@@ -5,8 +5,6 @@
 2 x 1.5 To WD Green in raid for system (/dev/sda, /dev/sdc ==> /devmd126)
 1 x 4 To SeaGate for storage
 data storage backup @ mull in WRRB
-
-
 ## 1. Installation
 ### 1.1 prepare hard drive
 #### 1.1.1 System
@@ -115,7 +113,7 @@ rmmod pcspkr
 And prevent reloading the module
 ```
 echo "blacklist pcspkr" >> /etc/modprobe.d/nobeep.conf
-
+```
 ### 1.4.1 update system
 Enable multilib repositories
 ```
@@ -137,7 +135,7 @@ pacman -Syu
 #### 1.3.1 Change console font
 Add:
 ```
-echo 'FONT=lat9-16' >> /etc/vconsole.conf
+echo "FONT=lat9-16" >> /etc/vconsole.conf
 ```
 #### 1.3.2 Change language local
 ```
@@ -191,7 +189,8 @@ hooks="... block keyboard ... mdadm_udev encrypt resume  ... filesystems"
 ```
 Rebuild the boot image
 ```
-mkinitcpio -p linux
+mkinitcpio -p linu
+```
 #### 1.3.7 Configure RAID array
 Save the RAID configuration file for the boot image
 ```
@@ -218,28 +217,18 @@ grub-install --target=i386-pc /dev/sdc
 ```
 nano -w /etc/default/grub
 ```
-COnfigure crypted drive
+Find offset for swapfile
 ```
-GRUB_cmdline-linux="cryptdevice=UUID=<UUID>:root resume=/dev/mapper/root resume_offset=34816
+filefrag -v /swapfile | awk '{if($1=="0:"){print $4}}'
+```
+GRUB_cmdline-linux="cryptdevice=UUID=<UUID>:root resume=/dev/mapper/root resume_offset=34816"
 ```
 And finally regenerate the grub.cfg
 ```
 grub-mkconfig -o /boot/grub/grub.cfg
 ```
-#### 1.4.3 If needed, modifiy grub configuration
-```
-nano -w /boot/grub/grub.cfg
-```
-Modifiy for raid
 
-
-
-Use the following command to know the swap offset (34816)
-``
-filefrag -v /swapfile | awk '{if($1==0){print $3}}'
-```
-
-#### 1.3.9 Create crypttab
+#### 1.4.3 Create crypttab
 ```
 mv /home.key /etc/home.key
 nano -w /etc/crypttab
@@ -248,3 +237,91 @@ And specify the path to the keyfile for home
 ```
 home  /dev/md126p4 /etc/home.key
 ```
+#### 1.4.4 Reboot
+```
+umount /mnt{/home, /boot, /}
+reboot
+```
+
+## 2. Packages and base configuration
+### 2.0 Create user
+Create the user megavolts
+```
+useradd -m g users -G wheel, audio,locate,disk,lp,network -s /bin/bash
+```
+Create a password for megavolts
+```
+passwd megavolts
+```
+Install sudo
+```
+pacman -S sudo
+```
+Modify /etc/sudoers to give wheel group superpower
+```
+nano -w /etc/sudoers
+```
+Uncomment and add
+```
+%weel ALL=(ALL) ALL
+...
+Defaults insults
+```
+Logout as root and log as new user
+Disable root user
+```
+passwd - l root
+```
+Install zsh shell and change /bin/bash to zsh for megavolts
+```
+sudo pacman -S grml-zsh-config
+chsh -s $(which zsh)
+```
+
+### 2.1 Install yaourt aur package manager
+Install dependencies
+```
+pacman -S curl yajl wget
+```
+Download and build package-query
+```
+wget https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=package-query
+mv PKGBUILD?<bla> PKGBUILD
+makepkg PKGBUILD
+sudo pacman -U package-query-XXX
+```
+Install yaourt
+```
+wget https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=yaourt
+mv PKGBUILD?<bla> PKGBUILD
+makepkg PKGBUILD
+sudo pacman -U yaourt-XXX
+```
+### 2.2 Configure and update pacman
+Refresh signature keys
+```
+pacman-key --refresh-keys
+```
+##### 2.2.1 Reflector
+```
+yaourt -S reflector
+```
+Create a pacman hook to trigger reflector
+```
+nano -w /etc/pacman.d/hooks/mirrorupgrade.hook
+- - -
+[Trigger]
+Operation = Upgrade
+Type = Package
+Target = pacman-mirrorlist
+
+[Action]
+Description = Updating pacman-mirrorlist with reflector and removing pacnew...
+When = PostTransaction
+Depends = reflector
+Exec = /usr/bin/env sh -c "reflector --country 'United States' --latest 200 --age 24 --sort rate --save /etc/pacman.d/mirrorlist; if [[ -f /etc/pacman.d/mirrorlist.pacnew ]]; then rm /etc/pacman.d/mirrorlist.pacnew; fi"
+```
+
+yaourt -S powerpill
+
+
