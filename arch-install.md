@@ -192,7 +192,8 @@ mkinitcpio -p linux
 passwd
 ```
 And enter your root password
-#### 1.3.8 Install the bootloader
+### 1.4 Bootloader
+#### 1.4.1 Install the bootloader
 Install grub package
 ```
 pacman -S grub
@@ -203,7 +204,7 @@ grub-install --target=i386-pc /dev/sdb
 grub-install --target=i386-pc /dev/sdc
 ```
 
-#### 1.3.8.1 If needed, modifiy grub configuration
+#### 1.4.2 If needed, modifiy grub configuration
 ```
 nano -w /etc/default/grub
 ```
@@ -211,7 +212,7 @@ And finally regenerate the grub.cfg
 ```
 grub-mkconfig -o /boot/grub/grub.cfg
 ```
-#### 1.3.8.2 If needed, modifiy grub configuration
+#### 1.4.3 If needed, modifiy grub configuration
 ```
 nano -w /boot/grub/grub.cfg
 ```
