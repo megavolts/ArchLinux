@@ -306,10 +306,17 @@ pacman-key --refresh-keys
 ```
 yaourt -S reflector
 ```
-Create a pacman hook to trigger reflector
+Update the mirrorlist:
+```
+reflector --country 'United States' --age 12 --protocol https --sort rate --save /etc/pacman.d/mirrorlist
+```
+Create a pacman hook to remove the .pacnew file created every time pacman-mirrorlist gets an upgrade.
 ```
 nano -w /etc/pacman.d/hooks/mirrorupgrade.hook
-- - -
+```
+and add
+```
+# /etc/pacman.d/hooks/mirrorupgrade.hook
 [Trigger]
 Operation = Upgrade
 Type = Package
@@ -321,7 +328,98 @@ When = PostTransaction
 Depends = reflector
 Exec = /usr/bin/env sh -c "reflector --country 'United States' --latest 200 --age 24 --sort rate --save /etc/pacman.d/mirrorlist; if [[ -f /etc/pacman.d/mirrorlist.pacnew ]]; then rm /etc/pacman.d/mirrorlist.pacnew; fi"
 ```
+Create a systemd service to trigger reflector everytime the computer boots
+```
+nano -w /etc/systemd/system/reflctor.service
+```
+and add
+```
+# etc/systemd/system/reflctor.service
+[Unit]
+Description=Pacman mirrorlist update
+Requires=network-online.target
+After=network-online.target
 
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/reflector --protocol https --latest 30 --number 20 --sort rate --save /etc/pacman.d/mirrorlist
+
+[Install]
+RequiredBy=multi-user.target
+
+```
+And activate the service
+```
+systemctl enable reflector.service
+```
+
+##### 2.2.1 Install powerpill
+```
 yaourt -S powerpill
+```
+Use powerpill instead of pacman
+
+## 2.3 Install graphics
+Install Xorg server
+```
+sudo powerpill -S xorg-server xorg-server-utils xorg-apps xf86-video-nouveau lib32-mesa lib32-libdrm libdrm mesa
+```
+Enabling nouveau in kernel module
+```
+nano /etc/mkinitcpio.conf
+```
+And add
+```
+MODULES="... nouveau"
+```
+Regenerate the initial image
+```
+mkinitcpio -p linux
+```
+Specify the nouveau driver for the kernel
+```nano -w /etc/share/X11/xorg.conf.d/20-nouveau.conf```
+With teh following content
+```
+Section "Device"
+    Identifier "Nvidia card"
+    Driver "nouveau"
+EndSection
+```
+
+## 2.4 Install windows manager KDE
+```
+sudo powerpill -S plasma plasma-wayland-session sddm archlinux-theme-sddm
+```
+Copy default configuration for ssdm and modifiy it
+```
+sddm --example-config > /etc/sddm.conf
+nano -w /etc/sddm.conf
+```
+With
+```
+...
+Numlock=on
+...
+Current=archlinux-simplyblack
+...
+```
 
 
+
+### Other software
+### 2.4.1 Drop-down termianl
+```
+yaourt -S tilda
+```
+
+
+```
+yaourt -S mlocate kwallet-pam ksshaskpass
+```
+
+
+
+## 2.4.2 Internet
+```
+yaourt -S firefox thunderbird
+```
