@@ -112,6 +112,9 @@ arch-chroot /mnt
 ```
 rmmod pcspkr
 ```
+And prevent reloading the module
+```
+echo "blacklist pcspkr" >> /etc/modprobe.d/nobeep.conf
 
 ### 1.4.1 update system
 Enable multilib repositories
@@ -180,14 +183,21 @@ nano -w /etc/mkinitcpio.conf
 Modify the lines
 ```
 ...
-modules="... ext4  raid1 ..."
-hooks="... block keyboard ... encrypt resume  ... filesystems"
+BINARIES="/sbin/mdmon"
+...
+modules="... dm_raid ext4 raid1 ..."
+...
+hooks="... block keyboard ... mdadm_udev encrypt resume  ... filesystems"
 ```
 Rebuild the boot image
 ```
 mkinitcpio -p linux
+#### 1.3.7 Configure RAID array
+Save the RAID configuration file for the boot image
 ```
-#### 1.3.7 Root password
+mdadm --detail --scan >> /mnt/etc/mdadm.conf
+```
+#### 1.3.8 Root password
 ```
 passwd
 ```
@@ -208,6 +218,10 @@ grub-install --target=i386-pc /dev/sdc
 ```
 nano -w /etc/default/grub
 ```
+COnfigure crypted drive
+```
+GRUB_cmdline-linux="cryptdevice=UUID=<UUID>:root resume=/dev/mapper/root resume_offset=34816
+```
 And finally regenerate the grub.cfg
 ```
 grub-mkconfig -o /boot/grub/grub.cfg
@@ -216,9 +230,11 @@ grub-mkconfig -o /boot/grub/grub.cfg
 ```
 nano -w /boot/grub/grub.cfg
 ```
-Modifiy for raid install
+Modifiy for raid
 
-Use the following command to know the swap offset
+
+
+Use the following command to know the swap offset (34816)
 ``
 filefrag -v /swapfile | awk '{if($1==0){print $3}}'
 ```
