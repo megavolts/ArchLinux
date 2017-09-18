@@ -7,7 +7,7 @@
 data storage backup @ mull in WRRB
 
 
-## 1. Preins
+## 1. Installation
 ### 1.1 prepare hard drive
 #### 1.1.1 System
 Prepare system drive for GRUB/GPT install
@@ -180,12 +180,54 @@ nano -w /etc/mkinitcpio.conf
 Modify the lines
 ```
 ...
-modules="... ext4  ..."
+modules="... ext4  raid1 ..."
 hooks="... block keyboard ... encrypt resume  ... filesystems"
 ```
 Rebuild the boot image
 ```
 mkinitcpio -p linux
 ```
-#### 1.3.7 Install the bootloader
+#### 1.3.7 Root password
+```
+passwd
+```
+And enter your root password
+#### 1.3.8 Install the bootloader
+Install grub package
+```
+pacman -S grub
+```
+For hardware raid, install grub on each partition /dev/sda and /dev/sdb
+```
+grub-install --target=i386-pc /dev/sdb
+grub-install --target=i386-pc /dev/sdc
+```
 
+#### 1.3.8.1 If needed, modifiy grub configuration
+```
+nano -w /etc/default/grub
+```
+And finally regenerate the grub.cfg
+```
+grub-mkconfig -o /boot/grub/grub.cfg
+```
+#### 1.3.8.2 If needed, modifiy grub configuration
+```
+nano -w /boot/grub/grub.cfg
+```
+Modifiy for raid install
+
+Use the following command to know the swap offset
+``
+filefrag -v /swapfile | awk '{if($1==0){print $3}}'
+```
+
+#### 1.3.9 Create crypttab
+```
+mv /home.key /etc/home.key
+nano -w /etc/crypttab
+```
+And specify the path to the keyfile for home
+```
+home  /dev/md126p4 /etc/home.key
+```
