@@ -221,6 +221,8 @@ Find offset for swapfile
 ```
 filefrag -v /swapfile | awk '{if($1=="0:"){print $4}}'
 ```
+Modifiy in the GRUB commandline
+```
 GRUB_cmdline-linux="cryptdevice=UUID=<UUID>:root resume=/dev/mapper/root resume_offset=34816"
 ```
 And finally regenerate the grub.cfg
@@ -403,7 +405,17 @@ Numlock=on
 Current=archlinux-simplyblack
 ...
 ```
-
+## 2.5 set up networking
+Enable wired interface at boot
+```
+sysetemctl enable dhcpcd@enp1s.service
+sysetemctl enable start@enp1s0.service
+```
+Enable wake-on-lan
+```
+yaourt -S ethtool
+ethtool enp1s0 | grep Wake-on
+```
 
 
 ### Other software
