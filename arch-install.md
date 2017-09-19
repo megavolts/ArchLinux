@@ -422,6 +422,7 @@ ethtool enp1s0 | grep Wake-on
 ### 2.4.1 Drop-down termianl
 ```
 yaourt -S tilda
+yaourt -S ttf-dejavu ttf-freefont font-mathematica ttf-mathtype ttf-vista-fonts ttf-google-fonts-hg 
 ```
 
 
@@ -429,7 +430,7 @@ yaourt -S tilda
 yaourt -S mlocate kwallet-pam ksshaskpass
 ```
 
-
+yaourt -S sublime-text-dev
 
 ## 2.4.2 Internet
 ```
