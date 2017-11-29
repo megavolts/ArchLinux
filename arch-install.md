@@ -3,7 +3,8 @@
 ## 0. Computer Spec
 ### 0.1 Hard drives
 * 2 x 1.0 To WD Green in raid for system (/dev/sda, /dev/sdc ==> /devmd126)
-1 x 4 To SeaGate for storage
+
+* 1 x 4 To SeaGate for storage
 data storage backup @ mull in WRRB
 
 LVM on LUKS on RAID
