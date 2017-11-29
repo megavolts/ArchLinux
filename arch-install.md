@@ -75,6 +75,7 @@ lvdisplay
 ```
 
 Create the filesystem
+```
 mkfs.ext4 /dev/mapper/vgroup-lvroot
 mount /dev/mapper/vgroup-lvroot /mnt
 mkfs.ext4 /dev/mapper/vgroup-lvhome
@@ -143,7 +144,9 @@ Uncomment for American English language
 ```
 en_US.UTF-8 UTF-8
 ```
+
 Reload and import local
+
 ```
 locale-gen
 export LANG=en_US.UTF-8
