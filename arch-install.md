@@ -181,9 +181,7 @@ nano -w /etc/mkinitcpio.conf
 ```
 Modify the lines
 ```
-...
-BINARIES="/sbin/mdmon"
-...
+```
 modules="... dm_raid ext4 raid1 ..."
 ...
 hooks="... block keyboard ... mdadm_udev lvm2 encrypt resume  ... filesystems"
