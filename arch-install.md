@@ -181,7 +181,6 @@ nano -w /etc/mkinitcpio.conf
 ```
 Modify the lines
 ```
-```
 modules="... dm_raid ext4 raid1 ..."
 ...
 hooks="... block keyboard ... mdadm_udev lvm2 encrypt resume  ... filesystems"
@@ -208,8 +207,8 @@ pacman -S grub
 ```
 For hardware raid, install grub on each partition /dev/sda and /dev/sdb
 ```
+grub-install --target=i386-pc /dev/sda
 grub-install --target=i386-pc /dev/sdb
-grub-install --target=i386-pc /dev/sdc
 ```
 
 #### 1.4.2 If needed, modify grub configuration
