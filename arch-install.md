@@ -291,6 +291,67 @@ makepkg PKGBUILD
 sudo pacman -U yaourt-XXX
 ```
 
+## 2.3 Install graphics
+Install Xorg server
+```
+sudo yaourt -S xorg-server xorg-apps xf86-video-nouveau lib32-mesa lib32-libdrm libdrm mesa
+```
+Enabling nouveau in kernel module
+```
+nano /etc/mkinitcpio.conf
+```
+And add
+```
+MODULES="... nouveau"
+```
+Regenerate the initial image
+```
+mkinitcpio -p linux
+```
+Specify the nouveau driver for the kernel
+```nano -w /etc/share/X11/xorg.conf.d/20-nouveau.conf```
+With the following content
+```
+Section "Device"
+    Identifier "Nvidia card"
+    Driver "nouveau"
+EndSection
+```
+
+## 2.4 Install windows manager KDE
+```
+sudo yaourt -S plasma sddm archlinux-themes-sddm
+```
+Copy default configuration for ssdm and modifiy it
+```
+casddm --example-config > /etc/sddm.conf
+nano -w /etc/sddm.conf
+-------------------------------------
+Numlock=on
+Current=archlinux-simplyblack
+```
+
+
+### Other software
+### 2.4.1 Drop-down termianl
+```
+yaourt -S tilda
+yaourt -S ttf-dejavu ttf-freefont font-mathematica ttf-mathtype ttf-vista-fonts ttf-google-fonts-hg 
+```
+
+
+```
+yaourt -S mlocate kwallet-pam ksshaskpass
+```
+
+yaourt -S sublime-text-dev
+
+## 2.4.2 Internet
+```
+yaourt -S firefox thunderbird
+```
+
+
 ### 2.2 Configure and update pacman
 Refresh signature keys
 ```
@@ -353,71 +414,8 @@ yaourt -S powerpill
 ```
 Use powerpill instead of pacman
 
-## 2.3 Install graphics
-Install Xorg server
-```
-sudo powerpill -S xorg-server xorg-server-utils xorg-apps xf86-video-nouveau lib32-mesa lib32-libdrm libdrm mesa
-```
-Enabling nouveau in kernel module
-```
-nano /etc/mkinitcpio.conf
-```
-And add
-```
-MODULES="... nouveau"
-```
-Regenerate the initial image
-```
-mkinitcpio -p linux
-```
-Specify the nouveau driver for the kernel
-```nano -w /etc/share/X11/xorg.conf.d/20-nouveau.conf```
-With teh following content
-```
-Section "Device"
-    Identifier "Nvidia card"
-    Driver "nouveau"
-EndSection
-```
-
-## 2.4 Install windows manager KDE
-```
-sudo powerpill -S plasma plasma-wayland-session sddm archlinux-theme-sddm
-```
-Copy default configuration for ssdm and modifiy it
-```
-sddm --example-config > /etc/sddm.conf
-nano -w /etc/sddm.conf
-```
-With
-```
-...
-Numlock=on
-...
-Current=archlinux-simplyblack
-...
-```
 
 
-
-### Other software
-### 2.4.1 Drop-down termianl
-```
-yaourt -S tilda
-yaourt -S ttf-dejavu ttf-freefont font-mathematica ttf-mathtype ttf-vista-fonts ttf-google-fonts-hg 
-```
-
-
-```
-yaourt -S mlocate kwallet-pam ksshaskpass
-```
-
-yaourt -S sublime-text-dev
-
-## 2.4.2 Internet
-```
-yaourt -S firefox thunderbird
-```
 
 ## Wake-On Lan
 
