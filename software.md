@@ -25,3 +25,10 @@ yaourt -S sublime-text-dev
 ```
 yaourt -S firefox thunderbird
 ```
+
+## Network
+```
+yaourt -S arp-scan
+sudo arp-scan -q -l --interface enp1s0 | grep 00:1e:c9:46:57:67 
+```
+ 
