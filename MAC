@@ -1,0 +1,18 @@
+
+
+# Server: Mull
+* DELL Precision T3400
+* name: Mull
+* location: WRRB 104B
+* MAC eth0 : 00:1e:c9:46:57:67
+* 
+
+# Latptop
+* Thinkpad X220
+* MAC eth0:
+* MAC wlan0:
+
+
+# Router:
+* Raspberry Pi 1B
+* MAC eth0: b8:27:eb:01:bd:78
