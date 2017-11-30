@@ -232,33 +232,38 @@ reboot
 ```
 
 ## 2. Packages and base configuration
-### 2.0 Create user
+## 2.0 set up networking and ssh
+Enable wired interface at boot
+```
+sysetemctl enable dhcpcd@enp1s.service
+sysetemctl enable start@enp1s0.service
+```
+Install **openssh**
+```
+pacman -S openssh
+```
+Configure sshd socket to listen to ports 1354
+```
+systemctl edit sshd.sockets
+----------------
+[Socket]
+ListenStream=1354
+```
+Enable sshd socket
+```
+systemctl enable sshd.socket
+systemctl start sshd.socket
+```
+
+
+### 2.1 Create user
 Create the user megavolts
 ```
-useradd -m g users -G wheel, audio,locate,disk,lp,network -s /bin/bash
+useradd -m g users -G wheel, audio,locate,disk,lp,network -s /bin/bash megavolts
 ```
 Create a password for megavolts
 ```
 passwd megavolts
-```
-Install sudo
-```
-pacman -S sudo
-```
-Modify /etc/sudoers to give wheel group superpower
-```
-nano -w /etc/sudoers
-```
-Uncomment and add
-```
-%weel ALL=(ALL) ALL
-...
-Defaults insults
-```
-Logout as root and log as new user
-Disable root user
-```
-passwd - l root
 ```
 Install zsh shell and change /bin/bash to zsh for megavolts
 ```
@@ -271,7 +276,7 @@ Install dependencies
 ```
 pacman -S curl yajl wget
 ```
-Download and build package-query
+Download and build package-query, as non-root user
 ```
 wget https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=package-query
 mv PKGBUILD?<bla> PKGBUILD
@@ -285,6 +290,7 @@ mv PKGBUILD?<bla> PKGBUILD
 makepkg PKGBUILD
 sudo pacman -U yaourt-XXX
 ```
+
 ### 2.2 Configure and update pacman
 Refresh signature keys
 ```
@@ -391,17 +397,7 @@ Numlock=on
 Current=archlinux-simplyblack
 ...
 ```
-## 2.5 set up networking
-Enable wired interface at boot
-```
-sysetemctl enable dhcpcd@enp1s.service
-sysetemctl enable start@enp1s0.service
-```
-Enable wake-on-lan
-```
-yaourt -S ethtool
-ethtool enp1s0 | grep Wake-on
-```
+
 
 
 ### Other software
@@ -421,4 +417,46 @@ yaourt -S sublime-text-dev
 ## 2.4.2 Internet
 ```
 yaourt -S firefox thunderbird
+```
+
+## Wake-On Lan
+
+Enable wake-on-lan
+```
+yaourt -S ethtool
+ethtool enp1s0 | grep Wake-on
+```
+Install shell and ssh hook for remote unlocking.
+```
+yaourt -S mkinitcpio-netconf mkinitcpio-dropbear mkinitcpio-utils dropbear mkinictpio-nfs-utils
+```
+Create SSH key pair on the client machine, without password
+```
+ssh-keygen
+```
+Copy the key from the client machine to the server machine
+```
+scp -P 1354 ~/.ssh/arran-wol.pub root@137.229.94.127:  ```
+```
+On the server side, copy the key to /etc/dropbear/root_key
+```
+cp /arran-wol.pub /etc/dropbear/root_key
+```
+Add **netconf**, **dropbear** and **encryptssh** to the hooks and regenerate initramfs.**encryptssh** replace **encrypt**:
+```
+nano /etc/mkinitcpio.conf
+-----------------------------------------
+HOOKS=(... lvm2 netconf dropbear encryptssh filesystems ...)
+```
+Rebuild the initramfs image
+```
+mkinictpio -p linux
+```
+Add ip= to kernel parameter
+```
+ip=:::::eth0:dhcp
+```
+Rebuild the grub image
+```
+grub-mkconfig -o /boot/grub/grub.cfg
 ```
