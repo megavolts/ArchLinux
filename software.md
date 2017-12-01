@@ -1,25 +1,13 @@
-### 2.4.1 Drop-down termianl
+# 4 Packages
+# 4.1 Utility packages
 ```
-yaourt -S tilda
-yaourt -S ttf-dejavu ttf-freefont font-mathematica ttf-mathtype ttf-vista-fonts ttf-google-fonts-git
-```
-
-
-### 
-
-```
-yaourt -S pycharm-community git
+yaourt -S gparted ntfs-3g exfat-utils mtools gpart
+pacman -S mlocate xorg-xkill
+yaourt -S  tilda terminator
+yaourt -S ttf-dejavu font-mathematica ttf-mathtype ttf-vista-fonts ttf-google-fonts-git ttf-freefont ttf-inconsolata
+sudo updatedb
 ```
 
-```
-yaourt amarok vlc
-``` 
-
-```
-yaourt -S mlocate kwallet-pam ksshaskpass
-```
-
-yaourt -S sublime-text-dev
 
 ## 2.4.2 Internet
 ```
@@ -31,4 +19,58 @@ yaourt -S firefox thunderbird
 yaourt -S arp-scan
 sudo arp-scan -q -l --interface enp1s0 | grep 00:1e:c9:46:57:67 
 ```
+
+
+## 4.2 Media
+```
+yaourt -S dolphin filezilla
+```
+yaourt -S ffmpegthumbnailer poppler-glib ligsf libopenraw
+yaourt -S gvfs gvfs-smb sshfs udiskie fuse mtpfs gigolo gvfs-mtp gvfs-gphoto2  
+yaourt -S xarchiver unrar p7zip unzip
+yaourt -S imagemagick
+yaourt -S libdvdcss ffmpeg mencoder mpd ario sonata gstreamer0.10-ugly-plugins pycddb
+yaourt -S gst-plugins-base gst-plugins-good gst-libav gst-plugins-ugly gst-plugins-bad
+
+### 4.2.1 Images
+yaourt -S geeqie inkscape
+yaourt -S gimp
+yaourt -S hugin hugin-hg panomatic
+
+### 4.2.2 Music & video
+```
+yaourt -S amarok vlc
+```
+
+### 4.3.  printer & scan
+yaourt -S cups foomatic-db foomatic-db-engine foomatic-db-nonfree
+yaourt -S xsane xsane-gimp
+
+## 4.4 vbox
+yaourt -S virtualbox virtualbox-host-modules virtualbox-ext-oracle virtualbox-guest-iso vboxhost-hook linux-headers
+        nano /etc/modules-load.d/virtualbox.conf
+                > vboxdrv
+        sudo nano -w /etc/mkinitcpio.conf
+                > HOOKS="... vboxhost"
+        mkinitcpio -p linux
+        gpasswd -a megavolts vboxusers
  
+## 4.5 customization
+yaourt -S awoken-icons
+ 
+## 4.6 office
+yaourt -S acroread libreoffice mendeleydesktop zotero
+yaourt -S texmaker texlive-most
+> all # Install all packages
+yaourt -S ghostscript
+yaourt -S aspell-fr aspell-en aspell-de hunspell-en hunspell-fr hunspell-de hyphen-en hyphen-en hyphen-de libmythes mythes-en mythes-fr libreoffice-extension-grammalecte-fr
+
+## 4.7 coding
+```
+yaourt -S pycharm-community git
+yaourt -S sublime-text-dev
+```
+# 3.7.n mtp
+yaourt -S mtpfs kio-mtp 
+
+
