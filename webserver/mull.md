@@ -301,3 +301,20 @@ mv PKGBUILD?<bla> PKGBUILD
 makepkg PKGBUILD
 sudo pacman -U yaourt-XXX
 ```
+
+## 2.2 Set up pacman
+```
+pacman-key --refresh-keys
+```
+Set automatic mirror ranking
+```
+pacman -S reflector
+```
+Select the 200 most recently synchronized HTTP or HTTPS mirrors, sort them by download speed, and overwrite the file /etc/pacman.d/mirrorlist
+```
+reflector --latest 200 --protocol http --protocol https --sort rate --save /etc/pacman.d/mirrorlist
+```
+Download pacman hook to trigger reflector everytime pacman-mirrorlist get an update
+```
+wget https://raw.githubusercontent.com/megavolts/X220/master/script/mirrorupgrade.hook -P /etc/pacman.d/hooks/
+```
