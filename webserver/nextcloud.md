@@ -12,6 +12,13 @@ nano -w /etc/php/php.ini
 extension=gd.so
 extension=iconv.so
 ```
+Uncomment the line
+```
+nano -w /etc/php/php-fpm.d/www.conf
+--------------------------------------------------------------------------------------------------------------------------------------
+env[PATH] = $HOSTNAME
+env[PATH] = /usr/local/bin:/usr/bin:/bin
+```
 
 ## Install NextClooud
 ```
