@@ -20,7 +20,7 @@ env[PATH] = $HOSTNAME
 env[PATH] = /usr/local/bin:/usr/bin:/bin
 ```
 
-## Install NextClooud
+## Install NextCloud
 ```
 yaourt -S nextcloud
 ```
