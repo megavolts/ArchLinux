@@ -37,6 +37,7 @@ mysql> \q
 Create an empty directory to hold cloud-specific configuration files
 ```
 mkdir /etc/nginx/conf.d/
+mkdir /etc/sites-enabled/
 ```
 Modify nginx.conf
 ```
@@ -46,6 +47,7 @@ http {
     ...
     server_names_hash_bucket_size 64;
     include conf.d/*.conf;
+    include sites-enabled/*;
     ...
 }
 ```
@@ -54,3 +56,17 @@ Create a configuration file for nextcloud according to [link: https://docs.nextc
 wget LINK -P /etc/nginx/nginx.d/
 ```
 
+## Default configuration
+Create directory to hold owncloud data and apps
+```
+mkdir -p /mnt/data/www/nextcloud/{data, apps2}
+chown http:http /mnt/data/www//nextcloud -R
+chmod 700 /mnt/data/www/nextcloud/{data, apps2}
+```
+Copy default config file
+```
+cp /etc/webapps/nextcloud/config/config.sample.php /etc/webapps/nextcloud/config/config.php
+```
+And modify accordingly to the newly created folders
+```
+nano 
