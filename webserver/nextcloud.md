@@ -51,29 +51,40 @@ Modify nginx.conf
 nano -w /etc/nginx/nginx.conf
 --------------------------------------------------------------------------------------------------------------------------------------
 http {
-    ...
-    server_names_hash_bucket_size 64;
     include conf.d/*.conf;
-    include sites-enabled/*;
     ...
 }
 ```
-Create a configuration file for nextcloud according to [link: https://docs.nextcloud.com/server/12/admin_manual/installation/nginx.html]. Modified files is available through:
+Add the following line at the end of the configuration files
 ```
-wget LINK -P /etc/nginx/nginx.d/
+/etc/webapps/nextcloud/config/config.php
+--------------------------------------------------------------------------------------------------------------------------------------
+'apps_paths' =>
+  array (
+    0 =>
+    array (
+      'path' => '/usr/share/webapps/nextcloud/apps',
+      'url' => '/apps',
+      'writable' => false,
+    ),
+    1 =>
+    array (
+      'path' => '/usr/share/webapps/nextcloud/apps2',
+      'url' => '/apps2',
+      'writable' => true,
+    ),
+  ),
+  'datadirectory' => '/usr/share/webapps/nextcloud/data'
 ```
-
-## Default configuration
-Create directory to hold owncloud data and apps
+Create the directories and, link accordingly
 ```
 mkdir -p /mnt/data/www/nextcloud/{data, apps2}
 chown http:http /mnt/data/www//nextcloud -R
-chmod 700 /mnt/data/www/nextcloud/{data, apps2}
+chmod 700 /mnt/data/www/nextcloud/{data
+chmod 700 /mnt/data/www/nextcloud/apps
+ln -s /mnt/data/www/nextcloud/data /usr/share/webapps/nextcloud/data
+ln -s /mnt/data/www/nextcloud/apps /usr/share/webapps/nextcloud/app2
 ```
-Copy default config file
-```
-cp /etc/webapps/nextcloud/config/config.sample.php /etc/webapps/nextcloud/config/config.php
-```
-And modify accordingly to the newly created folders
-```
-nano 
+Log to cloud.megagavolts.ch and finish the configuration
+
+
