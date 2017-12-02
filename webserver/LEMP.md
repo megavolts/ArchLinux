@@ -45,14 +45,14 @@ nano /etc/nginx/nginx.conf
 location ~ \.php$ {
       fastcgi_pass   unix:/var/run/php-fpm/php-fpm.sock;
       fastcgi_index  index.php;
-      root   /srv/http;
+      root   /usr/share/nginx/html
       include        fastcgi.conf;
  }
 
 ```
 ### Create a PHP info page
 ```
-sudo nano /srv/http/info.php
+sudo nano /usr/share/nginx/html/info.php
 --------------------------------------------------------------------------------------------------------------------------------------
 <?php
 phpinfo();
@@ -63,5 +63,32 @@ Restart nginx
 systemctl restart nginx
 ```
 
-
-
+### Install phpmyadmin
+Install required packages
+```
+pacman -S phpmyadmin php-mcrypt
+```
+Enable module in php-fpm:
+```
+nano /etc/php/php.ini
+--------------------------------------------------------------------------------------------------------------------------------------
+[...]
+extension=mcrypt.so
+extension=mysqli.so
+[...]
+```
+Modify nginx.conf
+```
+nano /etc/nginx/nginx.conf
+--------------------------------------------------------------------------------------------------------------------------------------
+location / {
+ root /usr/share/nginx/html;
+ index index.html index.htm index.php;
+```
+Link PhpMyAdmin folder to nginx/html
+```
+ln -s /usr/share/webapps/phpMyAdmin/ /usr/share/nginx/html/
+systemctl restart nginx
+systemctl restart php-fpm
+```
+Check IP/phpMyAdmin
