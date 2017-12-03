@@ -21,12 +21,16 @@ env[PATH] = /usr/local/bin:/usr/bin:/bin
 ```
 
 ## Install NextCloud
+Download the latest version of nextcloud in the webserver directory
 ```
-yaourt -S nextcloud
+cd /mnt/data/www/megavolts.ch
+wget wget https://download.nextcloud.com/server/releases/nextcloud-10.0.1.tar.bz2
+tar xvf nextcloud-10.0.1.tar.bz2
 ```
-Install a pacman hook to upgrade nextcloud database automatically when nextcloud is updated
+Fix the user and group for nginx
+
 ```
-wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/webserver/scripts/nextcloud-update.hook -P /etc/pacman.d/hooks
+chown http:http extcloud/ -R
 ```
 
 ## Database setup
@@ -55,36 +59,12 @@ http {
     ...
 }
 ```
-Add the following line at the end of the configuration files
+Download the config file for the nextcloud server @ cloud.megavolts.ch
 ```
-/etc/webapps/nextcloud/config/config.php
---------------------------------------------------------------------------------------------------------------------------------------
-'apps_paths' =>
-  array (
-    0 =>
-    array (
-      'path' => '/usr/share/webapps/nextcloud/apps',
-      'url' => '/apps',
-      'writable' => false,
-    ),
-    1 =>
-    array (
-      'path' => '/usr/share/webapps/nextcloud/apps2',
-      'url' => '/apps2',
-      'writable' => true,
-    ),
-  ),
-  'datadirectory' => '/usr/share/webapps/nextcloud/data'
+wget LINK -p /etc/nginx/conf.d/
 ```
-Create the directories and, link accordingly
+Reload nginx:
 ```
-mkdir -p /mnt/data/www/nextcloud/{data, apps2}
-chown http:http /mnt/data/www//nextcloud -R
-chmod 700 /mnt/data/www/nextcloud/{data
-chmod 700 /mnt/data/www/nextcloud/apps
-ln -s /mnt/data/www/nextcloud/data /usr/share/webapps/nextcloud/data
-ln -s /mnt/data/www/nextcloud/apps /usr/share/webapps/nextcloud/app2
+systemctl reload nginx
 ```
-Log to cloud.megagavolts.ch and finish the configuration
-
 
