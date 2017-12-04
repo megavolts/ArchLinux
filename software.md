@@ -47,14 +47,11 @@ yaourt -S cups foomatic-db foomatic-db-engine foomatic-db-nonfree
 yaourt -S xsane xsane-gimp
 
 ## 4.4 vbox
-yaourt -S virtualbox virtualbox-host-modules virtualbox-ext-oracle virtualbox-guest-iso vboxhost-hook linux-headers
-        nano /etc/modules-load.d/virtualbox.conf
-                > vboxdrv
-        sudo nano -w /etc/mkinitcpio.conf
-                > HOOKS="... vboxhost"
-        mkinitcpio -p linux
-        gpasswd -a megavolts vboxusers
- 
+```
+yaourt -S virtualbox virtualbox-guest-iso virtualbox-host-modules-arch
+usermod -G vboxusers megavolts
+```
+
 ## 4.5 customization
 yaourt -S awoken-icons
  
@@ -74,3 +71,8 @@ yaourt -S sublime-text-dev
 yaourt -S mtpfs kio-mtp 
 
 
+# usbbootgui
+To access raspberry pi gpio via usb
+```
+yaourt -s devscript 
+https://github.com/raspberrypi/usbbootgui
