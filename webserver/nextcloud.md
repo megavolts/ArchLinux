@@ -3,14 +3,13 @@
 
 ## Install PHP modul for NextCloud
 ```
-yaourt -S php-intl php-mcrypt
+yaourt -S php-intl php-mcrypt php-mod php-xml php-imagick php-mbstring
 ```
 Uncomment the line
 ```
-nano -w /etc/php/php.ini
---------------------------------------------------------------------------------------------------------------------------------------
-extension=gd.so
-extension=iconv.so
+phpenmod intl
+phpenmod dom
+phpenmod openssl
 ```
 Uncomment the line
 ```
@@ -23,8 +22,10 @@ env[PATH] = /usr/local/bin:/usr/bin:/bin
 ## Install NextCloud
 Download the latest version of nextcloud in the webserver directory
 ```
+mkdi /mnt/data/www/megavolts.ch
 cd /mnt/data/www/megavolts.ch
-wget wget https://download.nextcloud.com/server/releases/nextcloud-10.0.1.tar.bz2
+wget https://download.nextcloud.com/server/releases/nextcloud-10.0.1.tar.bz2
+wget
 tar xvf nextcloud-10.0.1.tar.bz2
 ```
 Fix the user and group for nginx
