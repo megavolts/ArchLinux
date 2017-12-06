@@ -76,3 +76,17 @@ To access raspberry pi gpio via usb
 ```
 yaourt -s devscript 
 https://github.com/raspberrypi/usbbootgui
+```
+
+# setup git
+```
+yaourt install git
+git config --global user.name "Marc Oggier"
+git config --global user.email "Marc Oggier"
+```
+Set up a git directory
+```
+mkdir gitdir
+cd gitdir
+git init
+```
