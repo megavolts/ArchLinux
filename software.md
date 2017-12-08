@@ -24,6 +24,7 @@ sudo arp-scan -q -l --interface enp1s0 | grep 00:1e:c9:46:57:67
 ## 4.2 Media
 ```
 yaourt -S dolphin filezilla gamin kio-extras mtpfs kio-mtp  konsole kdegraphics-thumbnailers kdesdk-thumbnailers raw-thumbnailer ffmpegthumbs
+yaourt -S nextcloud-client
 yaourt -S ark unrar unzip
 yaourt -S okular qownnotes notes
 yaourt -S spectacle
@@ -31,8 +32,6 @@ yaourt -S imagemagick guetzli
 yaourt -S geeqie darktable inkscape
 ```
 
-yaourt -S ffmpegthumbnailer poppler-glib ligsf libopenraw
-yaourt -S gvfs gvfs-smb sshfs udiskie fuse mtpfs gigolo gvfs-mtp gvfs-gphoto2  
 yaourt -S libdvdcss ffmpeg mencoder mpd ario sonata gstreamer0.10-ugly-plugins pycddb
 yaourt -S gst-plugins-base gst-plugins-good gst-libav gst-plugins-ugly gst-plugins-bad
 
@@ -93,3 +92,5 @@ mkdir gitdir
 cd gitdir
 git init
 ```
+ ```
+ yaourt -S arduino
