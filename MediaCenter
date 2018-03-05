@@ -1,0 +1,134 @@
+
+### install SSh
+Install *openssh*
+```
+pacman -S openssh
+```
+Configure sshd socket to listen to ports 1354
+```
+systemctl edit sshd.sockets
+----------------
+[Socket]
+ListenStream=1354
+```
+Enable sshd socket
+```
+systemctl enable sshd.socket
+systemctl start sshd.socket
+``` 
+
+### Yaourt
+Install dependencies
+``` 
+pacman -S yajl wget base-devel
+```
+Download and build package-query and yaourt:
+```
+wget https://aur.archlinux.org/cgit/aur.git/snapshot/package-query.tar.gz
+tar -xvzf package-query.tar.gz
+cd package-query
+makepkg -si
+cd ..
+wget https://aur.archlinux.org/cgit/aur.git/snapshot/yaourt.tar.gz
+tar -xvzf yaourt.tar.gz
+cd yaourt
+makepkg -si
+
+cd ../
+rm -rf package-query/ package-query.tar.gz yaourt/ yaourt.tar.gz
+```
+3.1 Change shell
+```
+yaourt -S grml-zsh-config
+chsh -s $(which zsh)
+```
+
+2.3 Install graphics
+Install *X server* and ati driver
+```
+yaourt -S xorg-server xorg-apps lib32-mesa lib32-libdrm libdrm mesa xf86-video-ati mesa-vdpau lib32-mesa-vdpau
+```
+
+Enabling nouveau in kernel module
+```
+nano /etc/mkinitcpio.conf
+----------------------------
+MODULES="... radeon"
+```
+Regenerate the initial image
+```
+mkinitcpio -p linux
+```
+Specify the nouveau driver for the kernel nano -w /etc/share/X11/xorg.conf.d/20-radeon.conf With the following content
+```
+Section "Device"
+    Identifier "Radeon"
+    Driver "radeon"
+EndSection
+```
+
+3.2 Set up pacman
+
+Set automatic mirror ranking
+
+yaourt  -S reflector
+
+Select the 200 most recently synchronized HTTP or HTTPS mirrors, sort them by download speed, and overwrite the file /etc/pacman.d/mirrorlist
+
+sudo reflector --latest 200 --protocol http --protocol https --sort rate --save /etc/pacman.d/mirrorlist
+
+Download pacman hook to trigger reflector everytime pacman-mirrorlist get an update
+
+wget https://raw.githubusercontent.com/megavolts/X220/master/script/mirrorupgrade.hook -P /etc/pacman.d/hooks/
+
+
+3.3 Install plasma windows manager
+```
+yaourt -S plasma-desktop sddm kdenetwork powerdevil plasma-nm kscreen
+```
+With phonon-qt5-vlc and libx264-10bit
+
+Copy default configuration for ssdm and modifiy it
+```
+sddm --example-config > /etc/sddm.conf
+```
+Configure sddm
+```
+nano -w /etc/sddm.conf
+-------------------------------------
+Numlock=on
+[Theme]
+# Current theme name
+#Current=archlinux-simplyblack
+Current=breeze
+CursorTheme=breeze_cursors
+```
+Try sddm:
+```
+systemctl start sddm
+```
+If it works, reboot and enable sddm
+```
+systemctl enable sddm
+reboot
+```
+3.5 Networking
+
+Enable plasma 5 networking applet
+```
+pacman -S networkmanager
+systemctl enable NetworkManager.service
+systemctl start NetworkManager.service
+```
+We can also automate the hostname setup using the following systemd command:
+```
+hostnamectl set-hostname adak
+```
+3.4 Install audio server
+```
+yaourt -S alsa-utils pulseaudio pulseaudio-alsa
+yaourt -S pulseaudio-jack pulseaudio-equalizer kmix  
+yaourt -S libcanberra-pulse libcanberra-gstreamer
+```
+
+
