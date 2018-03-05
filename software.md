@@ -179,3 +179,11 @@ $ systemctl --user start gpg-agent-browser.socket
 Finally add your ssh key to ssh agent.
 
 $ ssh-add ~/.ssh/id_ed25519
+
+
+## screen 
+
+```
+yaourt -S synergy
+```
+Get online activation code through cpp.sh/3mjw3
