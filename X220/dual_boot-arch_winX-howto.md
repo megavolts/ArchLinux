@@ -34,8 +34,9 @@ As usual
 To simplify the installation of linux, one the isntaller launch,
 
 ```
-wget ...
-chmod +x ...
+wget https://github.com/megavolts/ArchLinux/edit/master/X220/archlinux_reinstall_script.sh
+chmod +x archlinux_reinstall_script.sh
+./archlinux_reinstall_script.sh
 ```
 Then boot
 
