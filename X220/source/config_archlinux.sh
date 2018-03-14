@@ -140,4 +140,5 @@ chmod +x software_install.sh
 
 userdel builduser
 rm /home/builduser -R
+sed -i 's/builduser ALL=(ALL) ALL//'
 
