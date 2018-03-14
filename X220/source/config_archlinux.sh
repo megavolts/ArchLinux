@@ -137,6 +137,7 @@ yaourtpkg "alsa-utils pulseaudio pulseaudio-alsa pulseaudio-jack pulseaudio-equa
 
 wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/source/software_install.sh
 chmod +x software_install.sh
+/bin/bash software_install.sh
 
 userdel builduser
 rm /home/builduser -R
