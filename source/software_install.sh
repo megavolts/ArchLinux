@@ -1,10 +1,14 @@
 #!/bin/bash
 # execute as root
 
-# create a fake builduser
-useradd builduser -m # Create the builduser
-passwd -d builduser # Delete the buildusers password
-echo "builduser ALL=(ALL) ALL" >> /etc/sudoers
+if [[ $( grep builduser /etc/passwd) ]]; then
+  # create a fake builduser
+  useradd builduser -m # Create the builduser
+  passwd -d builduser # Delete the buildusers password
+  echo "builduser ALL=(ALL) ALL" >> /etc/sudoers
+  USER_FLAG=0
+fi
+
 buildpkg(){
   CURRENT_DIR=$pwd
   wget https://aur.archlinux.org/cgit/aur.git/snapshot/$1.tar.gz
@@ -75,5 +79,8 @@ echo "vboxdrv vboxnetadp vboxnetflt" >> /usr/lib/modules-load.d/virtualbox-host-
 echo -e "... to configure plex-media-server visit http://localhost:32400/web/"
 echo -e "... don't forget to install Antidote"
 
-userdel builduser
-rm /home/builduser -R
+if [[ USER_FLAG==0 ]]; then
+  userdel builduser
+  rm /home/builduser -R
+  sed -i 's/builduser ALL=(ALL) ALL//'
+fi
