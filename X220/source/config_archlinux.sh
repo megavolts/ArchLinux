@@ -29,12 +29,12 @@ echo -e ".. set hostname to adak"
 echo adak > /etc/hostname
 
 echo -e ".. generating initramfs"
-wget https://raw.githubusercontent.com/megavolts/X220/master/source/mkinitcpio.conf -O /etc/mkinitcpio.conf
+wget https://raw.githubusercontent.com/megavolts/ArchLinux/X220/master/source/mkinitcpio.conf -O /etc/mkinitcpio.conf
 mkinitcpio -p linux-zen
 
 echo -e ".. creating service file for initramfs regeneration"
-wget https://raw.githubusercontent.com/megavolts/X220/master/source/initramfs-update.path -O /etc/systemd/system/initramfs-update.path
-wget https://raw.githubusercontent.com/megavolts/X220/master/source/initramfs-update.service -O /etc/systemd/system/initramfs-update.service
+wget https://raw.githubusercontent.com/megavolts/ArchLinux/X220/master/source/initramfs-update.path -O /etc/systemd/system/initramfs-update.path
+wget https://raw.githubusercontent.com/megavolts/ArchLinux/X220/master/source/initramfs-update.service -O /etc/systemd/system/initramfs-update.service
 systemctl enable initramfs-update.path
 
 echo -e ".. setting root password"
@@ -103,7 +103,7 @@ echo -e ".. Configure pacman"
 yaourtpkg reflector
 
 reflector --latest 200 --protocol http --protocol https --sort rate --save /etc/pacman.d/mirrorlist
-wget https://raw.githubusercontent.com/megavolts/X220/master/script/mirrorupgrade.hook -P /etc/pacman.d/hooks/
+wget https://raw.githubusercontent.com/megavolts/ArchLinux/X220/master/source/mirrorupgrade.hook -P /etc/pacman.d/hooks/
 
 echo -e ".. Install xorg and input"
 pacman -S --noconfirm xorg-server xorg-apps xf86-video-intel mesa-libgl lib32-mesa-libgl libva-intel-driver libva xorg-xinit xorg-xrandr <<EOF
@@ -137,8 +137,6 @@ yaourtpkg "alsa-utils pulseaudio pulseaudio-alsa pulseaudio-jack pulseaudio-equa
 
 wget XXX
 chmod +x XXX
-
-
 
 userdel builduser
 rm /home/builduser -R
