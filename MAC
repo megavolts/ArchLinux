@@ -9,10 +9,22 @@
 
 # Latptop
 * Thinkpad X220
+* adak
 * MAC eth0:
 * MAC wlan0:
 
 
 # Router:
-* Raspberry Pi 1B
+* Orange Pi 2Eplus
+* kiska
+* MAC eth0:
+* MAC wlan0:
+
+* Raspberry Pi
 * MAC eth0: b8:27:eb:01:bd:78
+
+
+# Tablet P600, n1awifi
+* Akutan
+* MAC wlan0: 00:f4:6f:66:05:f2
+* 
