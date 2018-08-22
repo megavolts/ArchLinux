@@ -17,8 +17,8 @@
 # Router:
 * Orange Pi 2Eplus
 * kiska
-* MAC eth0:
-* MAC wlan0:
+* MAC eth0: 02:81:c6:e7:c5:62
+* MAC wlan0: 12:81:c6:e7:c5:62
 
 * Raspberry Pi
 * MAC eth0: b8:27:eb:01:bd:78
