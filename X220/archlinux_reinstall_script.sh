@@ -37,7 +37,13 @@ echo -e "Update pacman and install base and base-devel with linux-zen"
 pacman -Syy --noconfirm
 pacman -S archlinux-keyring --noconfirm
 pacman-key --refresh
-pacstrap /mnt $(pacman -Sqg base | sed 's/^\(linux\)$/\1-zen/') base-devel openssh sudo ntp wget
+if [ -f /mnt/boot/vmlinuz-linux-zen ]; then
+  rm /mnt/boot/vmlinuz-linux-zen 
+  rm /mnt/boot/initramfs-linux-zen.img 
+  rm /mnt/boot/initramfs-linux-zen-fallback.img 
+fi 
+
+pacstrap $(pacman -Sqg base | sed 's/^\(linux\)$/\1-zen/') /mnt  base-devel openssh sudo ntp wget
 
 echo -e ""
 echo -e "Create fstab"
@@ -49,7 +55,6 @@ echo -e "Tuning X220 adak"
 wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/X220/source/config_archlinux.sh
 chmod +x config_archlinux.sh
 cp config_archlinux.sh /mnt/
-arch-chroot /mnt
 arch-chroot /mnt ./config_archlinux.sh $DRIVE_PASSWORD
 rm /mnt/X220-arch-chroot.sh
 umount /mnt{/boot,/home,/}
