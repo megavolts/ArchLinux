@@ -84,6 +84,10 @@ packages = ''
 # internet messenging
 packages +=  'telegram-desktop'
 
+# python packages
+packages=''
+packages+='python-numpy python-matplotlib python-scipy python-pandas openpyxml'
+yaourt -S $packages --noconfirm
 yaourtpkg packages
 
 if [[ USER_FLAG==0 ]]; then
