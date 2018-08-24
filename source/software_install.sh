@@ -82,5 +82,5 @@ echo -e "... don't forget to install Antidote"
 if [[ USER_FLAG==0 ]]; then
   userdel builduser
   rm /home/builduser -R
-  sed -i 's/builduser ALL=(ALL) ALL//'
+  sed -i 's/builduser ALL=(ALL) ALL//' /etc/sudoers
 fi
