@@ -47,9 +47,10 @@ sed -i "s|/mnt/swapfile|/swapfile|" /mnt/etc/fstab
 echo -e ""
 echo -e "Tuning X220 adak"
 wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/X220/source/config_archlinux.sh
+chmod +x config_archlinux.sh
 cp config_archlinux.sh /mnt/
 arch-chroot /mnt
-arch-chroot /mnt ./X220-arch-chroot.sh $DRIVE_PASSWORD
+arch-chroot /mnt ./config_archlinux.sh $DRIVE_PASSWORD
 rm /mnt/X220-arch-chroot.sh
 umount /mnt{/boot,/home,/}
 
