@@ -15,7 +15,7 @@ pacman -Syu
 
 echo -e ".. change locales"
 echo "FONT=lat9w-16" >> /etc/vconsole.conf
-wget https://raw.githubusercontent.com/megavolts/X220/master/source/locale.gen -O /etc/locale.gen
+wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/X220/source/locale.gen -O /etc/locale.gen
 echo "LANG=en_US.UTF-8" > /etc/locale.conf
 locale-gen
 export LANG=en_US.UTF-8
@@ -29,12 +29,12 @@ echo -e ".. set hostname to adak"
 echo adak > /etc/hostname
 
 echo -e ".. generating initramfs"
-wget https://raw.githubusercontent.com/megavolts/ArchLinux/X220/master/source/mkinitcpio.conf -O /etc/mkinitcpio.conf
+wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/X220/source/mkinitcpio.conf -O /etc/mkinitcpio.conf
 mkinitcpio -p linux-zen
 
 echo -e ".. creating service file for initramfs regeneration"
-wget https://raw.githubusercontent.com/megavolts/ArchLinux/X220/master/source/initramfs-update.path -O /etc/systemd/system/initramfs-update.path
-wget https://raw.githubusercontent.com/megavolts/ArchLinux/X220/master/source/initramfs-update.service -O /etc/systemd/system/initramfs-update.service
+wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/X220/source/initramfs-update.path -O /etc/systemd/system/initramfs-update.path
+wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/X220/source/initramfs-update.service -O /etc/systemd/system/initramfs-update.service
 systemctl enable initramfs-update.path
 
 echo -e ".. setting root password"
@@ -43,15 +43,15 @@ $PASSWORD
 $PASSWORD
 EOF
 
-echo -e ".. install bootload:
+echo -e ".. install bootload:"
 # copy vmlinuz and initramfs
 mkdir /boot/EFI/zen
 cp /boot/vmlinuz-linux-zen /boot/EFI/zen/vmlinuz-zen.efi
 cp /boot/initramfs-linux-zen.img /boot/EFI/zen/archlinux-zen.img
-*wget /backup/refindo.conf -O /boot/EFI/refind/refind.conf*
+# *wget /backup/refindo.conf -O /boot/EFI/refind/refind.conf*
 # change /dev/sdb4 with uuid
 
-pacman -S refind-efi --noconfirm
+pacman -Sy refind-efi --noconfirm
 refind-install
 # create a cryptab entry
 mv /home.keyfile /etc/home.keyfile
@@ -64,8 +64,8 @@ $PASSWORD
 $PASSWORD
 EOF
 
-echo -e " ... adding megavolts to wheel 
-sed 's/# %wheel ALL=(ALL) ALL/%wheel ALL=(ALL) ALL/'
+echo -e " ... adding megavolts to wheel"
+sed 's /# %wheel ALL=(ALL) ALL/%  wheel ALL=(ALL) ALL/' /etc/sudoers
 
 systemctl enable sshd
 
@@ -95,7 +95,7 @@ yaourtpkg() {
   sudo -u builduser bash -c "yaourt -S --noconfirm $1"
 }
 
-yaourtpkg -S grml-zsh-config
+yaourtpkg -grml-zsh-config
 chsh -s $(which zsh)
 chsh -s $(which zsh) megavolts
 
@@ -115,9 +115,11 @@ pacman -S --noconfirm xf86-input-synaptics xf86-input-keyboard xf86-input-wacom 
 echo -e "... rebuilding initramfs with i915"
 echo "options i915 enable_rc6=1 enable_fbc=1 lvds_downclock=1" >> /etc/modprobe.d/i915.conf
 mkinitcpio -p linux-zen
+cp /boot/vmlinuz-linux-zen /boot/EFI/zen/vmlinuz-zen.efi
+cp /boot/initramfs-linux-zen.img /boot/EFI/zen/archlinux-zen.img
 
 echo -e "... install plasma windows manager"
-pacman -S plasma-dekstop sddm networkmanager powerdevil plasma-nm kscreen --noconfirm
+pacman -S plasma-desktop sddm networkmanager powerdevil plasma-nm kscreen --noconfirm
 
 echo -e "... configure sddm"
 sddm --example-config > /etc/sddm.conf
@@ -137,9 +139,15 @@ yaourtpkg "alsa-utils pulseaudio pulseaudio-alsa pulseaudio-jack pulseaudio-equa
 
 wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/source/software_install.sh
 chmod +x software_install.sh
-/bin/bash software_install.sh
+./software_install.sh
 
-userdel builduser
-rm /home/builduser -R
-sed -i 's/builduser ALL=(ALL) ALL//'
+if id userbuild >/dev/null 2>&1; then
+  echo ".. deleting user userbuild"
+  userdel builduser
+  rm /home/builduser -R
+  sed -i 's/builduser ALL=(ALL) ALL//' /etc/sudoerselse
+fi
 
+echo ".. updating kernel image in /boot"
+cp /boot/vmlinuz-linux-zen /boot/EFI/zen/vmlinuz-zen.efi
+cp /boot/initramfs-linux-zen.img /boot/EFI/zen/archlinux-zen.img
