@@ -79,6 +79,13 @@ echo "vboxdrv vboxnetadp vboxnetflt" >> /usr/lib/modules-load.d/virtualbox-host-
 echo -e "... to configure plex-media-server visit http://localhost:32400/web/"
 echo -e "... don't forget to install Antidote"
 
+packages = ''
+
+# internet messenging
+packages +=  'telegram-desktop'
+
+yaourtpkg packages
+
 if [[ USER_FLAG==0 ]]; then
   userdel builduser
   rm /home/builduser -R
