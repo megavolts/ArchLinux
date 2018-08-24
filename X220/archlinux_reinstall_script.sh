@@ -56,7 +56,6 @@ wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/X220/source/co
 chmod +x config_archlinux.sh
 cp config_archlinux.sh /mnt/
 arch-chroot /mnt ./config_archlinux.sh $DRIVE_PASSWORD
-rm /mnt/X220-arch-chroot.sh
 umount /mnt{/boot,/home,/}
 
 #pressanykey() {
