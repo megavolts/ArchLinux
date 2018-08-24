@@ -151,3 +151,4 @@ fi
 echo ".. updating kernel image in /boot"
 cp /boot/vmlinuz-linux-zen /boot/EFI/zen/vmlinuz-zen.efi
 cp /boot/initramfs-linux-zen.img /boot/EFI/zen/archlinux-zen.img
+rm software_install.ch
