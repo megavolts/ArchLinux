@@ -2,8 +2,6 @@
 PASSWORD=$1
 
 echo -e "Entering chroot"
-echo -e "Tuning pacman"
-
 echo -e "..adding multilib"
 sed -i 's|#[multilib]|[multilib]|' /etc/pacman.conf
 sed -i "/\[multilib\]/,/Include/"'s/^#//' /etc/pacman.conf
@@ -46,7 +44,7 @@ systemctl enable sshd
 pacman -S mlocate rsync --noconfirm
 updatedb
 
-# crete a fake builduser
+# create a fake builduser
 useradd builduser -m # Create the builduser
 passwd -d builduser # Delete the buildusers password
 echo "builduser ALL=(ALL) ALL" >> /etc/sudoers
@@ -71,6 +69,7 @@ yaourtpkg() {
 
 yaourtpkg -grml-zsh-config
 chsh -s $(which zsh)
+chsh -s $(which zsh) megavolts
 
 echo -e ".. Configure pacman"
 yaourtpkg reflector
@@ -78,31 +77,12 @@ yaourtpkg reflector
 reflector --latest 200 --protocol http --protocol https --sort rate --save /etc/pacman.d/mirrorlist
 wget https://raw.githubusercontent.com/megavolts/ArchLinux/X220/master/source/mirrorupgrade.hook -P /etc/pacman.d/hooks/
 
-echo -e ".. Install xorg and input"
-pacman -S --noconfirm xorg-server xorg-apps xorg-xinit xorg-xrandr <<EOF
-all
-1
-EOF
-
-echo -e "... install plasma windows manager"
-pacman -S plasma-desktop sddm networkmanager powerdevil plasma-nm kscreen plasma-pa pavucontrol--noconfirm
-
-echo -e "... configure sddm"
-sddm --example-config > /etc/sddm.conf
-sed -i 's/Current=/Current=breeze/' /etc/sddm.conf
-sed -i 's/CursorTheme=/CursorTheme=breeze_cursors/' /etc/sddm.conf
-systemctl enable sddm
-
 echo -e "... enable NetworkManager"
 systemctl enable NetworkManager.service
 systemctl start NetworkManager.service
 
 echo -e ".. install audio server"
-yaourtpkg "alsa-utils pulseaudio pulseaudio-alsa pulseaudio-jack pulseaudio-equalizer kmix libcanberra-pulse libcanberra-gstreamer "
-
-wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/source/software_install.sh
-chmod +x software_install.sh
-./software_install.sh
+yaourtpkg "alsa-utils pulseaudio pulseaudio-alsa pulseaudio-jack pulseaudio-equalizer libcanberra-pulse libcanberra-gstreamer "
 
 if id userbuild >/dev/null 2>&1; then
   echo ".. deleting user userbuild"
@@ -111,6 +91,4 @@ if id userbuild >/dev/null 2>&1; then
   sed -i 's/builduser ALL=(ALL) ALL//' /etc/sudoerselse
 fi
 
-# remove config files
-# run specific_config.sh >> remove unnecessary graphic drivers
-# message: don't forget to change root passwords
+exit
