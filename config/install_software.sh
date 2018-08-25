@@ -66,7 +66,7 @@ yaourtpkg "sublime-text-dev pycharm-community-edition"
 
 echo -e ".. media"
 yaourtpkg "dolphin dolphin-plugins qt5-imageformats ffmpegthumbs"
-yaourtpkg "ark unrar"
+yaourtpkg "ark unrar p7zip unzip"
 
 echo -e "... viewer"
 yaourtpkg "okular spectacle discount kdegraphics-mobipocket"
