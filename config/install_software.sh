@@ -19,12 +19,13 @@ echo -e "... install plasma windows manager"
 pacman -S plasma-desktop sddm networkmanager powerdevil plasma-nm kscreen plasma-pa pavucontrol--noconfirm
 
 echo -e "... configure sddm"
+pacman -S sddm --noconfirm
 sddm --example-config > /etc/sddm.conf
 sed -i 's/Current=/Current=breeze/' /etc/sddm.conf
 sed -i 's/CursorTheme=/CursorTheme=breeze_cursors/' /etc/sddm.conf
 systemctl enable sddm
 
-
+# Function
 buildpkg(){
   CURRENT_DIR=$pwd
   wget https://aur.archlinux.org/cgit/aur.git/snapshot/$1.tar.gz
