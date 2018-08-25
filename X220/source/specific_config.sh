@@ -47,3 +47,5 @@ echo "home /dev/sdb5 /etc/home.keyfile" >> /etc/crypttab
 echo ".. updating kernel image in /boot"
 cp /boot/vmlinuz-linux-zen /boot/EFI/zen/vmlinuz-zen.efi
 cp /boot/initramfs-linux-zen.img /boot/EFI/zen/archlinux-zen.img
+
+exit
