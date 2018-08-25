@@ -1,6 +1,9 @@
 #/bin/bash
 # Reinstall
 #
+root_dev=sdb4
+home_dev=sdb6
+
 echo -e "prepare disk for installation"
 echo 'Enter a default passphrase use to encrypt the disk and serve as password for root and megavolts:'
 
@@ -9,16 +12,16 @@ read DRIVE_PASSPHRASE
 stty echo
 
 echo -e ".. encrypting root partition"
-echo -en $DRIVE_PASSPHRASE | cryptsetup -c aes-xts-plain64 -s 512 -h sha512 -i 5000 --use-random -q luksFormat /dev/sdb4
+echo -en $DRIVE_PASSPHRASE | cryptsetup -c aes-xts-plain64 -s 512 -h sha512 -i 5000 --use-random -q luksFormat /dev/$root_dev
 echo -en $DRIVE_PASSPHRASE | cryptsetup luksOpen /dev/sdb4 cryptroot
 mkfs.ext4 /dev/mapper/cryptroot
 mount /dev/mapper/cryptroot /mnt
 
 echo -e ".. create encryptation file for home partition"
 dd if=/dev/urandom of=/mnt/home.keyfile bs=512 count=4
-echo -en $DRIVE_PASSPHRASE | cryptsetup luksAddKey /dev/sdb5 /mnt/home.keyfile
+echo -en $DRIVE_PASSPHRASE | cryptsetup luksAddKey /dev/$home_dev /mnt/home.keyfile
 echo -e ".. mounting home partition"
-echo -en $DRIVE_PASSPHRASE | cryptsetup luksOpen /dev/sdb5 crypthome
+echo -en $DRIVE_PASSPHRASE | cryptsetup luksOpen /dev/$home_dev crypthome
 mkdir -p mkdir /mnt/home
 mount /dev/mapper/crypthome /mnt/home
 
@@ -50,16 +53,29 @@ echo -e "Create fstab"
 genfstab -U -p /mnt >> /mnt/etc/fstab
 sed -i "s|/mnt/swapfile|/swapfile|" /mnt/etc/fstab
 
+## Tuning
 echo -e ""
-echo -e "Tuning X220 adak"
-wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/X220/source/config_archlinux.sh
-chmod +x config_archlinux.sh
-cp config_archlinux.sh /mnt/
-arch-chroot /mnt ./config_archlinux.sh $DRIVE_PASSWORD
+echo -e ".. generic tuning"
+wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/config/generic_config.sh
+chmod +x generic_config.sh
+cp generic_config.sh /mnt/
+arch-chroot /mnt ./generic_config.sh $DRIVE_PASSWORD
+
+## Specific tuning
+echo -e ""
+echo -e ".. Specific X220 tuning"
+wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/X220/source/specific_config.sh
+chmod +x specific_config.sh
+cp specific_config.sh /mnt/
+arch-chroot /mnt ./specific_config.sh $root_dev $home_dev
+
+## Install software packages
+echo -e ""
+echo -e ".. Install software packages"
+wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/source/software_install.sh
+chmod +x software_install.sh
+cp specific_config.sh /mnt/
+arch-chroot /mnt ./specific_config.sh $root_dev $home_dev
+
+rm /mnt/{software_install.sh, specific_config.sh, generic_config.sh}
 umount /mnt{/boot,/home,/}
-
-#pressanykey() {
-#  echo -e "# press a key to continue"
-#  read -n1 -p "$txtpressanykey"
-#}
-
