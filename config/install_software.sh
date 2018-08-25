@@ -112,3 +112,5 @@ if [[ USER_FLAG==0 ]]; then
   rm /home/builduser -R
   sed -i 's/builduser ALL=(ALL) ALL//' /etc/sudoers
 fi
+
+exit
