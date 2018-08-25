@@ -1,5 +1,8 @@
 #/bin/bash!
 # specific config for X220
+root_dev=$1
+home_dev=$2
+
 echo -e ".. set hostname to adak"
 echo adak > /etc/hostname
 
@@ -12,22 +15,18 @@ wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/X220/source/in
 wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/X220/source/initramfs-update.service -O /etc/systemd/system/initramfs-update.service
 systemctl enable initramfs-update.path
 
-echo -e ".. install bootload:"
+echo -e ".. config bootloader"
 # copy vmlinuz and initramfs
 mkdir /boot/EFI/zen
 cp /boot/vmlinuz-linux-zen /boot/EFI/zen/vmlinuz-zen.efi
 cp /boot/initramfs-linux-zen.img /boot/EFI/zen/archlinux-zen.img
 
 wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/X220/source/refind.conf -O /boot/EFI/refind/refind.conf
-ROOT_UUID=$(get_uuid "/dev/$PART_ROOT")
-echo ROOT_UUID
-sed -i 's|ROOT_UUID|$ROOT_UUID|' /boot/EFI/refind/refind.conf
-
-# *wget /backup/refindo.conf -O /boot/EFI/refind/refind.conf*
-# change /dev/sdb4 with uuid
+sed -i "s|ROOT_UUID|$(blkid -o value -s UUID /dev/$root_dev)|" /boot/EFI/refind/refind.conf
 
 pacman -Sy refind-efi --noconfirm
 refind-install
+
 # create a cryptab entry
 mv /home.keyfile /etc/home.keyfile
 echo "home /dev/sdb5 /etc/home.keyfile" >> /etc/crypttab
