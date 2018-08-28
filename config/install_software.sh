@@ -114,6 +114,11 @@ packages+='flatpak'
 # bluetooth
 packages+='bluez bluez-utils bluedevil kdeconnect'
 
+# add the following line to /etc/bluetooth/audio.conf to allow laptop speaker as a sink
+# ```
+# [General] 
+# Enable=Source
+
 # Plex Media Player
 flatpak remote-add tingping https://dl.tingping.se/flatpak/tingping.flatpakrepo
 flatpak install tingping tv.plex.PlexMediaPlayer
