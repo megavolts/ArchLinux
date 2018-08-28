@@ -112,7 +112,7 @@ packages+='solaar'
 packages+='flatpak'
 
 # wireless connection with phone
-packages+='kdeconnect'
+packages+='kdeconnect sshfs'
 
 # bluetooth
 packages+='bluez bluez-utils bluedevil  pulseaudio-bluetooth '
