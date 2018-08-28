@@ -121,6 +121,12 @@ packages+='bluez bluez-utils bluedevil  pulseaudio-bluetooth '
 # ```
 # [General] 
 # Enable=Source
+# add the following lien to /etc/pulse/default.pa to auto connect to bluetooth
+# #automatically switch to newly-connected devices
+# load-module module-switch-on-connect
+#
+
+
 
 # Plex Media Player
 flatpak remote-add tingping https://dl.tingping.se/flatpak/tingping.flatpakrepo
