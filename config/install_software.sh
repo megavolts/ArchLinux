@@ -111,8 +111,11 @@ packages+='solaar'
 
 packages+='flatpak'
 
+# wireless connection with phone
+packages+='kdeconnect'
+
 # bluetooth
-packages+='bluez bluez-utils bluedevil kdeconnect'
+packages+='bluez bluez-utils bluedevil  pulseaudio-bluetooth '
 
 # add the following line to /etc/bluetooth/audio.conf to allow laptop speaker as a sink
 # ```
