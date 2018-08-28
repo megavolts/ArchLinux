@@ -104,8 +104,20 @@ packages +=  'telegram-desktop'
 # python packages
 packages=''
 packages+='python-numpy python-matplotlib python-scipy python-pandas openpyxml'
-yaourt -S $packages --noconfirm
 yaourtpkg packages
+
+# logitech unifying
+packages+='solaar'
+
+packages+='flatpak'
+
+# bluetooth
+packages+='bluez bluez-utils bluedevil kdeconnect'
+
+# Plex Media Player
+flatpak remote-add tingping https://dl.tingping.se/flatpak/tingping.flatpakrepo
+flatpak install tingping tv.plex.PlexMediaPlayer
+
 
 if [[ USER_FLAG==0 ]]; then
   userdel builduser
