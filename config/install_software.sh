@@ -62,7 +62,7 @@ wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/config/psd.con
 systemctl --user start psd
 
 echo -e ".. coding tools"
-yaourtpkg "sublime-text-dev pycharm-community-edition"
+yaourtpkg "sublime-text-dev pycharm-community-edition python-pip"
 
 echo -e ".. media"
 yaourtpkg "dolphin dolphin-plugins qt5-imageformats ffmpegthumbs"
@@ -73,7 +73,6 @@ yaourtpkg "okular spectacle discount kdegraphics-mobipocket"
 
 echo -e "... images"
 yaourtpkg "imagemagick guetzli geeqie inkscape gimp darktable libraw hugin-hg"
-hugin hugin-hg panomatic
 
 echo -e "... musics and videos"
 yaourtpkg "vlc amarok plex-media-server-plexpass plex-media-player ffmpeg"
@@ -110,6 +109,9 @@ yaourtpkg packages
 packages+='solaar'
 
 packages+='flatpak'
+
+# citation
+packages+='mendeleydesktop'
 
 # wireless connection with phone
 packages+='kdeconnect sshfs'
