@@ -79,7 +79,6 @@ wget https://raw.githubusercontent.com/megavolts/ArchLinux/X220/master/source/mi
 
 echo -e "... enable NetworkManager"
 systemctl enable NetworkManager.service
-systemctl start NetworkManager.service
 
 echo -e ".. install audio server"
 yaourtpkg "alsa-utils pulseaudio pulseaudio-alsa pulseaudio-jack pulseaudio-equalizer libcanberra-pulse libcanberra-gstreamer "
