@@ -93,7 +93,7 @@ arch-chroot /mnt ./generic_config.sh $DRIVE_PASSWORD
 ## Specific tuning
 echo -e ""
 echo -e ".. Specific JC600 tuning"
-wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/JC600/source/bootloader.sh
+wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/JC600/JC600-bootloader.sh
 chmod +x specific_config.sh
 cp specific_config.sh /mnt/
 arch-chroot /mnt ./specific_config.sh "$SDCARD"2 "$SDCARD"3
