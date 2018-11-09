@@ -90,13 +90,13 @@ chmod +x generic_config.sh
 cp generic_config.sh /mnt/
 arch-chroot /mnt ./generic_config.sh $DRIVE_PASSWORD
 
-## Specific tuning
+## JC600 video driver, bootloader, boot and kernel image
 echo -e ""
 echo -e ".. Specific JC600 tuning"
-wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/JC600/JC600-bootloader.sh
+wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/JC600/JC600-config.sh
 chmod +x specific_config.sh
 cp specific_config.sh /mnt/
-arch-chroot /mnt ./specific_config.sh "$SDCARD"2 "$SDCARD"3
+arch-chroot /mnt ./specific_config.sh "$SDCARD"
 
 rm /mnt/{specific_config.sh, bootloader.sh}
 umount /mnt{/boot,/home,/}
