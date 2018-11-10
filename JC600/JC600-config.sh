@@ -14,9 +14,9 @@ wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/JC600/source/g
 grub-mkconfig -o /boot/grub/grub.cfg
 
 # Change hostname
-echo -e ".. set hostname to ulva"
-#hostnamectl set-hostname ulva
-echo ulva > /etc/hostname
+echo -e ".. set hostname to kiska"
+hostnamectl set-hostname kiska
+echo kiska > /etc/hostname
 
 # Regenerate boot img
 echo -e ".. generating initramfs"
