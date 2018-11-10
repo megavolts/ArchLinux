@@ -10,6 +10,7 @@ echo -e ".. install bootloader"
 pacman -Sy grub --noconfirm
 grub-install --target=i386-pc $1
 # Configure grub
+wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/JC600/source/grub -O /etc/default/grub
 grub-mkconfig -o /boot/grub/grub.cfg
 
 # Change hostname
