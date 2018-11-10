@@ -7,7 +7,7 @@ pacman -S --noconfirm xf86-video-nouveau mesa lib32-mesa
 pacman -S --noconfirm xf86-input-keyboard xf86-input-mouse
 
 echo -e ".. install bootloader"
-pacman -Sy grub--noconfirm
+pacman -Sy grub --noconfirm
 grub-install --target=i386-pc $1
 # Configure grub
 grub-mkconfig -o /boot/grub/grub.cfg
