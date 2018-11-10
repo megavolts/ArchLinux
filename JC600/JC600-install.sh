@@ -49,15 +49,10 @@ chmod 0600 /mnt/swapfile
 mkswap /mnt/swapfile
 swapon /mnt/swapfile
 
-echo -e "\nUpdate pacman and install base and base-devel with linux-zen"
+echo -e "\nUpdate pacman and install base and base-devel"
 pacman -Syy --noconfirm
 pacman -S archlinux-keyring --noconfirm
 pacman-key --refresh
-if [ -f /mnt/boot/vmlinuz-linux-zen ]; then
-  rm /mnt/boot/vmlinuz-linux-zen 
-  rm /mnt/boot/initramfs-linux-zen.img 
-  rm /mnt/boot/initramfs-linux-zen-fallback.img 
-fi 
 
 echo -e "\n.. installing system"
 pacstrap /mnt base base-devel openssh sudo ntp wget screen
@@ -68,7 +63,7 @@ sed -i "s|/mnt/swapfile|/swapfile|" /mnt/etc/fstab
 
 ## Tuning
 echo -e "\n.. generic tuning"
-wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/config/generic_config-nopswd.sh
+wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/config/generic_config.sh
 chmod +x generic_config.sh
 cp generic_config.sh /mnt/
 echo '\n... Enter a default password for root and megavolts users:'
@@ -80,10 +75,9 @@ arch-chroot /mnt ./generic_config.sh $DRIVE_PASSPHRASE
 ## JC600 video driver, bootloader, boot and kernel image
 echo -e ""
 echo -e ".. Specific JC600 tuning"
-wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/JC600/JC600-config.sh
-chmod +x specific_config.sh
-cp specific_config.sh /mnt/
-arch-chroot /mnt ./specific_config.sh $SDCARD
+wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/JC600/JC600-config.sh -O /mnt/JC600-config.sh
+chmod +x /mnt/JC600-config.sh
+arch-chroot /mnt ./JC600-config.sh $SDCARD
 
 ## JC600 video driver, bootloader, boot and kernel image
 echo -e "\n.. minimal graphical router with PMP"
