@@ -43,6 +43,11 @@ mkfs.vfat "$SDCARD"1
 mkdir /mnt/boot
 mount "$SDCARD"1 /mnt/boot
 
+echo -e ".. format and mount boot partition"
+mkfs.ext4 "$SDCARD"4
+mkdir /mnt/mnt/data -p
+mount "$SDCARD"1 /mnt/mnt/data
+
 echo -e ".. creating swap partition"
 fallocate -l 16G /mnt/swapfile
 chmod 0600 /mnt/swapfile
