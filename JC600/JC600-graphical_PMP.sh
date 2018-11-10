@@ -114,12 +114,7 @@ passwd ulva << EOF
 113RoxieRd
 EOF
 
-mkdir /etc/sddm.conf.d/
-tee /etc/sddm.conf.d/autologin.conf <<EOF
-[Autologin]
-User=ulva
-Session=plasma.desktop
-EOF
+wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/JC600/source/sddm.conf -O /etc/sddm.conf
 
 if [[ USER_FLAG==0 ]]; then
   userdel builduser
@@ -128,6 +123,5 @@ if [[ USER_FLAG==0 ]]; then
 fi
 
 echo "+ add plexmediaplayer as autoboot"
-
 
 exit
