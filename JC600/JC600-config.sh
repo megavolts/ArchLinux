@@ -10,7 +10,6 @@ echo -e ".. install bootloader"
 pacman -Sy grub--noconfirm
 grub-install --target=i386-pc $1
 # Configure grub
-wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/JC600/source/mkinitcpio.conf -O /etc/mkinitcpio.conf
 grub-mkconfig -o /boot/grub/grub.cfg
 
 # Change hostname
@@ -21,4 +20,4 @@ echo ulva > /etc/hostname
 # Regenerate boot img
 echo -e ".. generating initramfs"
 wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/JC600/source/mkinitcpio.conf -O /etc/mkinitcpio.conf
-mkinitcpio -p linux-zen
+mkinitcpio -p linux
