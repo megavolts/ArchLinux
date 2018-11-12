@@ -16,7 +16,7 @@ all
 EOF
 
 echo -e "... install plasma windows manager"
-pacman -S plasma-desktop sddm networkmanager powerdevil plasma-nm kscreen plasma-pa pavucontrol --noconfirm
+pacman -S plasma-desktop sddm powerdevil kscreen plasma-pa pavucontrol --noconfirm
 
 echo -e "... configure sddm"
 pacman -S sddm --noconfirm
@@ -82,10 +82,10 @@ echo -e "... to configure plex-media-server visit http://localhost:32400/web/"
 packages = ''
 
 # wireless connection with phone
-packages+='sshfs'
+packages+='sshfs '
 
 # bluetooth
-packages+='bluez bluez-utils bluedevil  pulseaudio-bluetooth bluedevil'
+packages+='bluez bluez-utils bluedevil  pulseaudio-bluetooth bluedevil '
 
 yaourtpkg $packages
 
@@ -100,11 +100,6 @@ tee /etc/pulse/default.pa <<EOF
 # automatically switch to newly-connected devices
 load-module module-switch-on-connect
 EOF
-
-# Plex Media Player
-#flatpak remote-add tingping https://dl.tingping.se/flatpak/tingping.flatpakrepo
-#flatpak install tingping tv.plex.PlexMediaPlayer
-cat 
 
 # Create a default user with autologin
 echo -e ".. create user ulva with default password"
