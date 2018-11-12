@@ -1,6 +1,11 @@
 !/bin/bash
 # execute as root
 
+# Cofnigure locale
+echo "en_US.UTF-8" >> /etc/locale.gen 
+locale-gen 
+localectl set-locale LANG=en_US.UTF-8
+
 if [[ $( grep builduser /etc/passwd) ]]; then
   # create a fake builduser
   useradd builduser -m # Create the builduser
