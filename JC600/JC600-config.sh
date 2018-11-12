@@ -1,7 +1,7 @@
 #/bin/bash!
 # specific config for JC600
 echo -e ".. install video drivers specific to JC600"
-pacman -S --noconfirm xf86-video-nouveau mesa lib32-mesa
+# pacman -S --noconfirm xf86-video-nouveau mesa lib32-mesa
 
 # keyboard and mouse input
 pacman -S --noconfirm xf86-input-keyboard xf86-input-mouse
