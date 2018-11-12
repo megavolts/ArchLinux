@@ -7,10 +7,10 @@ sed -i 's|#[multilib]|[multilib]|' /etc/pacman.conf
 sed -i "/\[multilib\]/,/Include/"'s/^#//' /etc/pacman.conf
 echo -e ".. update pacman and system "
 pacman -Syy
-pacman -S archlinux-keyring
+pacman -S --noconfirm archlinux-keyring
 pacman-key --init
 pacman-key --populate archlinux
-pacman -Syu
+pacman -Syu --noconfirm
 
 echo -e ".. change locales"
 echo "FONT=lat9w-16" >> /etc/vconsole.conf
@@ -41,7 +41,7 @@ echo -e " ... adding megavolts to wheel"
 sed 's /# %wheel ALL=(ALL) ALL/%  wheel ALL=(ALL) ALL/' /etc/sudoers
 
 systemctl enable sshd
-pacman -S mlocate rsync --noconfirm
+pacman -S --noconfirm mlocate rsync 
 updatedb
 
 # create a fake builduser
