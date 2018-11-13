@@ -108,8 +108,8 @@ EOF
 
 # Create a default user with autologin
 echo -e ".. create user ulva with default password"
-useradd -m -g users -G audio,disk,lp,network -s /bin/bash ulva
-passwd ulva << EOF
+useradd -m -g users -G audio,disk,lp,network -s /bin/bash kiska
+passwd kiska << EOF
 113RoxieRd
 113RoxieRd
 EOF
