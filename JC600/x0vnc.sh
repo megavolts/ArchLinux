@@ -2,7 +2,7 @@
 pacman -S --noconfirm tigervnc
 
 # Create environment, config, and password files
-su - ulva -c  vncserver <<EOF
+su - kiska -c  vncserver <<EOF
 113RoxieRd
 113RoxieRd
 113RoxieRd
@@ -11,17 +11,18 @@ y
 113view
 EOF
 
-su -ulva -c "vncserer -kill :2"
+su -kiska -c "vncserer -kill :2"
 
 
 
 # Set up a user service to remotely control the desktop via x0vncserver
 # As the user:
-su ulva << EOF
+su kiska << EOF
 113RoxieRd
 EOF
 
-tee /home/$USER/systemd/user/x0vncserver.service << EOF
+mkdir -p /home/kiska/.config/systemd/user/
+tee /home/kiska/.config/systemd/user/x0vncserver.service << EOF
 [Unit]
 Description=Remote desktop service (VNC)
 
@@ -29,7 +30,7 @@ Description=Remote desktop service (VNC)
 Type=simple
 User=%i
 # wait for login with your username & password
-#ExecStart=/usr/bin/x0vncserver -PAMService=login -PlainUsers=${USER} -SecurityTypes=TLSPlain
+ExecStart=/usr/bin/x0vncserver -PAMService=login -PlainUsers=kiska -SecurityTypes=TLSPlain
 
 [Install]
 WantedBy=default.target
