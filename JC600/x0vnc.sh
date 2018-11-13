@@ -11,8 +11,7 @@ y
 113view
 EOF
 
-su -kiska -c "vncserer -kill :2"
-
+su -kiska -c "vncserver -kill :2"
 
 
 # Set up a user service to remotely control the desktop via x0vncserver
