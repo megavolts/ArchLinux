@@ -28,7 +28,6 @@ Description=Remote desktop service (VNC)
 
 [Service]
 Type=simple
-User=%i
 # wait for login with your username & password
 ExecStart=/usr/bin/x0vncserver -PAMService=login -PlainUsers=kiska -SecurityTypes=TLSPlain
 
