@@ -6,6 +6,10 @@ PASSWORD=F1n1ster3
 sgdisk --zap-all $DISK1
 sgdisk --zap-all $DISK2
 
+sudo sgdisk -n 1:0:+100M -t 1:ef00 -c 1:"EFI System" /dev/sda
+sudo sgdisk -n 2:0:+32G -t 2:fd00 -c 2:"Linux RAID" /dev/sda
+sudo sgdisk -n 3:0:0 -t 3:fd00 -c 3:"Linux RAID" /dev/sda
+
 echo "label: gpt
 unit: sectors
 first-lba: 34
