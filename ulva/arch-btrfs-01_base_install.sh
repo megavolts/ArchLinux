@@ -9,7 +9,7 @@ sgdisk --zap-all $DISK2
 sudo sgdisk -n 1:0:+100M -t 1:ef00 -c 1:"EFI System" /dev/sda
 sudo sgdisk -n 2:0:+32G -t 2:fd00 -c 2:"Linux RAID" /dev/sda
 sudo sgdisk -n 3:0:0 -t 3:fd00 -c 3:"Linux RAID" /dev/sda
-
+https://askubuntu.com/questions/660023/how-to-install-ubuntu-14-04-16-04-64-bit-with-a-dual-boot-raid-1-partition-on-an
 echo "label: gpt
 unit: sectors
 first-lba: 34
