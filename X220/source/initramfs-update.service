@@ -3,6 +3,4 @@ Description=Copy initramfs Kernel to EFI System Partition
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/cp -af /boot/vmlinuz-linux-zen esp/EFI/zen/vmlinuz-zen.efi
-ExecStart=/usr/bin/cp -af /boot/initramfs-linux-zen.img esp/EFI/zen/archlinux-zen.img
-ExecStart=/usr/bin/cp -af /boot/initramfs-linux-zen-fallback.img esp/EFI/zen/archlinux-zen-fallback.img
+ExecStart=/usr/share/megavolts/copy_efistub.sh
