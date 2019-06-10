@@ -28,11 +28,11 @@ cryptsetup close container
 
 echo -e ".. encrypting root partition"
 cryptsetup luksFormat --align-payload=8192 -s 512 -c aes-xts-plain64 /dev/disk/by-partlabel/CRYPTARCH
-echo -en $PWD | cryptsetup luksOpen /dev/disk/by-partlabel/CRYPTARCH arch
-mkfs.btrfs --force --label arch /dev/mapper/arch
+echo -en $PWD | cryptsetup luksOpen /dev/disk/by-partlabel/CRYPTARCH cryptarch
+mkfs.btrfs --force --label arch /dev/mapper/cryptarch
 
 echo -e ".. create subvolumes"
-mount -o defaults,compress=lzo,noatime,nodev,nosuid /dev/disk/by-label/arch /mnt/
+mount -o defaults,compress=lzo,noatime,nodev,ssd,discard /dev/mapper/cryptarch /mnt/
 mkdir -p /mnt/_snapshot
 mkdir -p /mnt/_active
 
@@ -42,30 +42,32 @@ btrfs subvolume create /mnt/_active/@swap
 
 umount /mnt
 # Mount subvolume
-mount -o defaults,compress=lzo,noatime,nodev,subvol=_active/@root /dev/disk/by-label/arch /mnt
+mount -o defaults,compress=lzo,noatime,nodev,ssd,discard,subvol=_active/@root /dev/mapper/cryptarch /mnt
 mkdir -p /mnt/home
-mount -o defaults,compress=lzo,noatime,nodev,subvol=_active/@home /dev/disk/by-label/arch /mnt/home
+mount -o defaults,compress=lzo,noatime,nodev,ssd,discard,subvol=_active/@home /dev/mapper/cryptarch /mnt/home
+mkdir -p /mnt/swap
+mount -o defaults,noatime,nodev,ssd,discard,subvol=_active/@swap /dev/mapper/cryptarch /mnt/swap
 mkdir -p /mnt/boot
 mount ${DISK}1 /mnt/boot
 
 # Create swapfile
-mount -o defaults,noatime,nodev,subvol=_active/@swap /dev/disk/by-label/arch /mnt/swapfile
-truncate -s 0 /mnt/swapfile
-chattr +C /mnt/swapfile
-btrfs property set /mnt/swapfile compression none
-fallocate -l 16G /mnt/swapfile
-chmod 600 /mnt/swapfile
-mkswap /mnt/swapfile -L swap
+truncate -s 0 /mnt/swap/swapfile
+chattr +C /mnt/swap/swapfile
+btrfs property set /mnt/swap/swapfile compression none
+fallocate -l 16G /mnt/swap/swapfile
+chmod 600 /mnt/swap/swapfile
+mkswap /mnt/swap/swapfile -L swap
 swapon -L swap
 
 # Install Arch Linux
-pacstrap $(pacman -Sqg base | sed 's/^\(linux\)$/\1-zen/') /mnt  base-devel openssh sudo ntp wget grml-zsh-config refind-efi btrfs-progs
+pacstrap $(pacman -Sqg base | sed 's/^\(linux\)$/\1-zen/') /mnt  base-devel openssh sudo ntp wget grml-zsh-config refind-efi btrfs-progs networkmanager
 
 echo -e ""
 echo -e "Create fstab"
 genfstab -L -p /mnt >> /mnt/etc/fstab
+mkdir -p /mnt/mnt/btrfs-arch
 echo "# arch root btrfs volume" >> /mnt/etc/fstab
-echo "LABEL=arch  /mnt/btrfs-arch btrfs rw,nodev,relatime,ssd,discard,compress=lzo,space_cache" >> /mnt/etc/fstab
+echo "LABEL=arch  /mnt/btrfs-arch btrfs rw,nodev,noatime,ssd,discard,compress=lzo,space_cache 0 0" >> /mnt/etc/fstab
 
 # EXT4 version
 
