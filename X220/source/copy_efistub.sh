@@ -12,3 +12,4 @@ if [ -f /boot/vmlinuz-linux-zen ]; then
 	cp -af /boot/initramfs-linux-zen.img /boot_efi/archlinux-zen.img
 	cp -af /boot/initramfs-linux-zen-fallback.img /boot_efi/archlinux-zen-fallback.img
 fi
+echo $(uname -r) >> /boot_efi/kernel.version
