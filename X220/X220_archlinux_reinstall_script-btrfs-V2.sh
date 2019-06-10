@@ -32,18 +32,42 @@ echo -en $PWD | cryptsetup luksOpen /dev/disk/by-partlabel/CRYPTARCH arch
 mkfs.btrfs --force --label arch /dev/mapper/arch
 
 echo -e ".. create subvolumes"
-echo -e "... create swap 
+mount -o defaults,compress=lzo,noatime,nodev,nosuid /dev/disk/by-label/arch /mnt/
+mkdir -p /mnt/_snapshot
+mkdir -p /mnt/_active
 
+btrfs subvolume create /mnt/_active/@root
+btrfs subvolume create /mnt/_active/@home
+btrfs subvolume create /mnt/_active/@swap
 
-echo -e ".. mount boot partition"
-mkdir /mnt/boot
-mount /dev/sdb1 /mnt/boot
+umount /mnt
+# Mount subvolume
+mount -o defaults,compress=lzo,noatime,nodev,subvol=_active/@root /dev/disk/by-label/arch /mnt
+mkdir -p /mnt/home
+mount -o defaults,compress=lzo,noatime,nodev,subvol=_active/@home /dev/disk/by-label/arch /mnt/home
+mkdir -p /mnt/boot
+mount ${DISK}1 /mnt/boot
 
-echo -e ".. creating swap partition"
+# Create swapfile
+mount -o defaults,noatime,nodev,subvol=_active/@swap /dev/disk/by-label/arch /mnt/swapfile
+truncate -s 0 /mnt/swapfile
+chattr +C /mnt/swapfile
+btrfs property set /mnt/swapfile compression none
 fallocate -l 16G /mnt/swapfile
-chmod 0600 /mnt/swapfile
-mkswap /mnt/swapfile
-swapon /mnt/swapfile
+chmod 600 /mnt/swapfile
+mkswap /mnt/swapfile -L swap
+swapon -L swap
+
+# Install Arch Linux
+pacstrap $(pacman -Sqg base | sed 's/^\(linux\)$/\1-zen/') /mnt  base-devel openssh sudo ntp wget grml-zsh-config refind-efi btrfs-progs
+
+echo -e ""
+echo -e "Create fstab"
+genfstab -L -p /mnt >> /mnt/etc/fstab
+echo "# arch root btrfs volume" >> /mnt/etc/fstab
+echo "LABEL=arch  /mnt/btrfs-arch btrfs rw,nodev,relatime,ssd,discard,compress=lzo,space_cache" >> /mnt/etc/fstab
+
+# EXT4 version
 
 echo -e ""
 echo -e "Update pacman and install base and base-devel with linux-zen"
@@ -56,12 +80,6 @@ if [ -f /mnt/boot/vmlinuz-linux-zen ]; then
   rm /mnt/boot/initramfs-linux-zen-fallback.img 
 fi 
 
-pacstrap $(pacman -Sqg base | sed 's/^\(linux\)$/\1-zen/') /mnt  base-devel openssh sudo ntp wget
-
-echo -e ""
-echo -e "Create fstab"
-genfstab -U -p /mnt >> /mnt/etc/fstab
-sed -i "s|/mnt/swapfile|/swapfile|" /mnt/etc/fstab
 
 ## Tuning
 echo -e ""
