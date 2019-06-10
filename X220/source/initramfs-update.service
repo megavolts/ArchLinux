@@ -3,4 +3,4 @@ Description=Copy initramfs Kernel to EFI System Partition
 
 [Service]
 Type=oneshot
-ExecStart=/usr/share/megavolts/copy_efistub.sh
+ExecStart=/opt/megavolts/copy_efistub.sh
