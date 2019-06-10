@@ -5,18 +5,17 @@
 #
 #  1            2048         1067007   512.0 MiB   EF00  EFI system partition
 #  2         1067008         1099775   16.0 MiB    0C01  Microsoft reserved ...
-#  3                                   16.0 GiB    8200  Linux SWAP on LVM
-#  4         1099776       261598247   124.2 GiB   0700  Basic data partition
+#  3         1099776       261598247   124.2 GiB   0700  Basic data partition
 #  5       261599232       523743231   125.0 GiB   8300  Linux filesystem on LVM
 
-root_dev=sdb4
-home_dev=sdb6
+DISK1=/dev/sda
+
+sgdisk -n 4:0:0 -t 4:8300 -c 4:"ARCH" $DISK1
 
 echo -e "prepare disk for installation"
 echo 'Enter a default passphrase use to encrypt the disk and serve as password for root and megavolts:'
-
 stty -echo
-read DRIVE_PASSPHRASE
+read ROOT
 stty echo
 
 echo -e ".. encrypting root partition"
