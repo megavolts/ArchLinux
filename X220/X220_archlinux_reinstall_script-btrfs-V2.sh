@@ -8,29 +8,32 @@
 #  3         1099776       261598247   124.2 GiB   0700  Basic data partition
 #  5       261599232       523743231   125.0 GiB   8300  Linux filesystem on LVM
 
-DISK1=/dev/sda
+DISK=/dev/sda
+PART=4
 
-sgdisk -n 4:0:0 -t 4:8300 -c 4:"ARCH" $DISK1
+sgdisk -n $PART:0:0 -t $PART:8300 -c $PART:"CRYPTARCH" $DISK
 
 echo -e "prepare disk for installation"
+
 echo 'Enter a default passphrase use to encrypt the disk and serve as password for root and megavolts:'
 stty -echo
-read ROOT
+read PWD
 stty echo
 
-echo -e ".. encrypting root partition"
-echo -en $DRIVE_PASSPHRASE | cryptsetup -c aes-xts-plain64 -s 512 -h sha512 -i 5000 --use-random -q luksFormat /dev/$root_dev
-echo -en $DRIVE_PASSPHRASE | cryptsetup luksOpen /dev/sdb4 cryptroot
-mkfs.ext4 /dev/mapper/cryptroot
-mount /dev/mapper/cryptroot /mnt
+echo -e ".. wipe partition
+# Wipe partition with zeros after creating an encrypted container with a random key
+cryptsetup open --type plain ${DISK}$PART container --key-file /dev/urandom 
+dd if=/dev/zero of=/dev/mapper/container status=progress bs
+cryptsetup close container
 
-echo -e ".. create encryptation file for home partition"
-dd if=/dev/urandom of=/mnt/home.keyfile bs=512 count=4
-echo -en $DRIVE_PASSPHRASE | cryptsetup luksAddKey /dev/$home_dev /mnt/home.keyfile
-echo -e ".. mounting home partition"
-echo -en $DRIVE_PASSPHRASE | cryptsetup luksOpen /dev/$home_dev crypthome
-mkdir -p mkdir /mnt/home
-mount /dev/mapper/crypthome /mnt/home
+echo -e ".. encrypting root partition"
+cryptsetup luksFormat --align-payload=8192 -s 512 -c aes-xts-plain64 /dev/disk/by-partlabel/CRYPTARCH
+echo -en $PWD | cryptsetup luksOpen /dev/disk/by-partlabel/CRYPTARCH arch
+mkfs.btrfs --force --label arch /dev/mapper/arch
+
+echo -e ".. create subvolumes"
+echo -e "... create swap 
+
 
 echo -e ".. mount boot partition"
 mkdir /mnt/boot
