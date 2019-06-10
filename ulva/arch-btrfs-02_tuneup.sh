@@ -73,7 +73,12 @@ pacman -S --noconfirm xfce4
 
 echo -e "Install software"
 echo -e ".. basic tools"
-yaourtpkg "gnome-keyring sublime-text-dev thunar-archive-plugin thunar-media-tags-plugin ffmpegthumbnailer poppler-glib libgsf libopenraw unrar p7zip unzip ntfs-3g tilda arp-scan"
+yaourtpkg "gnome-keyring seahorse sublime-text-dev thunar-archive-plugin thunar-media-tags-plugin ffmpegthumbnailer poppler-glib libgsf libopenraw unrar p7zip unzip ntfs-3g tilda arp-scan"
+tee /etc/pam.d/pam_gnome_keyring.so << EOF
+#%PAM-1.0
+auth     optional  pam_gnome_keyring.so
+session  optional  pam_gnome_keyring.so auto_start
+EOF
 
 echo -e "... images"
 yaourtpkg "imagemagick guetzli geeqie libraw"
