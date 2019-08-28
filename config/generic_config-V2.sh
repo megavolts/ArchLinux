@@ -142,4 +142,27 @@ sed  "s|OnUnitActiveSec=1d|OnUnitActiveSec=1h|g" -i /usr/lib/systemd/system/snap
 
 setfacl -Rm "u:megavolts:rw" /etc/snapper/configs
 setfacl -Rdm "u:megavolts:rw" /etc/snapper/configs
+
+systemctl enable snapper-boot.timer
+
+# Snapper before and after update
+yaourtpkg snap-pac rsync
+
+# Copy partition on kernel update to enable backup
+echo /usr/share/libalpm/hooks/50_bootbackup.hook << EOF  
+[Trigger]
+Operation = Upgrade
+Operation = Install
+Operation = Remove
+Type = Package 
+Target = linux* 
+
+[Action] 
+Depends = rsync 
+Description = Backing up /boot... 
+When = PreTransaction 
+Exec = /usr/bin/rsync -a --delete /boot /.bootbackup
+EOF
+
+
 exit
