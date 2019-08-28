@@ -26,7 +26,7 @@ pacman -S --noconfirm xf86-input-synaptics xf86-input-keyboard xf86-input-wacom 
 echo -e "... rebuilding initramfs with i915"
 echo "options i915 enable_rc6=1 enable_fbc=1 lvds_downclock=1" >> /etc/modprobe.d/i915.conf
 mkinitcpio -p linux-zen
-mkdir /boot/EFI/zen
+mkdir -p /boot/EFI/zen
 cp /boot/vmlinuz-linux-zen /boot/EFI/zen/vmlinuz-zen.efi
 cp /boot/initramfs-linux-zen.img /boot/EFI/zen/archlinux-zen.img
 
@@ -37,12 +37,6 @@ refind-install
 wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/X220/source/refind.conf -O /boot/EFI/refind/refind.conf
 sed -i "s|ROOT_UUID|$(blkid -o value -s UUID /dev/$root_dev)|" /boot/EFI/refind/refind.conf
 
-# create a cryptab entry
-mv /home.keyfile /etc/home.keyfile
-echo "home /dev/sdb5 /etc/home.keyfile" >> /etc/crypttab
-# for part uuid
-#home_uuid=$(blkid -o value -s UUID /dev/$home_dev)
-#echo "home UUID="$home_uuid" /etc/home.keyfile" 
 
 echo ".. updating kernel image in /boot"
 cp /boot/vmlinuz-linux-zen /boot/EFI/zen/vmlinuz-zen.efi
