@@ -65,6 +65,8 @@ $PASSWORD
 $PASSWORD
 EOF
 
+chsh -s $(which zsh)
+
 echo -e ".. > create user $USER with default password"
 useradd -m -g users -G wheel,audio,disk,lp,network -s /bin/zsh $USER
 passwd megavolts << EOF
@@ -73,25 +75,26 @@ $PASSWORD
 EOF
 
 echo -e " .. > allowing wheel group to sudo"
-sed 's /# %wheel ALL=(ALL) ALL/%  wheel ALL=(ALL) ALL/' /etc/sudoers
+sed  's/# %wheel ALL=(ALL) ALL/%  wheel ALL=(ALL) ALL/' -s /etc/sudoers
+
+pacman -S mlocate
 
 echo -e ".. > start services"
 systemctl enable NetworkManager
 systemctl enable sshd
 updatedb
 systemctl enable btrfs-scrub@home.timer 
-systemctl start btrfs-scrub@home.timer 
 systemctl enable btrfs-scrub@-.timer 
-systemctl start btrfs-scrub@-.timer 
-
 
 # uncomment in /etec/pam.d/sddm
 # auth            optional        pam_gnome_keyring.so
 # password        optional        pam_gnome_keyring.so use_authtok
 # session         optional        pam_gnome_keyring.so auto_start
 
+
+## REMOVE UNDERNEATH MOVE TO FINALIZE AFTER REBOOT
 # Enable snapshots with snapper
-yaourtpkg snapper setfacl
+yaourtpkg snapper acl
 
 echo -e "... >> Configure snapper"
 snapper -c root create-config /
@@ -101,19 +104,18 @@ snapper -c home create-config /home
 btrfs subvolume delete /.snapshots
 btrfs subvolume delete /home/.snapshots
 
-btrfs subvolume create /mnt/btrfs-arch/@snapshot
-btrfs subvolume create /mnt/btrfs-arch/@snapshot/@root_snaps
-btrfs subvolume create /mnt/btrfs-arch/@snapshot/@home_snaps
+btrfs subvolume create /mnt/btrfs-arch/@snapshots/@root_snaps
+btrfs subvolume create /mnt/btrfs-arch/@snapshots/@home_snaps
 
 # # mount subvolume to original snapper subvolume
 mkdir /.snapshots
 mkdir /home/.snapshots
-mount -o compress=lzo,subvol=@snapshot/@root_snaps /dev/mapper/arch /.snapshots
-mount -o compress=lzo,subvol=@snapshot/@home_snaps /dev/mapper/arch /home/.snapshots
+mount -o compress=lzo,subvol=@snapshots/@root_snaps /dev/mapper/arch /.snapshots
+mount -o compress=lzo,subvol=@snapshots/@home_snaps /dev/mapper/arch /home/.snapshots
 
 echo "# Snapper subvolume" >> /etc/fstab # add snapper subvolume to fstab
-echo "LABEL=arch /.snapshots btrfs rw,noatime,ssd,discard,compress=lzo,space_cache,subvol=@snapshot/@root_snaps   0 0" >> /etc/fstab
-echo "LABEL=arch /home/.snapshots  btrfs rw,noatime,ssd,discardcompress=lzo,space_cache,subvol=@snapshot/@home_snaps   0 0" >> /etc/fstab
+echo "LABEL=arch /.snapshots btrfs rw,noatime,ssd,discard,compress=lzo,space_cache,subvol=@snapshots/@root_snaps   0 0" >> /etc/fstab
+echo "LABEL=arch /home/.snapshots  btrfs rw,noatime,ssd,discardcompress=lzo,space_cache,subvol=@snapshots/@home_snaps   0 0" >> /etc/fstab
 
 sed -i "s/ALLOW_USERS=\"/ALLOW_USERS=\"$USER/g" /etc/snapper/configs/home # Allow $USER to modify the files
 sed -i "s/ALLOW_USERS=\"/ALLOW_USERS=\"$USER/g" /etc/snapper/configs/root
