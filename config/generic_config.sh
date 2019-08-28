@@ -75,7 +75,7 @@ echo -e ".. Configure pacman"
 yaourtpkg reflector
 
 reflector --latest 200 --protocol http --protocol https --sort rate --save /etc/pacman.d/mirrorlist
-wget https://raw.githubusercontent.com/megavolts/ArchLinux/X220/master/source/mirrorupgrade.hook -P /etc/pacman.d/hooks/
+wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/X220/source/mirrorupgrade.hook -P /etc/pacman.d/hooks/
 
 echo -e "... enable NetworkManager"
 systemctl enable NetworkManager.service
