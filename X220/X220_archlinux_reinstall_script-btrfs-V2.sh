@@ -89,7 +89,7 @@ echo -e ".. Specific X220 tuning"
 wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/X220/source/specific_config.sh
 chmod +x specific_config.sh
 cp specific_config.sh /mnt/
-arch-chroot /mnt ./specific_config.sh 
+arch-chroot /mnt ./specific_config.sh NO
 rm /mnt/specific_config.sh
 
 
