@@ -122,18 +122,13 @@ mount -a
 # set VBox directoy with nocow
 chattr +C /mnt/data/VBox
 
-
-sudo mkdir noCOW/mysql
-sudo chattr +C noCOW/mysql
-# check nocow attribute is set
-lsattr noCOW
-
-
 echo -e ".. enable scrub on tank"
 systemctl enable btrfs-scrub@tank.timer 
 systemctl start btrfs-scrub@tank.timer 
 
 # Setup Btrbk
+yaourtpkg btrkbk mbuffer
+
 ## Create subvolume
 btrfs subvolume create /mnt/btrfs-tank/@snapshots
 btrfs subvolume create /mnt/btrfs-tank/@snapshots/@btrbk_root
@@ -141,7 +136,7 @@ btrfs subvolume create /mnt/btrfs-tank/@snapshots/@btrbk_home
 btrfs subvolume create /mnt/btrfs-tank/@snapshots/@btrbk_snaps
 
 ## Config
-
+wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/X220/source/btrbk.conf -O /etc/btrbk/btrbk.conf
 
 ## Enable chron
 cat >> /etc/cron.daily/btrbk << EOF
@@ -149,10 +144,6 @@ cat >> /etc/cron.daily/btrbk << EOF
 exec /usr/sbin/btrbk -q -c /etc/btrbk/btrbk.conf run
 EOF
 
-cat >> /etc/cron.montly/btrbk << EOF
-#!/bin/sh
-exec /usr/sbin/btrbk -q -c /etc/btrbk/btrbk-monthly.conf run
-EOF
 
 if [ -f /boot/vmlinuz-linux ]; then
 	mkinitcpio -p linux
