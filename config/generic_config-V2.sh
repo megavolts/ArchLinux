@@ -92,6 +92,11 @@ systemctl enable btrfs-scrub@-.timer
 # session         optional        pam_gnome_keyring.so auto_start
 
 
+# deactivate baloo indexer
+balooctl suspend
+balooctl disable
+
+
 ## REMOVE UNDERNEATH MOVE TO FINALIZE AFTER REBOOT
 # Enable snapshots with snapper
 yaourtpkg snapper acl
