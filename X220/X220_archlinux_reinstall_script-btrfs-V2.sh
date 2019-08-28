@@ -9,9 +9,11 @@
 #  5       261599232       523743231   125.0 GiB   8300  Linux filesystem on LVM
 
 DISK=/dev/sdb
-PART=2
+BOOTPART=1
+ROOTPART=2
 
-sgdisk -n $PART:0:0 -t $PART:8300 -c $PART:"CRYPTARCH" $DISK
+sgdisk -n $BOOTPART:0:0 -t $BOOTPART:8300 -c $BOOTPART:"BOOT" $DISK
+sgdisk -n $ROOTPART:0:0 -t $ROOTPART:8300 -c $ROOTPART:"CRYPTARCH" $DISK
 
 echo 'Enter a default passphrase use to encrypt the disk and serve as password for root and megavolts:'
 stty -echo
@@ -19,7 +21,7 @@ read PWD
 stty echo
 
 echo -e ".. prepare boot partition"
-mkfs.fat -F32 /dev/sdb1
+mkfs.fat -F32 ${DISK}${BOOTPART}
 
 echo -e ".. wipe partition
 # Wipe partition with zeros after creating an encrypted container with a random key
@@ -31,8 +33,6 @@ echo -e ".. encrypting root partition"
 cryptsetup luksFormat --align-payload=8192 -s 512 -c aes-xts-plain64 /dev/disk/by-partlabel/CRYPTARCH
 echo -en $PWD | cryptsetup luksOpen /dev/disk/by-partlabel/CRYPTARCH cryptarch
 mkfs.btrfs --force --label arch /dev/mapper/cryptarch
-
-
 
 echo -e ".. create subvolumes"
 mount -o defaults,compress=lzo,noatime,nodev,ssd,discard /dev/mapper/cryptarch /mnt/
@@ -65,13 +65,8 @@ mkfs.vfat -F32 /dev/sdb1
 mkidr /mn/boot
 mount /dev/sdb1 /mnt/boot
 
-
-
 # Install Arch Linux
 pacstrap $(pacman -Sqg base | sed 's/^linux$/&-zen/') /mnt  base-devel openssh sudo ntp wget grml-zsh-config refind-efi btrfs-progs networkmanager
-
-
-
 
 echo -e ""
 echo -e "Create fstab"
@@ -97,8 +92,6 @@ chmod +x generic_config.sh
 cp generic_config.sh /mnt/
 arch-chroot /mnt ./generic_config.sh $DRIVE_PASSWORD
 rm /mnt/generic_config.sh
-
-
 
 ## Specific tuning
 echo -e ""
