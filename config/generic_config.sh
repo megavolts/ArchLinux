@@ -1,8 +1,10 @@
 #/bin/bash!
 PASSWORD=$1
+USER=$2
+HOSTNAME=$3
 
-echo -e "Entering chroot"
-echo -e "..adding multilib"
+echo -e "Tuning pacman"
+echo -e ".. > Adding multilib"
 sed -i 's|#[multilib]|[multilib]|' /etc/pacman.conf
 sed -i "/\[multilib\]/,/Include/"'s/^#//' /etc/pacman.conf
 echo -e ".. update pacman and system "
@@ -12,82 +14,166 @@ pacman-key --init
 pacman-key --populate archlinux
 pacman -Syu --noconfirm
 
-echo -e ".. change locales"
-echo "FONT=lat9w-16" >> /etc/vconsole.conf
-wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/source/locale.gen -O /etc/locale.gen
-echo "LANG=en_US.UTF-8" > /etc/locale.conf
-locale-gen
-export LANG=en_US.UTF-8
-
-echo -e ".. set timezone to America/Anchorage"
-rm /etc/localtime
-ln -sf /usr/share/zoneinfo/America/Anchorage /etc/localtime
-hwclock --systohc --utc
-
-echo -e ".. setting root password"
-passwd root << EOF
-$PASSWORD
-$PASSWORD
-EOF
-
-echo -e ".. create user megavolts with default password"
-useradd -m -g users -G wheel,audio,disk,lp,network -s /bin/bash megavolts
-passwd megavolts << EOF
-$PASSWORD
-$PASSWORD
-EOF
-
-echo -e " ... adding megavolts to wheel"
-sed 's /# %wheel ALL=(ALL) ALL/%  wheel ALL=(ALL) ALL/' /etc/sudoers
-
-systemctl enable sshd
-pacman -S --noconfirm mlocate rsync 
-updatedb
+echo -e ".. > Installing aur package manager"
 
 # create a fake builduser
-useradd builduser -m # Create the builduser
-passwd -d builduser # Delete the buildusers password
-echo "builduser ALL=(ALL) ALL" >> /etc/sudoers
 buildpkg(){
   CURRENT_DIR=$pwd
   wget https://aur.archlinux.org/cgit/aur.git/snapshot/$1.tar.gz
-  tar -xvzf $1.tar.gz -C /home/builduser
-  chown builduser:builduser /home/builduser/$1 -R
-  cd /home/builduser/$1
-  sudo -u builduser bash -c "makepkg -si --noconfirm"
+  tar -xvzf $1.tar.gz -C /home/$USER
+  chown ${USER}:users /home/$USER/$1 -R
+  cd /home/$USER/$1
+  sudo -u $USER bash -c "makepkg -si --noconfirm"
   cd $CURRENT_dir 
-  rm /home/builduser/$1 -R
-  rm $1.tar.gz
+  rm /home/$USER/$1 -R
+  rm /home/$USER/$1.tar.gz
 }
 
 buildpkg package-query
 buildpkg yaourt
 
 yaourtpkg() {
-  sudo -u builduser bash -c "yaourt -S --noconfirm $1"
+  sudo -u $USER bash -c "yaourt -S --noconfirm $1"
 }
 
-yaourtpkg -grml-zsh-config
-chsh -s $(which zsh)
-chsh -s $(which zsh) megavolts
-
-echo -e ".. Configure pacman"
+echo -e ".. > Optimize mirrorlist"
 yaourtpkg reflector
-
 reflector --latest 200 --protocol http --protocol https --sort rate --save /etc/pacman.d/mirrorlist
 wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/X220/source/mirrorupgrade.hook -P /etc/pacman.d/hooks/
 
-echo -e "... enable NetworkManager"
-systemctl enable NetworkManager.service
+echo -e "Configuring system"
+echo "FONT=lat9w-16" >> /etc/vconsole.conf
+echo -e ".. > changing locales"
+wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/X220/source/locale.gen -O /etc/locale.gen
+echo "LANG=en_US.UTF-8" > /etc/locale.conf
+locale-gen
+localectl set-locale LANG=en_US.UTF-8
+
+echo -e ".. > set timezone to America/Anchorage"
+timedatectl set-ntp 1
+timedatectl set-timezone America/Anchorage
+
+echo -e ".. > setting hostname & network manager"
+hostnamectl set-hostname $HOSTNAME
+echo "127.0.1.1    $HOSTNAME.localdomain    $HOSTNAME" >> /etc/hosts
+echo $HOSTNAME > /etc/hostname
+
+echo -e "Setting up users"
+echo -e ".. > setting root password"
+passwd root << EOF
+$PASSWORD
+$PASSWORD
+EOF
+
+echo -e ".. > create user $USER with default password"
+useradd -m -g users -G wheel,audio,disk,lp,network -s /bin/zsh $USER
+passwd megavolts << EOF
+$PASSWORD
+$PASSWORD
+EOF
+
+echo -e " .. > allowing wheel group to sudo"
+sed 's /# %wheel ALL=(ALL) ALL/%  wheel ALL=(ALL) ALL/' /etc/sudoers
+
+#!/bin/bash
+# execute as root
+# 2019-08-29
+USER=$1
+
+yaourtpkg() {
+  sudo -u $USER bash -c "yaourt -S --noconfirm $1"
+}
+
+echo -e ".. Install xorg and input"
+pacman -S --noconfirm xorg-server xorg-apps xorg-xinit xorg-xrandr xorg-xkill<<EOF
+all
+1
+EOF
 
 echo -e ".. install audio server"
-yaourtpkg "alsa-utils pulseaudio pulseaudio-alsa pulseaudio-jack pulseaudio-equalizer libcanberra-pulse libcanberra-gstreamer "
+packages+= 'alsa-utils pulseaudio pulseaudio-alsa pulseaudio-jack pulseaudio-equalizer libcanberra-pulse libcanberra-gstreamer '
 
-if id userbuild >/dev/null 2>&1; then
-  echo ".. deleting user userbuild"
-  userdel builduser
-  rm /home/builduser -R
-  sed -i 's/builduser ALL=(ALL) ALL//' /etc/sudoerselse
-fi
+echo -e "... install plasma windows manager"
+packages+= 'plasma-desktop sddm networkmanager powerdevil plasma-nm kscreen plasma-pa pavucontrol '
 
+yaourtpkg packages
+
+
+# echo -e ".. disable kwallet for users"
+# tee /home/${USER}/.config/kwalletrc <<EOF
+# [Wallet]
+# Enabled=false
+# EOF
+
+echo -e "... configure sddm"
+pacman -S sddm --noconfirm
+sddm --example-config > /etc/sddm.conf
+sed -i 's/Current=/Current=breeze/' /etc/sddm.conf
+sed -i 's/CursorTheme=/CursorTheme=breeze_cursors/' /etc/sddm.conf
+systemctl enable sddm
+
+
+echo -e ".. > start services"
+systemctl enable NetworkManager
+systemctl enable sshd
+updatedb
+
+echo -e ".. > start services"
+systemctl enable btrfs-scrub@home.timer 
+systemctl start btrfs-scrub@home.timer 
+systemctl enable btrfs-scrub@-.timer 
+systemctl start btrfs-scrub@-.timer 
+
+
+# uncomment in /etec/pam.d/sddm
+# auth            optional        pam_gnome_keyring.so
+# password        optional        pam_gnome_keyring.so use_authtok
+# session         optional        pam_gnome_keyring.so auto_start
+
+# # snapper
+# yaourtpkg "snapper snapper-gui-git btrbk mbuffer"
+# echo -e "... >> Configure snapper"
+# snapper -c root create-config /
+# snapper -c home create-config /home
+
+# # we want the snaps located /at /mnt/btrfs-root/_snapthot rather than at the root
+# btrfs subvolume delete /.snapshots
+# btrfs subvolume delete /home/.snapshots
+
+# btrfs subvolume create /mnt/btrfs-arch/@snapshot
+# btrfs subvolume create /mnt/btrfs-arch/@snapshot/@root_snaps
+# btrfs subvolume create /mnt/btrfs-arch/@snapshot/@home_snaps
+
+# # mount subvolume to original snapper subvolume
+# mkdir /.snapshots
+# mkdir /home/.snapshots
+# mount -o compress=lzo,subvol=@snapshot/@root_snaps /dev/mapper/arch /.snapshots
+# mount -o compress=lzo,subvol=@snapshot/@home_snaps /dev/mapper/arch /home/.snapshots
+
+# echo "# Snapper subvolume" >> /etc/fstab # add snapper subvolume to fstab
+# echo "LABEL=arch /.snapshots btrfs rw,noatime,ssd,discard,compress=lzo,space_cache,subvol=@snapshot/@root_snaps   0 0" >> /etc/fstab
+# echo "LABEL=arch /home/.snapshots  btrfs rw,noatime,ssd,discardcompress=lzo,space_cache,subvol=@snapshot/@home_snaps   0 0" >> /etc/fstab
+
+# sed -i "s/ALLOW_USERS=\"/ALLOW_USERS=\"$USER/g" /etc/snapper/configs/home # Allow $USER to modify the files
+# sed -i "s/ALLOW_USERS=\"/ALLOW_USERS=\"$USER/g" /etc/snapper/configs/root
+# sed 's/PRUNENAMES = "/PRUNENAMES = ".snapshots /g' -i /etc/updatedb.conf # do not index snapshot via mlocate
+# systemctl start snapper-timeline.timer snapper-cleanup.timer  # start and enable snapper
+# systemctl enable snapper-timeline.timer snapper-cleanup.timer
+
+# sed -i "s/ALLOW_USERS=\"/ALLOW_USERS=\"$USER/g" /etc/snapper/configs/home # Allow $USER to modify the files
+
+# # change snapper timer to every 5 minutes
+# sed  "s|OnCalendar=hourly|OnCalendar=*:0\/5|g" -i /usr/lib/systemd/system/snapper-timeline.timer
+# sed  "s|OnUnitActiveSec=1d|OnUnitActiveSec=1h|g" -i /usr/lib/systemd/system/snapper-cleanup.timer
+
+# # change sap config for home directory
+# sed  "s|TIMELINE_MIN_AGE=\"1800\"|TIMELINE_MIN_AGE=\"172800\"|g" -i /etc/snapper/configs/home  # keep all backup for 2 days (172800 seconds)
+# sed  "s|TIMELINE_LIMIT_HOURLY=\"10\"|TIMELINE_LIMIT_HOURLY=\"96\"|g" -i /etc/snapper/configs/home  # keep daily backup fro 14 days (336 backup)
+# sed  "s|TIMELINE_LIMIT_DAILY=\"10\"|TIMELINE_LIMIT_DAILY=\"90\"|g" -i /etc/snapper/configs/home    # keep daily backup for 90 days
+# sed  "s|TIMELINE_LIMIT_WEEKLY=\"0\"|TIMELINE_LIMIT_WEEKLY=\"0\"|g" -i /etc/snapper/configs/home    # do not keep weekly backup
+# sed  "s|TIMELINE_LIMIT_MONTHLY=\"10\"|TIMELINE_LIMIT_MONTHLY=\"24\"|g" -i /etc/snapper/configs/home # keep daily backup for 2 years (24)
+# sed  "s|TIMELINE_LIMIT_YEARLY=\"10\"|TIMELINE_LIMIT_YEARLY=\"10\"|g" -i /etc/snapper/configs/home # keep yearly bakcup for 10 years
+
+# setfacl -Rm "u:megavolts:rw" /etc/snapper/configs
+# setfacl -Rdm "u:megavolts:rw" /etc/snapper/configs
 exit
