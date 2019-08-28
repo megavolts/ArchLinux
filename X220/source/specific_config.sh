@@ -1,6 +1,6 @@
 #/bin/bash!
 # specific config for X220
-root_dev=$1
+=$1
 home_dev=$2
 
 echo -e ".. set hostname to adak"
@@ -34,12 +34,36 @@ echo -e ".. install bootloader"
 pacman -Sy refind-efi --noconfirm
 refind-install
 # change root_dev for its uuid
-#wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/X220/source/refind.conf -O /boot/EFI/refind/refind.conf
+wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/X220/source/refind.conf -O /boot/EFI/refind/refind.conf
 #sed -i "s|ROOT_UUID|$(blkid -o value -s UUID /dev/$root_dev)|" /boot/EFI/refind/refind.conf
 
 
-echo ".. updating kernel image in /boot"
-cp /boot/vmlinuz-linux-zen /boot/EFI/zen/vmlinuz-zen.efi
-cp /boot/initramfs-linux-zen.img /boot/EFI/zen/archlinux-zen.img
+echo -e ".. Install xorg and input"
+pacman -S --noconfirm xorg-server xorg-apps xorg-xinit xorg-xrandr xorg-xkill<<EOF
+all
+1
+EOF
 
+echo -e "... install plasma windows manager"
+pacman -S --noconfirm plasma-desktop sddm networkmanager powerdevil plasma-nm kscreen plasma-pa pavucontrol
+
+
+echo -e ".. install audio server"
+pacman -S --noconfirm alsa-utils pulseaudio pulseaudio-alsa pulseaudio-jack pulseaudio-equalizer libcanberra-pulse libcanberra-gstreamer
+
+# echo -e ".. disable kwallet for users"
+# tee /home/${USER}/.config/kwalletrc <<EOF
+# [Wallet]
+# Enabled=false
+# EOF
+
+echo -e "... configure sddm"
+pacman -S sddm --noconfirm
+sddm --example-config > /etc/sddm.conf
+sed -i 's/Current=/Current=breeze/' /etc/sddm.conf
+sed -i 's/CursorTheme=/CursorTheme=breeze_cursors/' /etc/sddm.conf
+systemctl enable sddm
+
+# GUI interface for sanpper
+pacman -S snapper-gui-git '
 exit
