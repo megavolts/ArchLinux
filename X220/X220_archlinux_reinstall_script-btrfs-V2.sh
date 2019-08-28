@@ -4,9 +4,7 @@
 
 #
 #  1            2048         1067007   512.0 MiB   EF00  EFI system partition
-#  2         1067008         1099775   16.0 MiB    0C01  Microsoft reserved ...
-#  3         1099776       261598247   124.2 GiB   0700  Basic data partition
-#  5       261599232       523743231   125.0 GiB   8300  Linux filesystem on LVM
+#  5       261599232       523743231   466.0 GiB   8300  Linux filesystem on LVM
 
 DISK=/dev/sdb
 BOOTPART=1
@@ -75,8 +73,6 @@ mkdir -p /mnt/mnt/btrfs-arch
 echo "# arch root btrfs volume" >> /mnt/etc/fstab
 echo "LABEL=arch  /mnt/btrfs-arch btrfs rw,nodev,noatime,ssd,discard,compress=lzo,space_cache 0 0" >> /mnt/etc/fstab
 sed 's/\/mnt\/swapfile/\/swapfile/g' /mnt/etc/fstab
-
-# EXT4 version
 
 echo -e ""
 echo -e "Update pacman and install base and base-devel with linux-zen"
