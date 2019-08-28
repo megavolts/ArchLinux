@@ -8,17 +8,18 @@
 #  3         1099776       261598247   124.2 GiB   0700  Basic data partition
 #  5       261599232       523743231   125.0 GiB   8300  Linux filesystem on LVM
 
-DISK=/dev/sda
-PART=4
+DISK=/dev/sdb
+PART=2
 
 sgdisk -n $PART:0:0 -t $PART:8300 -c $PART:"CRYPTARCH" $DISK
-
-echo -e "prepare disk for installation"
 
 echo 'Enter a default passphrase use to encrypt the disk and serve as password for root and megavolts:'
 stty -echo
 read PWD
 stty echo
+
+echo -e ".. prepare boot partition"
+mkfs.fat -F32 /dev/sdb1
 
 echo -e ".. wipe partition
 # Wipe partition with zeros after creating an encrypted container with a random key
@@ -31,36 +32,46 @@ cryptsetup luksFormat --align-payload=8192 -s 512 -c aes-xts-plain64 /dev/disk/b
 echo -en $PWD | cryptsetup luksOpen /dev/disk/by-partlabel/CRYPTARCH cryptarch
 mkfs.btrfs --force --label arch /dev/mapper/cryptarch
 
+
+
 echo -e ".. create subvolumes"
 mount -o defaults,compress=lzo,noatime,nodev,ssd,discard /dev/mapper/cryptarch /mnt/
 mkdir -p /mnt/_snapshot
 mkdir -p /mnt/_active
 
-btrfs subvolume create /mnt/_active/@root
-btrfs subvolume create /mnt/_active/@home
-btrfs subvolume create /mnt/_active/@swap
+btrfs subvolume create /mnt/@active/@root
+btrfs subvolume create /mnt/@active/@home
 
 umount /mnt
 # Mount subvolume
-mount -o defaults,compress=lzo,noatime,nodev,ssd,discard,subvol=_active/@root /dev/mapper/cryptarch /mnt
+mount -o defaults,compress=lzo,noatime,nodev,ssd,discard,subvol=@active/@root /dev/mapper/cryptarch /mnt
 mkdir -p /mnt/home
-mount -o defaults,compress=lzo,noatime,nodev,ssd,discard,subvol=_active/@home /dev/mapper/cryptarch /mnt/home
+mount -o defaults,compress=lzo,noatime,nodev,ssd,discard,subvol=@active/@home /dev/mapper/cryptarch /mnt/home
 mkdir -p /mnt/swap
-mount -o defaults,noatime,nodev,ssd,discard,subvol=_active/@swap /dev/mapper/cryptarch /mnt/swap
-mkdir -p /mnt/boot
 mount ${DISK}1 /mnt/boot
 
 # Create swapfile
-truncate -s 0 /mnt/swap/swapfile
-chattr +C /mnt/swap/swapfile
-btrfs property set /mnt/swap/swapfile compression none
-fallocate -l 16G /mnt/swap/swapfile
-chmod 600 /mnt/swap/swapfile
-mkswap /mnt/swap/swapfile -L swap
-swapon -L swap
+truncate -s 0 /mnt/swapfile
+chattr +C /mnt/swapfile
+btrfs property set /mnt//swapfile compression none
+fallocate -l 16G /mnt/swapfile
+chmod 600 /mnt/swapfile
+mkswap /mnt/swapfile -L swap
+swapon /mnt/swapile
+
+##
+echo -e "prepare disk for installation"
+mkfs.vfat -F32 /dev/sdb1
+mkidr /mn/boot
+mount /dev/sdb1 /mnt/boot
+
+
 
 # Install Arch Linux
-pacstrap $(pacman -Sqg base | sed 's/^\(linux\)$/\1-zen/') /mnt  base-devel openssh sudo ntp wget grml-zsh-config refind-efi btrfs-progs networkmanager
+pacstrap $(pacman -Sqg base | sed 's/^linux$/&-zen/') /mnt  base-devel openssh sudo ntp wget grml-zsh-config refind-efi btrfs-progs networkmanager
+
+
+
 
 echo -e ""
 echo -e "Create fstab"
@@ -68,6 +79,7 @@ genfstab -L -p /mnt >> /mnt/etc/fstab
 mkdir -p /mnt/mnt/btrfs-arch
 echo "# arch root btrfs volume" >> /mnt/etc/fstab
 echo "LABEL=arch  /mnt/btrfs-arch btrfs rw,nodev,noatime,ssd,discard,compress=lzo,space_cache 0 0" >> /mnt/etc/fstab
+sed 's/\/mnt\/swapfile/\/swapfile/g' /mnt/etc/fstab
 
 # EXT4 version
 
@@ -76,12 +88,6 @@ echo -e "Update pacman and install base and base-devel with linux-zen"
 pacman -Syy --noconfirm
 pacman -S archlinux-keyring --noconfirm
 pacman-key --refresh
-if [ -f /mnt/boot/vmlinuz-linux-zen ]; then
-  rm /mnt/boot/vmlinuz-linux-zen 
-  rm /mnt/boot/initramfs-linux-zen.img 
-  rm /mnt/boot/initramfs-linux-zen-fallback.img 
-fi 
-
 
 ## Tuning
 echo -e ""
@@ -90,6 +96,9 @@ wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/config/generic
 chmod +x generic_config.sh
 cp generic_config.sh /mnt/
 arch-chroot /mnt ./generic_config.sh $DRIVE_PASSWORD
+rm /mnt/generic_config.sh
+
+
 
 ## Specific tuning
 echo -e ""
@@ -98,7 +107,8 @@ wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/X220/source/sp
 chmod +x specific_config.sh
 cp specific_config.sh /mnt/
 arch-chroot /mnt ./specific_config.sh $root_dev $home_dev
-
+rm /mnt/specific_config.sh
+    
 ## Install software packages
 echo -e ""
 echo -e ".. Install software packages"
