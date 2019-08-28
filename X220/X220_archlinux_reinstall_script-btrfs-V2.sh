@@ -7,7 +7,8 @@
 DISK=/dev/sdb
 BOOTPART=1
 ROOTPART=2
-
+TANK_DEV_PART = /dev/sda1
+FORMAT_TANK = NO
 sgdisk -n $BOOTPART:0:0 -t $BOOTPART:EF00 -c $BOOTPART:"BOOT" $DISK
 sgdisk -n $ROOTPART:0:0 -t $ROOTPART:8300 -c $ROOTPART:"CRYPTARCH" $DISK
 
@@ -71,10 +72,6 @@ echo "LABEL=arch  /mnt/btrfs-arch btrfs rw,nodev,noatime,ssd,discard,compress=lz
 sed 's/\/mnt\/swapfile/\/swapfile/g' /mnt/etc/fstab
 
 ## Tuning
-echo -e "\n"
-echo -e ".. generic tuning"
-
-## Tuning
 echo -e ""
 echo -e ".. generic tuning"
 wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/config/generic_config-V2.sh
@@ -89,18 +86,16 @@ echo -e ".. Specific X220 tuning"
 wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/X220/source/specific_config.sh
 chmod +x specific_config.sh
 cp specific_config.sh /mnt/
-arch-chroot /mnt ./specific_config.sh NO
+arch-chroot /mnt ./specific_config.sh $TANK_DEV_PART $FORMAT_TANK
 rm /mnt/specific_config.sh
-
-
     
-# ## Install software packages
-# echo -e ""
-# echo -e ".. Install software packages"
-# wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/source/software_install.sh
-# chmod +x software_install.sh
-# cp specific_config.sh /mnt/
-# arch-chroot /mnt ./specific_config.sh $root_dev $home_dev
+## Install software packages
+echo -e ""
+echo -e ".. Install software packages"
+wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/source/software_install.sh
+chmod +x software_install.sh
+cp specific_config.sh /mnt/
+arch-chroot /mnt ./specific_config.sh $root_dev $home_dev
 
 # rm /mnt/{software_install.sh, specific_config.sh, generic_config.sh}
 # umount /mnt{/boot,/home,/}
