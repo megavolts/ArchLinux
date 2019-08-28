@@ -39,14 +39,14 @@ mount -o defaults,compress=lzo,noatime,nodev,ssd,discard /dev/mapper/cryptarch /
 mkdir -p /mnt/_snapshot
 mkdir -p /mnt/_active
 
-btrfs subvolume create /mnt/@active/@root
-btrfs subvolume create /mnt/@active/@home
+btrfs subvolume create /mnt/@root
+btrfs subvolume create /mnt/@home
 
 umount /mnt
 # Mount subvolume
-mount -o defaults,compress=lzo,noatime,nodev,ssd,discard,subvol=@active/@root /dev/mapper/cryptarch /mnt
+mount -o defaults,compress=lzo,noatime,nodev,ssd,discard,subvol=@root /dev/mapper/cryptarch /mnt
 mkdir -p /mnt/home
-mount -o defaults,compress=lzo,noatime,nodev,ssd,discard,subvol=@active/@home /dev/mapper/cryptarch /mnt/home
+mount -o defaults,compress=lzo,noatime,nodev,ssd,discard,subvol=@home /dev/mapper/cryptarch /mnt/home
 mkdir -p /mnt/swap
 mount ${DISK}1 /mnt/boot
 
