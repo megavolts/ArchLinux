@@ -67,6 +67,7 @@ add the following lien to /etc/pulse/default.pa to auto connect to bluetooth
 #automatically switch to newly-connected devices
 load-module module-switch-on-connect
 EOF
+systemctl enable bluetooth
 
 
 # echo -e ".. disable kwallet for users"
