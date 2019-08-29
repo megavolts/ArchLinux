@@ -38,6 +38,7 @@ mkdir -p /mnt/
 btrfs subvolume create /mnt/@root
 btrfs subvolume create /mnt/@home
 btrfs subvolume create /mnt/@snapshots
+btrfs subvolume create /mnt/@swap
 
 umount /mnt
 # Mount subvolume
@@ -46,13 +47,13 @@ mkdir -p /mnt/home
 mount -o defaults,compress=lzo,noatime,nodev,ssd,discard,subvol=@home /dev/mapper/cryptarch /mnt/home
 
 # Create swapfile
-truncate -s 0 /mnt/swapfile
-chattr +C /mnt/swapfile
-btrfs property set /mnt//swapfile compression none
-fallocate -l 16G /mnt/swapfile
-chmod 600 /mnt/swapfile
-mkswap /mnt/swapfile -L swap
-swapon /mnt/swapfile
+truncate -s 0 /mnt/swap/swapfile
+chattr +C /mnt/swap/swapfile
+btrfs property set /mnt/swap/swapfile compression none
+fallocate -l 16G /mnt/swap/swapfile
+chmod 600 /mnt/swap/swapfile
+mkswap /mnt/swap/swapfile -L swap
+swapon /mnt/swap/swapfile
 
 ##
 echo -e "prepare disk for installation"
@@ -69,7 +70,7 @@ genfstab -L -p /mnt >> /mnt/etc/fstab
 mkdir -p /mnt/mnt/btrfs-arch
 echo "# arch root btrfs volume" >> /mnt/etc/fstab
 echo "LABEL=arch  /mnt/btrfs-arch btrfs rw,nodev,noatime,ssd,discard,compress=lzo,space_cache,noauto 0 0" >> /mnt/etc/fstab
-sed 's/\/mnt\/swapfile/\/swapfile/g' /mnt/etc/fstab
+sed 's/\/mnt\/swap/\/swap/g' /mnt/etc/fstab
 
 ## Tuning
 echo -e ""
