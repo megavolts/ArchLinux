@@ -13,11 +13,6 @@
 ## Graphical interface
 echo -e ".. install drivers specific to X220"
 pacman -S --noconfirm mesa lib32-mesa vulkan-intel lib32-vulkan-intel mesa-vdpau
-# pacman -S --noconfirm xf86-video-intel mesa-libgl lib32-mesa-libgl libva-intel-driver libva <<EOF
-# all
-# 1
-# EOF
-# pacman -S --noconfirm xf86-input-synaptics xf86-input-keyboard xf86-input-wacom xf86-input-mouse
 
 ## wireless driver
 pacman -S --noconfirm linux-firmware
@@ -27,7 +22,6 @@ sed -i 's/fsck)/btrfs)/g' /etc/mkinitcpio.conf
 
 echo -e "... rebuilding initramfs with i915"
 echo "options i915"
-#echo "options i915 enable_rc6=1 enable_fbc=1 lvds_downclock=1" >> /etc/modprobe.d/i915.conf
 mkinitcpio -p linux-zen
 
 ## BOOTLOADER
@@ -46,18 +40,13 @@ refind-install
 wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/T14/source/refind_linux.conf -O /boot/EFI/refind/refind_linux.conf
 
 echo -e ".. Install xorg and input"
-pacman -S --noconfirm xorg-server xorg-apps xorg-xinit xorg-xrandr xorg-xkill<<EOF
-# all
-# 1
-# EOF
+pacman -S --noconfirm xorg-server xorg-apps xorg-xinit xorg-xrandr xorg-xkill
 
 echo -e "... install plasma windows manager"
-pacman -S --noconfirm plasma-desktop sddm networkmanager  plasma-nm kscreen
-#powerdevil
+pacman -S --noconfirm plasma-desktop sddm networkmanager  plasma-nm kscreen powerdevil
 
 echo -e ".. install audio server"
 pacman -S --noconfirm alsa-utils pulseaudio pulseaudio-alsa pulseaudio-jack pulseaudio-equalizerplasma-pa pavucontrol pulseaudio-zeroconf 
-#  libcanberra-pulse libcanberra-gstreamer  
 
 echo -e ".. Installing bluetooth"
 yaourtpkg "bluez bluez-utils pulseaudio-bluetooth"
@@ -89,48 +78,36 @@ sed -i 's/CursorTheme=/CursorTheme=breeze_cursors/' /etc/sddm.conf
 systemctl enable sddm
 
 # # Mount or format data tank:
+mkdir /mnt/btrfs-arch
 
-# mkdir -p /mnt/btrfs-tank
-# echo "\n# Data TANK"  >> /etc/fstab
-# echo "LABEL=tank  /mnt/btrfs-tank btrfs rw,nodev,noatime,ssd,discard,compress=lzo,space_cache,noauto 0 0" >> /etc/fstab
+mount -o defaults,compress=lzo,noatime,nodev,ssd,discard /dev/mapper/arch /mnt/btrfs-arch
+btrfs subvolume create /mnt/btrfs-arch/@data
+btrfs subvolume create /mnt/btrfs-arch/@media
+btrfs subvolume create /mnt/btrfs-arch/@anarchy
+btrfs subvolume create /mnt/btrfs-arch/@photography
+btrfs subvolume create /mnt/btrfs-arch/@UAF-data
+umount /mnt
 
-# if [FORMAT == 'YES']; then
-# 	pacman -S --noconfirm gptfdisk
-# 	sgdisk --zap-all $TANK
-# 	sgdisk -n 1:0:0 -t 1:8300 -c 1:"TANK" $TANK_DEV_PART -m dup
-# 	mkfs.btrfs --force --label tank /dev/disk/by-partlabel/TANK
 
-# 	# create subvolume
-# 	mount -o defaults,compress=lzo,noatime,nodev,ssd,discard /dev/disk/by-label/tank /mnt/btrfs-tank
-# 	btrfs subvolume create /mnt/btrfs-tank/@data
-# 	btrfs subvolume create /mnt/btrfs-tank/@media
-# 	btrfs subvolume create /mnt/btrfs-tank/@anarchy
-# 	btrfs subvolume create /mnt/btrfs-tank/@photography
-# 	btrfs subvolume create /mnt/btrfs-tank/@UAF-data
-# 	btrfs subvolume create /mnt/btrfs-tank/@virtualbox
+echo "\n# BTRFS volume"  >> /etc/fstab
+echo "LABEL=tank  /mnt/data btrfs rw,nodev,noatime,ssd,discard,compress=lzo,space_cache,noauto 0 0" >> /etc/fstab
 
-# echo "# Data TANK subvolume"  >> /etc/fstab
-# mkdir -p /mnt/data
-# echo "LABEL=tank	/mnt/data				btrfs	rw,nodev,noatime,compress=lzo,ssd,discard,space_cache,subvol=@data	0	0" >> /etc/fstab
-# mkdir -p /mnt/data/media
-# echo "LABEL=tank	/mnt/data/media			btrfs	rw,nodev,noatime,compress=lzo,ssd,discard,space_cache,subvol=@media	0	0" >> /etc/fstab
-# mkdir -p /mnt/data/anarchy
-# echo "LABEL=tank	/mnt/data/anarchy		btrfs	rw,nodev,noatime,compress=lzo,ssd,discard,space_cache,subvol=@anarchy	0	0" >> /etc/fstab
-# mkdir -p /mnt/data/UAF-data
-# echo "LABEL=tank	/mnt/data/UAF-data		btrfs	rw,nodev,noatime,compress=lzo,ssd,discard,space_cache,subvol=@UAF-data	0	0" >> /etc/fstab
-# mkdir -p /mnt/data/VBox
-# echo "LABEL=tank	/mnt/data/VBox 			btrfs	rw,nodev,noatime,compress=lzo,ssd,discard,space_cache,nodatacow,subvol=@virtualbox	0	0" >> /etc/fstab
-# mkdir -p /mnt/data/media/photography     
-# echo "LABEL=tank	/mnt/data/media/photography		btrfs	rw,nodev,noatime,compress=lzo,ssd,discard,space_cache,subvol=@photography	0	0" >> /etc/fstab
+echo "# Data TANK subvolume"  >> /etc/fstab
+mkdir -p /mnt/data
+echo "LABEL=tank	/mnt/data				btrfs	rw,nodev,noatime,compress=lzo,ssd,discard,space_cache,subvol=@data	0	0" >> /etc/fstab
+mkdir -p /mnt/data/media
+echo "LABEL=tank	/mnt/data/media			btrfs	rw,nodev,noatime,compress=lzo,ssd,discard,space_cache,subvol=@media	0	0" >> /etc/fstab
+mkdir -p /mnt/data/anarchy
+echo "LABEL=tank	/mnt/data/anarchy		btrfs	rw,nodev,noatime,compress=lzo,ssd,discard,space_cache,subvol=@anarchy	0	0" >> /etc/fstab
+mkdir -p /mnt/data/UAF-data
+echo "LABEL=tank	/mnt/data/UAF-data		btrfs	rw,nodev,noatime,compress=lzo,ssd,discard,space_cache,subvol=@UAF-data	0	0" >> /etc/fstab
+mkdir -p /mnt/data/media/photography     
+echo "LABEL=tank	/mnt/data/media/photography		btrfs	rw,nodev,noatime,compress=lzo,ssd,discard,space_cache,subvol=@photography	0	0" >> /etc/fstab
 
-# mount -a
+mount -a
 
 # # set VBox directoy with nocow
 # chattr +C /mnt/data/VBox
-
-# echo -e ".. enable scrub on tank"
-# systemctl enable btrfs-scrub@tank.timer 
-# systemctl start btrfs-scrub@tank.timer 
 
 # # Setup Btrbk
 # yaourtpkg btrkbk mbuffer
