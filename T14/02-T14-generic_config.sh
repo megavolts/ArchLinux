@@ -47,10 +47,10 @@ yaourtpkg() {
   sudo -u $USER bash -c "yaourt -S --noconfirm $1"
 }
 
-#echo -e ".. > Optimize mirrorlist"
-#yaourtpkg reflector
-#reflector --latest 200 --protocol http --protocol https --sort rate --save /etc/pacman.d/mirrorlist
-#wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/X220/source/mirrorupgrade.hook -P /etc/pacman.d/hooks/
+echo -e ".. > Optimize mirrorlist"
+yaourtpkg reflector
+reflector --latest 200 --protocol http --protocol https --sort rate --save /etc/pacman.d/mirrorlist
+wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/X220/source/mirrorupgrade.hook -P /etc/pacman.d/hooks/
 
 echo -e "Configure system"
 echo "FONT=lat9w-16" >> /etc/vconsole.conf
