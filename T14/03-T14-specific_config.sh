@@ -56,11 +56,11 @@ pacman -S --noconfirm plasma-desktop sddm networkmanager  plasma-nm kscreen
 #powerdevil
 
 echo -e ".. install audio server"
-pacman -S --noconfirm alsa-utils pulseaudio pulseaudio-alsa pulseaudio-jack pulseaudio-equalizer libcanberra-pulse libcanberra-gstreamer  plasma-pa pavucontrol pulseaudio-bluetooth 
+pacman -S --noconfirm alsa-utils pulseaudio pulseaudio-alsa pulseaudio-jack pulseaudio-equalizerplasma-pa pavucontrol pulseaudio-zeroconf 
+#  libcanberra-pulse libcanberra-gstreamer  
 
-
-# echo -e ".. Installing bluetooth"
-# yaourtpkg "bluez bluez-utils bluedevil pulseaudio-bluetooth"
+echo -e ".. Installing bluetooth"
+yaourtpkg "bluez bluez-utils pulseaudio-bluetooth"
 # echo -e "... > allow streaming to bluetooth devices"
 # echo "load-module module-bluetooth-policy" >> /etc/pulse/system.pa
 # echo "load-module module-bluetooth-discover" >> /etc/pulse/system.pa
@@ -73,8 +73,7 @@ pacman -S --noconfirm alsa-utils pulseaudio pulseaudio-alsa pulseaudio-jack puls
 # #automatically switch to newly-connected devices
 # load-module module-switch-on-connect
 # EOF
-# systemctl enable bluetooth
-
+systemctl enable bluetooth
 
 echo -e ".. disable kwallet for users"
 tee /home/${USER}/.config/kwalletrc <<EOF
