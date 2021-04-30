@@ -63,40 +63,40 @@ mount ${DISK}p$BOOTPART /mnt/boot
 
 # Install Arch Linux
 pacman -Sy
-pacstrap  /mnt $(pacman -Sqg base | sed 's/^linux$/&-zen/') base-devel openssh sudo ntp wget grml-zsh-config btrfs-progs networkmanager
+pacstrap  /mnt $(pacman -Sqg base | sed 's/^linux$/&-zen/') base-devel openssh sudo ntp wget grml-zsh-config btrfs-progs networkmanager yajl linux-zen mkinitcpio
 
-echo -e "Create fstab"
-genfstab -L -p /mnt >> /mnt/etc/fstab
-mkdir -p /mnt/mnt/btrfs-arch
-echo "# arch root btrfs volume" >> /mnt/etc/fstab
-echo "LABEL=arch  /mnt/btrfs-arch btrfs rw,nodev,noatime,ssd,discard,compress=lzo,space_cache,noauto 0 0" >> /mnt/etc/fstab
-sed 's/\/mnt\/swap/\/swap/g' /mnt/etc/fstab
+# echo -e "Create fstab"
+# genfstab -L -p /mnt >> /mnt/etc/fstab
+# mkdir -p /mnt/mnt/btrfs-arch
+# echo "# arch root btrfs volume" >> /mnt/etc/fstab
+# echo "LABEL=arch  /mnt/btrfs-arch btrfs rw,nodev,noatime,ssd,discard,compress=lzo,space_cache,noauto 0 0" >> /mnt/etc/fstab
+# sed 's/\/mnt\/swap/\/swap/g' /mnt/etc/fstab
 
-## Tuning
-echo -e ""
-echo -e ".. generic tuning"
-wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/config/generic_config-V2.sh
-chmod +x generic_config-V2.sh
-cp generic_config-V2.sh /mnt/ 
-arch-chroot /mnt ./generic_config-V2.sh $PWD $USER adak
-rm /mnt/generic_config-V2.sh
+# ## Tuning
+# echo -e ""
+# echo -e ".. generic tuning"
+# wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/config/generic_config-V2.sh
+# chmod +x generic_config-V2.sh
+# cp generic_config-V2.sh /mnt/ 
+# arch-chroot /mnt ./generic_config-V2.sh $PWD $USER kanaga
+# rm /mnt/generic_config-V2.sh
 
-## Specific tuning
-echo -e ""
-echo -e ".. Specific X220 tuning"
-wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/X220/source/specific_config.sh
-chmod +x specific_config.sh
-cp specific_config.sh /mnt/
-arch-chroot /mnt ./specific_config.sh $TANK_DEV_PART $FORMAT_TANK
-rm /mnt/specific_config.sh
+# ## Specific tuning
+# echo -e ""
+# echo -e ".. Specific X220 tuning"
+# wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/X220/source/specific_config.sh
+# chmod +x specific_config.sh
+# cp specific_config.sh /mnt/
+# arch-chroot /mnt ./specific_config.sh $TANK_DEV_PART $FORMAT_TANK
+# rm /mnt/specific_config.sh
     
-## Install software packages
-echo -e ""
-echo -e ".. Install software packages"
-wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/source/software_install.sh
-chmod +x software_install.sh
-cp specific_config.sh /mnt/
-arch-chroot /mnt ./specific_config.sh $root_dev $home_dev
+# ## Install software packages
+# echo -e ""
+# echo -e ".. Install software packages"
+# wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/source/software_install.sh
+# chmod +x software_install.sh
+# cp specific_config.sh /mnt/
+# arch-chroot /mnt ./specific_config.sh $root_dev $home_dev
 
-# rm /mnt/{software_install.sh, specific_config.sh, generic_config.sh}
-# umount /mnt{/boot,/home,/}
+# # rm /mnt/{software_install.sh, specific_config.sh, generic_config.sh}
+# # umount /mnt{/boot,/home,/}
