@@ -24,7 +24,6 @@ $PASSWORD
 $PASSWORD
 EOF
 
-
 # create a fake builduser
 buildpkg(){
   CURRENT_DIR=$pwd
@@ -40,7 +39,6 @@ buildpkg(){
 
 echo -e " .. > allowing wheel group to sudo"
 sed  's/# %wheel ALL=(ALL) ALL/%  wheel ALL=(ALL) ALL/' -s /etc/sudoers
-
 
 buildpkg package-query
 buildpkg yaourt
