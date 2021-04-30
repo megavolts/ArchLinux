@@ -23,7 +23,7 @@ yaourtpkg 'ttf-dejavu ttf-mathtype freefonts ttf-inconsolata ttf-hack ttf-anonym
 
 
 # echo -e ".. internet software"
-yaourtpkg 'firefox thunderbird filezilla  nextcloud-client'
+yaourtpkg 'firefox thunderbird filezilla  nextcloud-client zoom telegram-desktop'
 
 #systemctl --user enable psd
 
@@ -49,7 +49,7 @@ yaourtpkg 'okular spectacle discount kdegraphics-mobipocket'
 yaourtpkg 'imagemagick guetzli geeqie inkscape gimp darktable libraw hugin-hg'
 
 # echo -e "... musics and videos"
-yaourtpkg 'vlc plex-media-server-plexpass plex-media-player ffmpeg'
+yaourtpkg 'vlc ffmpeg jellyfin jellyfin-media-player jellyfin-server'
 
 # echo -e ".. office"
 yaourtpkg 'libreoffice-fresh mendeleydesktop texmaker texlive-most'
@@ -76,12 +76,7 @@ yaourtpkg 'mendeleydesktop'
 yaourtpkg packages
 echo -e "... don't forget to install Antidote"
 
-# # # Plex Media Player
-# # yaourtpkg '"synergy "
-systemctl start plexmediaserver
-systemctl enable plexmediaserver
-echo -e "... to configure plex-media-server visit http://localhost:32400/web/"
-
+yaourtpkg 'virtualbox virtualbox
 groupadd vboxusers
 gpasswd -a megavolts vboxusers
 echo "vboxdrv vboxnetadp vboxnetflt" >> /usr/lib/modules-load.d/virtualbox-host-dkms.conf    
