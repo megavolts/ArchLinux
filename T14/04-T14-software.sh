@@ -13,7 +13,7 @@ packages=''
 
 echo -e "Install software"
 echo -e ".. basic tools"
-yaourtpkg 'yakuake tmux kdialog kfind arp-scan'
+yaourtpkg 'yakuake tmux kdialog kfind arp-scan htop'
 
 echo -e ".. partition tools"
 yaourtpkg 'gparted ntfs-3g exfat-utils mtools'
@@ -23,7 +23,7 @@ yaourtpkg 'ttf-dejavu ttf-mathtype freefonts ttf-inconsolata ttf-hack ttf-anonym
 
 
 # echo -e ".. internet software"
-yaourtpkg 'firefox thunderbird filezilla  nextcloud-client zoom telegram-desktop'
+yaourtpkg 'firefox thunderbird filezilla  nextcloud-client zoom teams slack-desktop telegram-desktop'
 
 #systemctl --user enable psd
 
