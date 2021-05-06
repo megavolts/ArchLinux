@@ -3,6 +3,9 @@ PASSWORD=$1
 USER=$2
 HOSTNAME=$3
 
+python-setuptools python-pip tk xorg-xauth dhcpcd dhclient 
+
+
 echo -e "Tuning pacman"
 echo -e ".. > Adding multilib"
 sed -i 's|#[multilib]|[multilib]|' /etc/pacman.conf
@@ -27,14 +30,15 @@ EOF
 # create a fake builduser
 buildpkg(){
   CURRENT_DIR=$pwd
-  wget https://aur.archlinux.org/cgit/aur.git/snapshot/$1.tar.gz
-  tar -xvzf $1.tar.gz -C /home/$USER
+  PKG=$1
+  wget https://aur.archlinux.org/cgit/aur.git/snapshot/$PKG.tar.gz
+  tar -xvzf $PKG.tar.gz -C /home/$USER
   chown ${USER}:users /home/$USER/$1 -R
-  cd /home/$USER/$1
+  cd /home/$USER/$PKG
   sudo -u $USER bash -c "makepkg -s --noconfirm"
-  pacman -U $1*.zst --noconfirm
+  pacman -U $PKG*.zst --noconfirm
   cd $CURRENT_dir 
-  rm /home/$USER/$1 -R
+  rm /home/$USER/$PKG -R
 }
 
 echo -e " .. > allowing wheel group to sudo"
