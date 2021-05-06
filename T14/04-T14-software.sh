@@ -11,9 +11,12 @@ yaourtpkg() {
 
 packages=''
 
+#### kio-extras kio-fuse poppler-data kaccounts-integration
+
+
 echo -e "Install software"
 echo -e ".. basic tools"
-yaourtpkg 'yakuake tmux kdialog kfind arp-scan htop'
+yaourtpkg 'yakuake tmux kdialog kfind arp-scan htop kgpg '
 
 echo -e ".. partition tools"
 yaourtpkg 'gparted ntfs-3g exfat-utils mtools'
@@ -28,7 +31,7 @@ yaourtpkg 'firefox thunderbird filezilla  nextcloud-client zoom teams slack-desk
 #systemctl --user enable psd
 
 # Power management (https://austingwalters.com/increasing-battery-life-on-an-arch-linux-laptop-thinkpad-t14s/)
-yaourtpkg 'tlp bash-completion smartmontols'
+yaourtpkg 'tlp bash-completion smartmontools'
 # if linux : acpi_call tp_smapi
 systemctl start tlp.service
 systemctl enable tlp.service
@@ -37,7 +40,7 @@ systemctl enable tlp.service
 yaourtpkg 'sublime-text-dev'
 
 # echo -e ".. media"
-yaourtpkg 'dolphin dolphin-plugins qt5-imageformats ffmpegthumbs lzop kdegraphics-thumbnailers'
+yaourtpkg 'dolphin dolphin-plugins qt5-imageformats ffmpegthumbs lzop kdegraphics-thumbnailers kimageformats libappimage unrar unzip'
 yaourtpkg 'openconnect networkmanager-openconnect'
 
 yaourtpkg 'ark unrar p7zip unzip'
@@ -58,37 +61,27 @@ yaourtpkg 'aspell-fr aspell-en aspell-de hunspell-en_US hunspell-fr hunspell-de 
 # echo -e ".. printing tools"
 yaourtpkg 'cups system-config-printer'
 
-yaourtpkg 'virtualbox virtualbox-guest-iso virtualbox-host-dkms linux-zen-headers virtualbox-ext-oracle linux-zen-headers'
-
-
-# # internet messenging
-yaourtpkg 'telegram-desktop'
+yaourtpkg 'virtualbox virtualbox-guest-iso virtualbox-host-dkms virtualbox-ext-oracle'
+groupadd vboxusers
+gpasswd -a megavolts vboxusers
+echo "vboxdrv vboxnetadp vboxnetflt" >> /usr/lib/modules-load.d/virtualbox-host-dkms.conf    
 
 # # python packages
-yaourtpkg 'pycharm-community-edition python-pip'
+yaourtpkg 'pycharm-professional-edition python-pip python-setuptools'
 yaourtpkg 'python-numpy python-matplotlib python-scipy python-pandas python-openpyxl python-basemap'
 yaourtpkg 'python-numpy python-matplotlib python-scipy python-pandas python-openpyxl ipython jupyter cython'
 
 # # citation
-yaourtpkg 'mendeleydesktop'
+yaourtpkg 'mendeleydesktop zotero'
 
 # yaourtpkg 'packages
 yaourtpkg packages
 echo -e "... don't forget to install Antidote"
 
-yaourtpkg 'virtualbox virtualbox
-groupadd vboxusers
-gpasswd -a megavolts vboxusers
-echo "vboxdrv vboxnetadp vboxnetflt" >> /usr/lib/modules-load.d/virtualbox-host-dkms.conf    
-
-
-
-yaourtpkg 'snapper-gui-git'
-
 yaourtpkg 'xdg-desktop-portal xdg-desktop-portal-kde'
+yaourtpkg 'qownnotes'
 
-
-yaourtpkg 'qownnotes profile-sync-daemon'
+yaourtpkg ' profile-sync-daemon'
 echo -e "... configure profile-sync-daemon to improve speed, reduced wear to physical drives"
 echo "megavolts ALL=(ALL) NOPASSWD: /usr/bin/psd-overlay-helper" >> /etc/sudoers
 mkdir /home/megavolts/.config/psd/
