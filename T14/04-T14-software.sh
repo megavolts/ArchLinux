@@ -28,8 +28,6 @@ yaourtpkg 'ttf-dejavu ttf-mathtype freefonts ttf-inconsolata ttf-hack ttf-anonym
 # echo -e ".. internet software"
 yaourtpkg 'firefox thunderbird filezilla  nextcloud-client zoom teams slack-desktop telegram-desktop'
 
-#systemctl --user enable psd
-
 # Power management (https://austingwalters.com/increasing-battery-life-on-an-arch-linux-laptop-thinkpad-t14s/)
 yaourtpkg 'tlp bash-completion smartmontools'
 # if linux : acpi_call tp_smapi
