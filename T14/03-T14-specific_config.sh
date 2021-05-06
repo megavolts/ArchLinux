@@ -13,6 +13,7 @@
 ## Graphical interface
 echo -e ".. install drivers specific to X220"
 pacman -S --noconfirm mesa lib32-mesa vulkan-intel lib32-vulkan-intel mesa-vdpau
+pacman -S --noconfirm nano
 
 ## wireless driver
 pacman -S --noconfirm linux-firmware
@@ -40,13 +41,13 @@ refind-install
 wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/T14/source/refind_linux.conf -O /boot/EFI/refind/refind_linux.conf
 
 echo -e ".. Install xorg and input"
-pacman -S --noconfirm xorg-server xorg-apps xorg-xinit xorg-xrandr xorg-xkill
+pacman -S --noconfirm xorg-server xorg-apps xorg-xinit xorg-xrandr xorg-xkill xorg-xauth
 
 echo -e "... install plasma windows manager"
 pacman -S --noconfirm plasma-desktop sddm networkmanager  plasma-nm kscreen powerdevil
 
 echo -e ".. install audio server"
-pacman -S --noconfirm alsa-utils pulseaudio pulseaudio-alsa pulseaudio-jack pulseaudio-equalizerplasma-pa pavucontrol pulseaudio-zeroconf 
+pacman -S --noconfirm alsa-utils pulseaudio pulseaudio-alsa pulseaudio-jack pulseaudio-equalizer plasma-pa pavucontrol pulseaudio-zeroconf 
 
 echo -e ".. Installing bluetooth"
 yaourtpkg "bluez bluez-utils pulseaudio-bluetooth"
@@ -64,6 +65,7 @@ yaourtpkg "bluez bluez-utils pulseaudio-bluetooth"
 # EOF
 systemctl enable bluetooth
 
+
 echo -e ".. disable kwallet for users"
 tee /home/${USER}/.config/kwalletrc <<EOF
 [Wallet]
@@ -78,32 +80,23 @@ sed -i 's/CursorTheme=/CursorTheme=breeze_cursors/' /etc/sddm.conf
 systemctl enable sddm
 
 # # Mount or format data tank:
-mkdir /mnt/btrfs-arch
-
-mount -o defaults,compress=lzo,noatime,nodev,ssd,discard /dev/mapper/arch /mnt/btrfs-arch
-btrfs subvolume create /mnt/btrfs-arch/@data
+mount -o defaults,compress=lzo,noatime,nodev,ssd,discard /dev/mapper/cryptarch /mnt/btrfs-arch
 btrfs subvolume create /mnt/btrfs-arch/@media
 btrfs subvolume create /mnt/btrfs-arch/@anarchy
 btrfs subvolume create /mnt/btrfs-arch/@photography
 btrfs subvolume create /mnt/btrfs-arch/@UAF-data
-umount /mnt
 
 
 echo "\n# BTRFS volume"  >> /etc/fstab
 echo "LABEL=tank  /mnt/data btrfs rw,nodev,noatime,ssd,discard,compress=lzo,space_cache,noauto 0 0" >> /etc/fstab
-
-echo "# Data TANK subvolume"  >> /etc/fstab
-mkdir -p /mnt/data
-echo "LABEL=tank	/mnt/data				btrfs	rw,nodev,noatime,compress=lzo,ssd,discard,space_cache,subvol=@data	0	0" >> /etc/fstab
 mkdir -p /mnt/data/media
-echo "LABEL=tank	/mnt/data/media			btrfs	rw,nodev,noatime,compress=lzo,ssd,discard,space_cache,subvol=@media	0	0" >> /etc/fstab
+echo "LABEL=arch	/mnt/data/media			btrfs	rw,nodev,noatime,compress=lzo,ssd,discard,space_cache,subvol=@media	0	0" >> /etc/fstab
 mkdir -p /mnt/data/anarchy
-echo "LABEL=tank	/mnt/data/anarchy		btrfs	rw,nodev,noatime,compress=lzo,ssd,discard,space_cache,subvol=@anarchy	0	0" >> /etc/fstab
+echo "LABEL=arch	/mnt/data/anarchy		btrfs	rw,nodev,noatime,compress=lzo,ssd,discard,space_cache,subvol=@anarchy	0	0" >> /etc/fstab
 mkdir -p /mnt/data/UAF-data
-echo "LABEL=tank	/mnt/data/UAF-data		btrfs	rw,nodev,noatime,compress=lzo,ssd,discard,space_cache,subvol=@UAF-data	0	0" >> /etc/fstab
+echo "LABEL=arch	/mnt/data/UAF-data		btrfs	rw,nodev,noatime,compress=lzo,ssd,discard,space_cache,subvol=@UAF-data	0	0" >> /etc/fstab
 mkdir -p /mnt/data/media/photography     
-echo "LABEL=tank	/mnt/data/media/photography		btrfs	rw,nodev,noatime,compress=lzo,ssd,discard,space_cache,subvol=@photography	0	0" >> /etc/fstab
-
+echo "LABEL=arch	/mnt/data/media/photography		btrfs	rw,nodev,noatime,compress=lzo,ssd,discard,space_cache,subvol=@photography	0	0" >> /etc/fstab
 mount -a
 
 # # set VBox directoy with nocow
