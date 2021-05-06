@@ -65,9 +65,8 @@ gpasswd -a megavolts vboxusers
 echo "vboxdrv vboxnetadp vboxnetflt" >> /usr/lib/modules-load.d/virtualbox-host-dkms.conf    
 
 # # python packages
-yaourtpkg 'pycharm-professional-edition python-pip python-setuptools'
-yaourtpkg 'python-numpy python-matplotlib python-scipy python-pandas python-openpyxl python-basemap'
-yaourtpkg 'python-numpy python-matplotlib python-scipy python-pandas python-openpyxl ipython jupyter cython'
+yaourtpkg 'pycharm-professional-edition python-pip python-setuptools tk'
+yaourtpkg 'python-numpy python-matplotlib python-scipy python-pandas python-openpyxl python-basemap ipython jupyter cython python-pillow '
 
 # # citation
 yaourtpkg 'mendeleydesktop zotero'
