@@ -38,22 +38,25 @@ btrfs subvolume create /mnt/@root
 btrfs subvolume create /mnt/@home
 btrfs subvolume create /mnt/@snapshots
 btrfs subvolume create /mnt/@swap
-
+btrfs subvolume create /mnt/@data
 umount /mnt
+
 # Mount subvolume
 mount -o defaults,compress=lzo,noatime,nodev,ssd,discard,subvol=@root /dev/mapper/cryptarch /mnt
 mkdir -p /mnt/home
 mount -o defaults,compress=lzo,noatime,nodev,ssd,discard,subvol=@home /dev/mapper/cryptarch /mnt/home
+mkdir -p /mnt/mnt/data
+mount -o defaults,compress=lzo,noatime,nodev,ssd,discard,subvol=@data /dev/mapper/cryptarch /mnt/mnt/data
 
 # Create swapfile
-mkdir /mnt/swap -p
-truncate -s 0 /mnt/swap/swapfile
-chattr +C /mnt/swap/swapfile
-btrfs property set /mnt/swap/swapfile compression none
-fallocate -l 16G /mnt/swap/swapfile
-chmod 600 /mnt/swap/swapfile
-mkswap /mnt/swap/swapfile -L swap
-swapon /mnt/swap/swapfile
+mkdir /mnt/@swap/swap -p
+truncate -s 0 /mnt/@swap/swapfile
+chattr +C /mnt/@swap/swapfile
+btrfs property set /mnt/@swap/swapfile compression none
+fallocate -l 16G /mnt/@swap/swapfile
+chmod 600 /mnt/@swap/swapfile
+mkswap /mnt/@swap/swapfile -L swap
+swapon /mnt/@swap/swapfile
 
 ##
 echo -e "prepare disk for installation"
@@ -63,7 +66,9 @@ mount ${DISK}p$BOOTPART /mnt/boot
 
 # Install Arch Linux
 pacman -Sy
-pacstrap  /mnt $(pacman -Sqg base | sed 's/^linux$/&-zen/') base-devel openssh sudo ntp wget grml-zsh-config btrfs-progs networkmanager linux-firmware sof-firmware yajl linux-zen mkinitcpio
+#pacstrap  /mnt $(pacman -Sqg base | sed 's/^linux$/&-zen/') base-devel openssh sudo ntp wget grml-zsh-config btrfs-progs networkmanager linux-firmware sof-firmware yajl linux-zen mkinitcpio
+pacstrap  /mnt base linux-zen linux-zen-headers base-devel openssh sudo ntp wget grml-zsh-config btrfs-progs networkmanager linux-firmware sof-firmware yajl mkinitcpio
+
 
 echo -e "Create fstab"
 genfstab -L -p /mnt >> /mnt/etc/fstab
@@ -71,6 +76,7 @@ mkdir -p /mnt/mnt/btrfs-arch
 echo "# arch root btrfs volume" >> /mnt/etc/fstab
 echo "LABEL=arch  /mnt/btrfs-arch btrfs rw,nodev,noatime,ssd,discard,compress=lzo,space_cache,noauto 0 0" >> /mnt/etc/fstab
 sed 's/\/mnt\/swap/\/swap/g' /mnt/etc/fstab
+
 
 # ## Tuning
 # echo -e ""
