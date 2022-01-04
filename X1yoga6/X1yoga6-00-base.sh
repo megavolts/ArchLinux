@@ -1,5 +1,5 @@
 # /bin/bash
-# Reinstall with windows on 1 2 
+# Dual boot with windows
 #
 #  1            2048         1050623   512.0 MiB   EF00  EFI system partition
 #  2         1050624         1083391    16.0 MiB         Microsoft Reserved
@@ -7,8 +7,6 @@
 #  4       314402816       315654143   611.0 MiB         Windows recovery environment
 #  5       315654144      3907029134     1.7 TiB   8300  Linux filesystem on LVM
 
-# NOT YET WORKING
-# Dual boot
 DISK=/dev/nvme0n1
 BOOTPART=1
 CRYPTPART=5
@@ -52,7 +50,6 @@ mkdir -p /mnt/mnt/data
 mount -o defaults,compress=lzo,noatime,nodev,ssd,discard,subvol=@data /dev/mapper/cryptarch /mnt/mnt/data
 
 # Create swapfile
-mkdir /mnt/@swap/swap -p
 truncate -s 0 /mnt/@swap/swapfile
 chattr +C /mnt/@swap/swapfile
 btrfs property set /mnt/@swap/swapfile compression none
@@ -72,14 +69,12 @@ pacman -Sy
 #pacstrap  /mnt $(pacman -Sqg base | sed 's/^linux$/&-zen/') base-devel openssh sudo ntp wget grml-zsh-config btrfs-progs networkmanager linux-firmware sof-firmware yajl linux-zen mkinitcpio
 pacstrap  /mnt base linux-zen linux-zen-headers base-devel openssh sudo ntp wget grml-zsh-config btrfs-progs networkmanager linux-firmware sof-firmware yajl mkinitcpio
 
-
 echo -e "Create fstab"
 genfstab -L -p /mnt >> /mnt/etc/fstab
 mkdir -p /mnt/mnt/btrfs-arch
 echo "# arch root btrfs volume" >> /mnt/etc/fstab
 echo "LABEL=arch  /mnt/btrfs-arch btrfs rw,nodev,noatime,ssd,discard,compress=lzo,space_cache,noauto 0 0" >> /mnt/etc/fstab
 sed 's/\/mnt\/swap/\/swap/g' /mnt/etc/fstab
-
 
 # ## Tuning
 # echo -e ""
