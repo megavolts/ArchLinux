@@ -50,13 +50,16 @@ mkdir -p /mnt/mnt/data
 mount -o defaults,compress=lzo,noatime,nodev,ssd,discard,subvol=@data /dev/mapper/cryptarch /mnt/mnt/data
 
 # Create swapfile
-truncate -s 0 /mnt/@swap/swapfile
-chattr +C /mnt/@swap/swapfile
-btrfs property set /mnt/@swap/swapfile compression none
-fallocate -l 16G /mnt/@swap/swapfile
-chmod 600 /mnt/@swap/swapfile
-mkswap /mnt/@swap/swapfile -L swap
-swapon /mnt/@swap/swapfile
+mkdir -p /mnt/swap
+mount -o defaults,compress=lzo,noatime,nodev,ssd,discard,subvol=@swap /dev/mapper/cryptarch /mnt/swap
+
+truncate -s 0 /mnt/swap/swapfile
+chattr +C /mnt/swap/swapfile
+btrfs property set /mnt/swap/swapfile compression none
+fallocate -l 16G /mnt/swap/swapfile
+chmod 600 /mnt/swap/swapfile
+mkswap /mnt/swap/swapfile -L swap
+swapon /mnt/swap/swapfile
 
 ##
 echo -e "prepare disk for installation"
@@ -67,7 +70,7 @@ mount ${DISK}p$BOOTPART /mnt/boot
 # Install Arch Linux
 pacman -Sy
 #pacstrap  /mnt $(pacman -Sqg base | sed 's/^linux$/&-zen/') base-devel openssh sudo ntp wget grml-zsh-config btrfs-progs networkmanager linux-firmware sof-firmware yajl linux-zen mkinitcpio
-pacstrap  /mnt base linux-zen linux-zen-headers base-devel openssh sudo ntp wget grml-zsh-config btrfs-progs networkmanager linux-firmware sof-firmware yajl mkinitcpio
+pacstrap  /mnt base linux-zen linux-zen-headers base-devel openssh sudo ntp wget grml-zsh-config btrfs-progs networkmanager linux-firmware sof-firmware yajl mkinitcpio git
 
 echo -e "Create fstab"
 genfstab -L -p /mnt >> /mnt/etc/fstab
