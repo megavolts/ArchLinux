@@ -70,7 +70,7 @@ mount ${DISK}p$BOOTPART /mnt/boot
 # Install Arch Linux
 pacman -Sy
 #pacstrap  /mnt $(pacman -Sqg base | sed 's/^linux$/&-zen/') base-devel openssh sudo ntp wget grml-zsh-config btrfs-progs networkmanager linux-firmware sof-firmware yajl linux-zen mkinitcpio
-pacstrap  /mnt base linux-zen linux-zen-headers base-devel openssh sudo ntp wget grml-zsh-config btrfs-progs networkmanager linux-firmware sof-firmware yajl mkinitcpio git go nano
+pacstrap  /mnt base linux-zen linux-zen-headers base-devel openssh sudo ntp wget grml-zsh-config btrfs-progs networkmanager linux-firmware sof-firmware yajl mkinitcpio git go nano zsh
 
 echo -e "Create fstab"
 genfstab -L -p /mnt >> /mnt/etc/fstab
@@ -78,6 +78,11 @@ mkdir -p /mnt/mnt/btrfs-arch
 echo "# arch root btrfs volume" >> /mnt/etc/fstab
 echo "LABEL=arch  /mnt/btrfs-arch btrfs rw,nodev,noatime,ssd,discard,compress=lzo,space_cache,noauto 0 0" >> /mnt/etc/fstab
 sed 's/\/mnt\/swap/\/swap/g' /mnt/etc/fstab
+
+echo -e " .. > allowing wheel group to sudo"
+sed -i 's/^#\s*\(%wheel\s*ALL=(ALL)\s*ALL\)/\1/' /mnt/etc/sudoers
+
+arch-chroot /mnt -s /bin/zsh
 
 echo -e "Tuning pacman"
 echo -e ".. > Adding multilib"
@@ -107,9 +112,6 @@ EOF
 $PASSWORD
 $PASSWORD
 #EOF
-
-echo -e " .. > allowing wheel group to sudo"
-sed  's/# %wheel ALL=(ALL) ALL/%  wheel ALL=(ALL) ALL/' -s /mnt/etc/sudoers
 
 echo -e ".. > Installing aur package manager"
 # create a fake builduser
