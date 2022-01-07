@@ -70,7 +70,7 @@ mount ${DISK}p$BOOTPART /mnt/boot
 # Install Arch Linux
 pacman -Sy
 #pacstrap  /mnt $(pacman -Sqg base | sed 's/^linux$/&-zen/') base-devel openssh sudo ntp wget grml-zsh-config btrfs-progs networkmanager linux-firmware sof-firmware yajl linux-zen mkinitcpio
-pacstrap  /mnt base linux-zen linux-zen-headers base-devel openssh sudo ntp wget grml-zsh-config btrfs-progs networkmanager linux-firmware sof-firmware yajl mkinitcpio git go nano zsh
+pacstrap  /mnt base linux-zen linux-zen-headers base-devel openssh sudo ntp wget grml-zsh-config btrfs-progs networkmanager usbutils linux-firmware sof-firmware yajl mkinitcpio git go nano zsh
 
 echo -e "Create fstab"
 genfstab -L -p /mnt >> /mnt/etc/fstab
@@ -164,6 +164,7 @@ sed -i 's/filesystems keyboard/keyboard encrypt resume filesystems/g' /etc/mkini
 # modify refind.conf
 cp /boot/refind_linux.conf /boot/refind_linux.conf.old
 wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/X1yoga6/sources/refind.conf -O /boot/refind_linux.conf
+
 
 # Rebuild kernel
 if [ -f /boot/vmlinuz-linux ]; then
