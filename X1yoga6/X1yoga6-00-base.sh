@@ -82,10 +82,10 @@ sed 's/\/mnt\/swap/\/swap/g' /mnt/etc/fstab
 # ## Tuning
 # echo -e ""
 # echo -e ".. generic tuning"
-# wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/config/generic_config-V2.sh
+# wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/config/X1yoga6-01-generic_config-V2.sh
 # chmod +x generic_config-V2.sh
 # cp generic_config-V2.sh /mnt/ 
-# arch-chroot /mnt ./generic_config-V2.sh $PWD $USER kanaga
+# arch-chroot /mnt ./generic_config-V2.sh $PWD $USER adak
 # rm /mnt/generic_config-V2.sh
 
 # ## Specific tuning
