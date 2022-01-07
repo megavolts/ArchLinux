@@ -79,6 +79,104 @@ echo "# arch root btrfs volume" >> /mnt/etc/fstab
 echo "LABEL=arch  /mnt/btrfs-arch btrfs rw,nodev,noatime,ssd,discard,compress=lzo,space_cache,noauto 0 0" >> /mnt/etc/fstab
 sed 's/\/mnt\/swap/\/swap/g' /mnt/etc/fstab
 
+echo -e "Tuning pacman"
+echo -e ".. > Adding multilib"
+sed -i 's|#[multilib]|[multilib]|' /etc/pacman.conf
+sed -i "/\[multilib\]/,/Include/"'s/^#//' /etc/pacman.conf
+echo -e ".. update pacman and system "
+pacman -Syy
+pacman -S --noconfirm archlinux-keyring
+pacman-key --init
+pacman-key --populate archlinux
+pacman -Syu --noconfirm
+
+# create $USER
+
+echo -e "Setting up users"
+echo -e ".. > setting root password"
+passwd root << EOF
+$PASSWORD
+$PASSWORD
+EOF
+echo -e ".. > create user $USER with default password"
+useradd -m -g users -G wheel,audio,disk,lp,network -s /bin/bash $USER  << EOF
+$PASSWORD
+$PASSWORD
+EOF
+#passwd megavolts << EOF
+$PASSWORD
+$PASSWORD
+#EOF
+
+echo -e " .. > allowing wheel group to sudo"
+sed  's/# %wheel ALL=(ALL) ALL/%  wheel ALL=(ALL) ALL/' -s /etc/sudoers
+
+echo -e ".. > Installing aur package manager"
+# create a fake builduser
+buildpkg(){
+  CURRENT_DIR=$pwd
+  wget https://aur.archlinux.org/cgit/aur.git/snapshot/$1.tar.gz
+  tar -xvzf $1.tar.gz -C /home/$USER
+  chown ${USER}:users /home/$USER/$1 -R
+  cd /home/$USER/$1
+  sudo -u $USER bash -c "makepkg -s --noconfirm"
+  pacman -Uy $1*.zst
+  cd $CURRENT_dir
+  rm /home/$USER/$1 -R
+  rm /home/$USER/$1.tar.gz
+}
+
+buildpkg package-query
+pacman -S go
+buildpkg yay
+
+wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/X220/source/mirrorupgrade.hook -P /etc/pacman.d/hooks/
+echo -e "Configure system"
+echo "FONT=lat9w-16" >> /etc/vconsole.conf
+echo -e ".. > changing locales"
+wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/X220/source/locale.gen -O /etc/locale.gen
+echo "LANG=en_US.UTF-8" > /etc/locale.conf
+locale-gen
+localectl set-locale LANG=en_US.UTF-8
+
+echo -e ".. > set timezone to America/Anchorage"
+timedatectl set-ntp 1
+timedatectl set-timezone America/Anchorage
+
+echo -e ".. > setting hostname & network manager"
+hostnamectl set-hostname $HOSTNAME
+echo "127.0.1.1    $HOSTNAME.localdomain    $HOSTNAME" >> /etc/hosts
+echo $HOSTNAME > /etc/hostname
+
+echo -e ".. > start services"
+systemctl enable NetworkManager
+systemctl enable sshd
+systemctl enable btrfs-scrub@home.timer 
+systemctl enable btrfs-scrub@-.timer 
+
+# add btrfs hook and remove fsck
+sed -i 's/fsck)/btrfs)/g' /etc/mkinitcpio.conf
+
+# add encrypt and keyboard hook before filesystems
+sed -i 's/filesystems keyboard/keyboard encrypt resume filesystems/g' /etc/mkinitcpio.conf
+
+# modify refind.conf
+cp /boot/refind_linux.conf /boot/refind_linux.conf.old
+wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/X1yoga6/sources/refind.conf -O /boot/refind_linux.conf
+
+# Rebuild kernel
+if [ -f /boot/vmlinuz-linux ]; then
+	mkinitcpio -p linux
+fi
+if [ -f /boot/vmlinuz-linux-zen ]; then
+	mkinitcpio -p linux-zen
+fi
+exit
+
+umount /mnt/{boot,home,data}
+reboot
+
+
 # ## Tuning
 # echo -e ""
 # echo -e ".. generic tuning"
@@ -107,3 +205,6 @@ sed 's/\/mnt\/swap/\/swap/g' /mnt/etc/fstab
 
 # # rm /mnt/{software_install.sh, specific_config.sh, generic_config.sh}
 # # umount /mnt{/boot,/home,/}
+
+
+
