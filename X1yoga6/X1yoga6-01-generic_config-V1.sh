@@ -14,8 +14,28 @@ pacman-key --init
 pacman-key --populate archlinux
 pacman -Syu --noconfirm
 
-echo -e ".. > Installing aur package manager"
+# create $USER
 
+echo -e "Setting up users"
+echo -e ".. > setting root password"
+passwd root << EOF
+$PASSWORD
+$PASSWORD
+EOF
+echo -e ".. > create user $USER with default password"
+useradd -m -g users -G wheel,audio,disk,lp,network -s /bin/bash $USER  << EOF
+$PASSWORD
+$PASSWORD
+EOF
+#passwd megavolts << EOF
+$PASSWORD
+$PASSWORD
+#EOF
+
+echo -e " .. > allowing wheel group to sudo"
+sed  's/# %wheel ALL=(ALL) ALL/%  wheel ALL=(ALL) ALL/' -s /etc/sudoers
+
+echo -e ".. > Installing aur package manager"
 # create a fake builduser
 buildpkg(){
   CURRENT_DIR=$pwd
@@ -23,24 +43,26 @@ buildpkg(){
   tar -xvzf $1.tar.gz -C /home/$USER
   chown ${USER}:users /home/$USER/$1 -R
   cd /home/$USER/$1
-  sudo -u $USER bash -c "makepkg -si --noconfirm"
-  cd $CURRENT_dir 
+  sudo -u $USER bash -c "makepkg -s --noconfirm"
+  pacman -Uy $1*.zst
+  cd $CURRENT_dir
   rm /home/$USER/$1 -R
   rm /home/$USER/$1.tar.gz
 }
 
 buildpkg package-query
-buildpkg yaourt
+pacman -S go
+buildpkg yay
 
 yaourtpkg() {
-  sudo -u $USER bash -c "yaourt -S --noconfirm $1"
+  yay -S --noconfirm $1
 }
 
 echo -e ".. > Optimize mirrorlist"
-yaourtpkg reflector
-reflector --latest 200 --protocol http --protocol https --sort rate --save /etc/pacman.d/mirrorlist
-wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/X220/source/mirrorupgrade.hook -P /etc/pacman.d/hooks/
+yay -S reflector
+reflector --latest 20 --protocol http --protocol https --sort rate --save /etc/pacman.d/mirrorlist
 
+wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/X220/source/mirrorupgrade.hook -P /etc/pacman.d/hooks/
 echo -e "Configure system"
 echo "FONT=lat9w-16" >> /etc/vconsole.conf
 echo -e ".. > changing locales"
@@ -58,49 +80,31 @@ hostnamectl set-hostname $HOSTNAME
 echo "127.0.1.1    $HOSTNAME.localdomain    $HOSTNAME" >> /etc/hosts
 echo $HOSTNAME > /etc/hostname
 
-echo -e "Setting up users"
-echo -e ".. > setting root password"
-passwd root << EOF
-$PASSWORD
-$PASSWORD
-EOF
-
+pacman -Sy zsh
 chsh -s $(which zsh)
-
-echo -e ".. > create user $USER with default password"
-useradd -m -g users -G wheel,audio,disk,lp,network -s /bin/zsh $USER
-passwd megavolts << EOF
-$PASSWORD
-$PASSWORD
-EOF
-
-echo -e " .. > allowing wheel group to sudo"
-sed  's/# %wheel ALL=(ALL) ALL/%  wheel ALL=(ALL) ALL/' -s /etc/sudoers
-
-pacman -S mlocate
 
 echo -e ".. > start services"
 systemctl enable NetworkManager
 systemctl enable sshd
-updatedb
 systemctl enable btrfs-scrub@home.timer 
 systemctl enable btrfs-scrub@-.timer 
 
-# uncomment in /etec/pam.d/sddm
-# auth            optional        pam_gnome_keyring.so
-# password        optional        pam_gnome_keyring.so use_authtok
-# session         optional        pam_gnome_keyring.so auto_start
-
-
 # deactivate baloo indexer
-balooctl suspend
-balooctl disable
+# balooctl suspend
+# balooctl disable
 
+
+
+
+
+# After reboot
+
+pacman -Sy mlocate zsh
+updatedb
 
 ## REMOVE UNDERNEATH MOVE TO FINALIZE AFTER REBOOT
 # Enable snapshots with snapper
-yaourtpkg snapper acl
-
+yay -Sy snapper acl
 echo -e "... >> Configure snapper"
 snapper -c root create-config /
 snapper -c home create-config /home
