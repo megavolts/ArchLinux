@@ -70,7 +70,7 @@ mount ${DISK}p$BOOTPART /mnt/boot
 # Install Arch Linux
 pacman -Sy
 #pacstrap  /mnt $(pacman -Sqg base | sed 's/^linux$/&-zen/') base-devel openssh sudo ntp wget grml-zsh-config btrfs-progs networkmanager linux-firmware sof-firmware yajl linux-zen mkinitcpio
-pacstrap  /mnt base linux-zen linux-zen-headers base-devel openssh sudo ntp wget grml-zsh-config btrfs-progs networkmanager linux-firmware sof-firmware yajl mkinitcpio git
+pacstrap  /mnt base linux-zen linux-zen-headers base-devel openssh sudo ntp wget grml-zsh-config btrfs-progs networkmanager linux-firmware sof-firmware yajl mkinitcpio git go nano
 
 echo -e "Create fstab"
 genfstab -L -p /mnt >> /mnt/etc/fstab
@@ -109,7 +109,7 @@ $PASSWORD
 #EOF
 
 echo -e " .. > allowing wheel group to sudo"
-sed  's/# %wheel ALL=(ALL) ALL/%  wheel ALL=(ALL) ALL/' -s /etc/sudoers
+sed  's/# %wheel ALL=(ALL) ALL/%  wheel ALL=(ALL) ALL/' -s /mnt/etc/sudoers
 
 echo -e ".. > Installing aur package manager"
 # create a fake builduser
@@ -127,7 +127,6 @@ buildpkg(){
 }
 
 buildpkg package-query
-pacman -S go
 buildpkg yay
 
 wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/X220/source/mirrorupgrade.hook -P /etc/pacman.d/hooks/
