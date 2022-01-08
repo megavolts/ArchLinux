@@ -31,29 +31,28 @@ pip install ...
 
 
 # echo -e ".. coding tools"
-yaourtpkg 'sublime-text-dev'
+yay -S --noconfirm sublime-text-dev
 
 # echo -e ".. media"
-yaourtpkg 'dolphin dolphin-plugins qt5-imageformats ffmpegthumbs lzop kdegraphics-thumbnailers kimageformats libappimage unrar unzip'
-yaourtpkg 'openconnect networkmanager-openconnect'
-
-yaourtpkg 'ark unrar p7zip unzip'
+yay -S --noconfirm dolphin dolphin-plugins qt5-imageformats ffmpegthumbs lzop kdegraphics-thumbnailers kimageformats libappimage unrar unzip
+yay -S --noconfirm openconnect networkmanager-openconnect
+yay -S --noconfirm ark unrar p7zip unzip
 
 # echo -e "... viewer"
-yaourtpkg 'okular spectacle discount kdegraphics-mobipocket'
+yay -S --noconfirm okular spectacle discount kdegraphics-mobipocket
 
 # echo -e "... images"
-yaourtpkg 'imagemagick guetzli geeqie inkscape gimp darktable libraw hugin-hg'
+yay -S --noconfirm imagemagick guetzli geeqie inkscape gimp darktable libraw hugin-hg
 
 # echo -e "... musics and videos"
-yaourtpkg 'vlc ffmpeg jellyfin jellyfin-media-player jellyfin-server'
+yay -S --noconfirm vlc ffmpeg jellyfin jellyfin-media-player jellyfin-server
 
 # echo -e ".. office"
 yaourtpkg 'libreoffice-fresh mendeleydesktop texmaker texlive-most'
 yaourtpkg 'aspell-fr aspell-en aspell-de hunspell-en_US hunspell-fr hunspell-de hyphen-en hyphen-en hyphen-de libmythes mythes-en mythes-fr libreoffice-extension-grammalecte-fr'
 
 # echo -e ".. printing tools"
-yaourtpkg 'cups system-config-printer'
+yay -S --noconfirm cups system-config-printer
 
 yaourtpkg 'virtualbox virtualbox-guest-iso virtualbox-host-dkms virtualbox-ext-oracle'
 groupadd vboxusers
