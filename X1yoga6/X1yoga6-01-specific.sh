@@ -111,7 +111,7 @@ echo -e ".. install audio server"
 pacman -S --noconfirm alsa-utils pulseaudio pulseaudio-alsa pulseaudio-jack pulseaudio-equalizer plasma-pa pavucontrol pulseaudio-zeroconf 
 
 echo -e ".. Installing bluetooth"
-yay -S --noconfirm bluez bluez-utils pulseaudio-bluetooth
+yay -S --noconfirm bluez bluez-utils pulseaudio-bluetooth bluedevil
 systemctl start bluetooth
 systemctl enable bluetooth
 
@@ -132,17 +132,6 @@ systemctl enable bluetooth
 yay -S --noconfirm input-wacom-dkms xf86-input-wacom wacom-utility
 
 
-
-yay -S --noconfirm dolphin ffpmegthumbs kdegraphics-thumbnailers konsole purpose   
-yay -S --noconfirm kdeconnect yakuake plasma-browser-integration
-yay -S --noconfirm sshf ntfs-3g
-yay -S --noconfirm firefox thunderbird
-
-yay -S --noconfirm barrier
-yay -S --noconfirm python python-utils python-pip
-
-pip3 install distro
-
 #echo -e ".. disable kwallet for users"
 #tee /home/${USER}/.config/kwalletrc <<EOF
 #[Wallet]
@@ -157,9 +146,8 @@ sed -i 's/CursorTheme=/CursorTheme=breeze_cursors/' /etc/sddm.conf
 systemctl enable sddm
 
 # # Mount or format data tank:
-mount -o defaults,compress=lzo,noatime,nodev,ssd,discard /dev/mapper/cryptarch /mnt/btrfs-arch
+mount -o defaults,compress=lzo,noatime,nodev,ssd,discard /dev/mapper/arch /mnt/btrfs-arch
 btrfs subvolume create /mnt/btrfs-arch/@media
-btrfs subvolume create /mnt/btrfs-arch/@anarchy
 btrfs subvolume create /mnt/btrfs-arch/@photography
 btrfs subvolume create /mnt/btrfs-arch/@UAF-data
 
@@ -168,13 +156,12 @@ echo "\n# BTRFS volume"  >> /etc/fstab
 echo "LABEL=tank  /mnt/data btrfs rw,nodev,noatime,ssd,discard,compress=lzo,space_cache,noauto 0 0" >> /etc/fstab
 mkdir -p /mnt/data/media
 echo "LABEL=arch	/mnt/data/media			btrfs	rw,nodev,noatime,compress=lzo,ssd,discard,space_cache,subvol=@media	0	0" >> /etc/fstab
-mkdir -p /mnt/data/anarchy
-echo "LABEL=arch	/mnt/data/anarchy		btrfs	rw,nodev,noatime,compress=lzo,ssd,discard,space_cache,subvol=@anarchy	0	0" >> /etc/fstab
 mkdir -p /mnt/data/UAF-data
 echo "LABEL=arch	/mnt/data/UAF-data		btrfs	rw,nodev,noatime,compress=lzo,ssd,discard,space_cache,subvol=@UAF-data	0	0" >> /etc/fstab
 mkdir -p /mnt/data/media/photography     
 echo "LABEL=arch	/mnt/data/media/photography		btrfs	rw,nodev,noatime,compress=lzo,ssd,discard,space_cache,subvol=@photography	0	0" >> /etc/fstab
 mount -a
+
 
 # # Setup Btrbk
 # yaourtpkg btrkbk mbuffer
@@ -194,17 +181,9 @@ mount -a
 # exec /usr/sbin/btrbk -q -c /etc/btrbk/btrbk.conf run
 # EOF
 
-
-
-
-
 # deactivate baloo indexer
 # balooctl suspend
 # balooctl disable
-
-
-
-
 
 # After reboot
 
