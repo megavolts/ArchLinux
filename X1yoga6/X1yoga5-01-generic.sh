@@ -71,5 +71,6 @@ systemctl --user start psd
 # autorotate
 yay -S --noconfirm iio-sensor-proxy maliit-keyboard
 
+castnow cast_control
 
 exit
