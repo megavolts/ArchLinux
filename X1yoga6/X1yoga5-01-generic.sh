@@ -68,4 +68,8 @@ mkdir /home/megavolts/.config/psd/
 wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/config/psd.conf -O /home/megavolts/.config/psd/psd.conf
 systemctl --user start psd
 
+# autorotate
+yay -S --noconfirm iio-sensor-proxy
+
+
 exit
