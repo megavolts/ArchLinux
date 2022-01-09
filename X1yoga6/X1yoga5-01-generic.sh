@@ -7,6 +7,7 @@ PWD=$1
 echo -e "Install software"
 echo -e ".. basic tools"
 yay -S --noconfirm yakuake kdialog kfind arp-scan htop kdeconnect barrier lsof strace
+# guake or tilda
 
 echo -e ".. partition tools"
 yay -S --noconfirm gparted ntfs-3g exfat-utils mtools sshfs
@@ -17,18 +18,7 @@ yay -S --noconfirm  ttf-dejavu freefonts ttf-inconsolata ttf-hack ttf-anonymous-
 # echo -e ".. internet software"
 yay -S --noconfirm firefox thunderbird filezilla  nextcloud-client zoom teams slack-wayland telegram-desktop
 
-
 yay -S --noconfirm dolphin ffpmegthumbs kdegraphics-thumbnailers konsole purpose   
-
-firefox thunderbird
-
-yay -S --noconfirm python python-utils python-pip
-
-# python install
-
-pip install ...
-
-
 
 # echo -e ".. coding tools"
 yay -S --noconfirm sublime-text-dev
@@ -48,32 +38,30 @@ yay -S --noconfirm imagemagick guetzli geeqie inkscape gimp darktable libraw hug
 yay -S --noconfirm vlc ffmpeg jellyfin jellyfin-media-player jellyfin-server
 
 # echo -e ".. office"
-yaourtpkg 'libreoffice-fresh mendeleydesktop texmaker texlive-most'
-yaourtpkg 'aspell-fr aspell-en aspell-de hunspell-en_US hunspell-fr hunspell-de hyphen-en hyphen-en hyphen-de libmythes mythes-en mythes-fr libreoffice-extension-grammalecte-fr'
+yay -S --noconfirm libreoffice-fresh mendeleydesktop texmaker texlive-most
+yay -S --noconfirm aspell-fr aspell-en aspell-de hunspell-en_US hunspell-fr hunspell-de hyphen-en hyphen-en hyphen-de libmythes mythes-en mythes-fr libreoffice-extension-grammalecte-fr
 
 # echo -e ".. printing tools"
 yay -S --noconfirm cups system-config-printer
 
-yaourtpkg 'virtualbox virtualbox-guest-iso virtualbox-host-dkms virtualbox-ext-oracle'
+yay -S --noconfirm virtualbox virtualbox-guest-iso virtualbox-host-dkms virtualbox-ext-oracle
 groupadd vboxusers
 gpasswd -a megavolts vboxusers
 echo "vboxdrv vboxnetadp vboxnetflt" >> /usr/lib/modules-load.d/virtualbox-host-dkms.conf    
 
 # # python packages
-yaourtpkg 'pycharm-professional-edition python-pip python-setuptools tk'
-yaourtpkg 'python-numpy python-matplotlib python-scipy python-pandas python-openpyxl python-basemap ipython jupyter cython python-pillow '
+yay -S --noconfirm pycharm-professional python-pip python-setuptools tk python-utils
+pip install numpy matplotlib scipy pandas openpyxl basemap pillow cython jupyter ipython 
 
-# # citation
-yaourtpkg 'mendeleydesktop zotero'
+# citation
+yay -S --noconfirm mendeleydesktop zotero
 
-# yaourtpkg 'packages
-yaourtpkg packages
 echo -e "... don't forget to install Antidote"
 
-yaourtpkg 'xdg-desktop-portal xdg-desktop-portal-kde'
+# yaourtpkg 'xdg-desktop-portal xdg-desktop-portal-kde'
 yaourtpkg 'qownnotes'
 
-yaourtpkg ' profile-sync-daemon'
+yay -S --noconfirm profile-sync-daemon
 echo -e "... configure profile-sync-daemon to improve speed, reduced wear to physical drives"
 echo "megavolts ALL=(ALL) NOPASSWD: /usr/bin/psd-overlay-helper" >> /etc/sudoers
 mkdir /home/megavolts/.config/psd/
