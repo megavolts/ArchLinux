@@ -69,7 +69,7 @@ wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/config/psd.con
 systemctl --user start psd
 
 # autorotate
-yay -S --noconfirm iio-sensor-proxy
+yay -S --noconfirm iio-sensor-proxy maliit-keyboard
 
 
 exit
