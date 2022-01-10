@@ -95,7 +95,7 @@ echo -e ".. Install xorg and input"
 pacman -S --noconfirm xorg-server xorg-apps xorg-xinit xorg-xrandr xorg-xkill xorg-xauth
 
 echo -e "... install plasma windows manager"
-pacman -S --noconfirm plasma-desktop sddm networkmanager  plasma-nm kscreen powerdevil
+pacman -S --noconfirm plasma-desktop sddm networkmanager  plasma-nm kscreen powerdevil plasma-wayland-session
 
 echo -e ".. install audio server"
 pacman -S --noconfirm alsa-utils pulseaudio pulseaudio-alsa pulseaudio-jack pulseaudio-equalizer plasma-pa pavucontrol pulseaudio-zeroconf 
