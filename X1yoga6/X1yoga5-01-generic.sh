@@ -7,13 +7,13 @@ PWD=$1
 echo -e "Install software"
 echo -e ".. basic tools"
 yay -S --noconfirm yakuake kdialog kfind arp-scan htop kdeconnect barrier lsof strace
-# guake or tilda
+
 
 echo -e ".. partition tools"
 yay -S --noconfirm gparted ntfs-3g exfat-utils mtools sshfs
 
 # echo -e "... installing fonts"
-yay -S --noconfirm  ttf-dejavu freefonts ttf-inconsolata ttf-hack ttf-anonymous-pro ttf-liberation
+yay -S --noconfirm  freefonts ttf-inconsolata ttf-hack ttf-anonymous-pro ttf-liberation gnu-free-fonts noto-fonts ttf-bitstream-vera ttf-croscore ttf-dejavu ttf-droid ttf-ibm-plex
 
 # echo -e ".. internet software"
 yay -S --noconfirm firefox thunderbird filezilla  nextcloud-client zoom teams slack-wayland telegram-desktop
