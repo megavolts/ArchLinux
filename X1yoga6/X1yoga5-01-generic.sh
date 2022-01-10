@@ -47,7 +47,7 @@ gpasswd -a megavolts vboxusers
 
 # # python packages
 yay -S --noconfirm pycharm-professional python-pip python-setuptools tk python-utils
-yay -S --noconfirm pycharm-numpy pycharm-matplotlib pycharm-scipy pycharm-pandas pycharm-openpyxl pycharm-basemap pycharm-pillow cython jupyter ipython 
+yay -S --noconfirm python-numpy python-matplotlib python-scipy python-pandas python-openpyxl python-basemap python-pillow cython jupyter ipython 
 
 # citation
 yay -S --noconfirm mendeleydesktop zotero
