@@ -8,13 +8,14 @@
 #  5       315654144      3907029134     1.7 TiB   8300  Linux filesystem on LVM
 
 DISK=/dev/nvme0n1
+NEWUSER=megavolts
 BOOTPART=1
 CRYPTPART=5
 sgdisk -n $ROOTPART:315654144:3907029134 -t $ROOTPART:8300 -c $ROOTPART:"CRYPTARCH" $DISK
 
 echo 'Enter a default passphrase use to encrypt the disk and serve as password for root and megavolts:'
 stty -echo
-read PWD
+read PASSWORD
 stty echo
 
 # echo -e ".. prepare boot partition"
@@ -102,14 +103,14 @@ passwd root << EOF
 $PASSWORD
 $PASSWORD
 EOF
-echo -e ".. > create user $USER with default password"
-useradd -m -g users -G wheel,audio,disk,lp,network -s /bin/bash $USER  << EOF
-$PWD
-$PWD
+echo -e ".. > create user $NEWUSER with default password"
+useradd -m -g users -G wheel,audio,disk,lp,network -s /bin/bash $NEWUSER  << EOF
+$PASSWORD
+$PASSWORD
 EOF
-#passwd megavolts << EOF
-$PWD
-$PWD
+#passwd $NEWUSER << EOF
+$PASSWORD
+$PASSWORD
 #EOF
 
 echo -e ".. > Installing aur package manager"
@@ -117,14 +118,15 @@ echo -e ".. > Installing aur package manager"
 buildpkg(){
   CURRENT_DIR=$pwd
   wget https://aur.archlinux.org/cgit/aur.git/snapshot/$1.tar.gz
-  tar -xvzf $1.tar.gz -C /home/$USER
-  chown ${USER}:users /home/$USER/$1 -R
-  cd /home/$USER/$1
-  sudo -u $USER bash -c "makepkg -s --noconfirm"
-  pacman -Uy $1*.zst
+  tar -xvzf $1.tar.gz -C /home/$NEWUSER
+  chown ${NEWUSER}:users /home/$NEWUSER/$1 -R
+  cd /home/$NEWUSER/$1
+  sudo -u $NEWUSER bash -c "makepkg -s --noconfirm"
+  pacman -U --noconfirm $1*.zst
   cd $CURRENT_dir
-  rm /home/$USER/$1 -R
-  rm /home/$USER/$1.tar.gz
+  rm /home/$NEWUSER/$1 -R
+  rm /home/$NEWUSER/$1.tar.gz
+  rm ./$1.tar.gz
 }
 
 buildpkg package-query
