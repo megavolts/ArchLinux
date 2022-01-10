@@ -127,6 +127,9 @@ mount -a
 mkdir -p /mnt/data/media/photography     
 echo "LABEL=arch	/mnt/data/media/photography		btrfs	rw,nodev,noatime,compress=lzo,ssd,discard,space_cache,subvol=@photography	0	0" >> /etc/fstab
 
+setfacl -m  u:$NEWUSER:rwx -R /mnt/data/
+setfacl -m  u:$NEWUSER:rwx -Rd /mnt/data/
+
 ## Disable kwallet and install gnome keyring
 #echo -e ".. disable kwallet for users"
 #tee /home/${NEWUSER}/.config/kwalletrc <<EOF
