@@ -5,10 +5,6 @@
 PWD=$1
 
 echo -e "Install software"
-echo -e ".. basic tools"
-yay -S --noconfirm yakuake kdialog kfind arp-scan htop kdeconnect barrier lsof strace
-
-
 echo -e ".. partition tools"
 yay -S --noconfirm gparted ntfs-3g exfat-utils mtools sshfs
 
@@ -18,7 +14,7 @@ yay -S --noconfirm  freefonts ttf-inconsolata ttf-hack ttf-anonymous-pro ttf-lib
 # echo -e ".. internet software"
 yay -S --noconfirm firefox thunderbird filezilla  nextcloud-client zoom teams slack-wayland telegram-desktop
 
-yay -S --noconfirm dolphin ffpmegthumbs kdegraphics-thumbnailers konsole purpose   
+yay -S --noconfirm dolphin ffmpegthumbs kdegraphics-thumbnailers konsole purpose   
 
 # echo -e ".. coding tools"
 yay -S --noconfirm sublime-text-dev
@@ -32,7 +28,7 @@ yay -S --noconfirm ark unrar p7zip unzip
 yay -S --noconfirm okular spectacle discount kdegraphics-mobipocket
 
 # echo -e "... images"
-yay -S --noconfirm imagemagick guetzli geeqie inkscape gimp darktable libraw hugin-hg
+yay -S --noconfirm imagemagick guetzli geeqie inkscape gimp darktable libraw hugin
 
 # echo -e "... musics and videos"
 yay -S --noconfirm vlc ffmpeg jellyfin jellyfin-media-player jellyfin-server
@@ -51,7 +47,7 @@ echo "vboxdrv vboxnetadp vboxnetflt" >> /usr/lib/modules-load.d/virtualbox-host-
 
 # # python packages
 yay -S --noconfirm pycharm-professional python-pip python-setuptools tk python-utils
-pip install numpy matplotlib scipy pandas openpyxl basemap pillow cython jupyter ipython 
+yay -S --noconfirm pycharm-numpy pycharm-matplotlib pycharm-scipy pycharm-pandas pycharm-openpyxl pycharm-basemap pycharm-pillow cython jupyter ipython 
 
 # citation
 yay -S --noconfirm mendeleydesktop zotero
