@@ -23,7 +23,6 @@ echo -e "... >> Configure snapper"
 snapper -c root create-config /
 snapper -c home create-config /home
 
-
 # we want the snaps located /at /mnt/btrfs-root/_snaptshot rather than at the root
 btrfs subvolume delete /.snapshots
 btrfs subvolume delete /home/.snapshots
@@ -115,22 +114,11 @@ yay -S --noconfirm bluez bluez-utils pulseaudio-bluetooth bluedevil
 systemctl start bluetooth
 systemctl enable bluetooth
 
-# echo -e "... > allow streaming to bluetooth devices"
-# echo "load-module module-bluetooth-policy" >> /etc/pulse/system.pa
-# echo "load-module module-bluetooth-discover" >> /etc/pulse/system.pa
-# sed  's/#AutoEnable=false/AutoEnable=true/g' -i /etc/bluetooth/main.conf # power on bluetooth dongle
-# # add the following line to /etc/bluetooth/audio.conf to allow laptop speaker as a sink
-# cat >> /etc/bluetooth/audio.conf << EOF
-# [General] 
-# Enable=Source
-# add the following lien to /etc/pulse/default.pa to auto connect to bluetooth
-# #automatically switch to newly-connected devices
-# load-module module-switch-on-connect
-# EOF
+echo -e ".. tablet tools"
+yay -S --noconfirm input-wacom-dkms xf86-input-wacom wacom-utility iio-sensor-proxy maliit-keyboard
 
-
-yay -S --noconfirm input-wacom-dkms xf86-input-wacom wacom-utility
-
+echo -e ".. basic tools"
+yay -S --noconfirm yakuake kdialog kfind arp-scan htop kdeconnect barrier lsof strace
 
 #echo -e ".. disable kwallet for users"
 #tee /home/${USER}/.config/kwalletrc <<EOF
@@ -151,7 +139,6 @@ btrfs subvolume create /mnt/btrfs-arch/@media
 btrfs subvolume create /mnt/btrfs-arch/@photography
 btrfs subvolume create /mnt/btrfs-arch/@UAF-data
 
-
 echo "\n# BTRFS volume"  >> /etc/fstab
 echo "LABEL=tank  /mnt/data btrfs rw,nodev,noatime,ssd,discard,compress=lzo,space_cache,noauto 0 0" >> /etc/fstab
 mkdir -p /mnt/data/media
@@ -161,29 +148,3 @@ echo "LABEL=arch	/mnt/data/UAF-data		btrfs	rw,nodev,noatime,compress=lzo,ssd,dis
 mkdir -p /mnt/data/media/photography     
 echo "LABEL=arch	/mnt/data/media/photography		btrfs	rw,nodev,noatime,compress=lzo,ssd,discard,space_cache,subvol=@photography	0	0" >> /etc/fstab
 mount -a
-
-
-# # Setup Btrbk
-# yaourtpkg btrkbk mbuffer
-
-# ## Create subvolume
-# btrfs subvolume create /mnt/btrfs-tank/@snapshots
-# btrfs subvolume create /mnt/btrfs-tank/@snapshots/@btrbk_root
-# btrfs subvolume create /mnt/btrfs-tank/@snapshots/@btrbk_home
-# btrfs subvolume create /mnt/btrfs-tank/@snapshots/@btrbk_snaps
-
-# ## Config
-# wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/X220/source/btrbk.conf -O /etc/btrbk/btrbk.conf
-
-# ## Enable chron
-# cat >> /etc/cron.daily/btrbk << EOF
-# #!/bin/sh
-# exec /usr/sbin/btrbk -q -c /etc/btrbk/btrbk.conf run
-# EOF
-
-# deactivate baloo indexer
-# balooctl suspend
-# balooctl disable
-
-# After reboot
-
