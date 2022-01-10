@@ -31,7 +31,7 @@ yay -S --noconfirm okular spectacle discount kdegraphics-mobipocket
 yay -S --noconfirm imagemagick guetzli geeqie inkscape gimp darktable libraw hugin
 
 # echo -e "... musics and videos"
-yay -S --noconfirm vlc ffmpeg jellyfin jellyfin-media-player jellyfin-server
+yay -S --noconfirm vlc ffmpeg jellyfin-bin jellyfin-media-player
 
 # echo -e ".. office"
 yay -S --noconfirm libreoffice-fresh mendeleydesktop texmaker texlive-most
@@ -43,7 +43,7 @@ yay -S --noconfirm cups system-config-printer
 yay -S --noconfirm virtualbox virtualbox-guest-iso virtualbox-host-dkms virtualbox-ext-oracle
 groupadd vboxusers
 gpasswd -a megavolts vboxusers
-echo "vboxdrv vboxnetadp vboxnetflt" >> /usr/lib/modules-load.d/virtualbox-host-dkms.conf    
+#echo "vboxdrv vboxnetadp vboxnetflt" >> /usr/lib/modules-load.d/virtualbox-host-dkms.conf    
 
 # # python packages
 yay -S --noconfirm pycharm-professional python-pip python-setuptools tk python-utils
@@ -55,7 +55,7 @@ yay -S --noconfirm mendeleydesktop zotero
 echo -e "... don't forget to install Antidote"
 
 # yaourtpkg 'xdg-desktop-portal xdg-desktop-portal-kde'
-yaourtpkg 'qownnotes'
+# yaourtpkg 'qownnotes'
 
 yay -S --noconfirm profile-sync-daemon
 echo -e "... configure profile-sync-daemon to improve speed, reduced wear to physical drives"
@@ -64,9 +64,6 @@ mkdir /home/megavolts/.config/psd/
 wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/config/psd.conf -O /home/megavolts/.config/psd/psd.conf
 systemctl --user start psd
 
-# autorotate
-yay -S --noconfirm iio-sensor-proxy maliit-keyboard
-
-castnow cast_control
+# castnow cast_control mkchromecast
 
 exit
