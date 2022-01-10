@@ -1,24 +1,24 @@
 #/bin/bash!
 # ssh megavolts@IP
 
-PWD=$1
+PASSWORD=$1
 USER=$2
 HOSTNAME=$3
 
 chsh -s $(which zsh)
 
-echo $PWD | sudo -S -v
+echo $PASSWORD | sudo -S -v
 sudo su
 
 echo -e ".. > Optimize mirrorlist"
-yay -Sy --noconfirm reflector
+yay -S --noconfirm reflector
 reflector --latest 20 --protocol http --protocol https --sort rate --save /etc/pacman.d/mirrorlist
 
-pacman -Sy --noconfirm mlocate
+pacman -S --noconfirm mlocate
 updatedb
 
 # Enable snapshots with snapper 
-yay -Sy --noconfirm snapper acl snapper-gui
+yay -S --noconfirm snapper acl snapper-gui
 echo -e "... >> Configure snapper"
 snapper -c root create-config /
 snapper -c home create-config /home
@@ -42,8 +42,6 @@ echo "LABEL=arch /.snapshots btrfs rw,noatime,ssd,discard,compress=lzo,space_cac
 echo "LABEL=arch /home/.snapshots  btrfs rw,noatime,ssd,discardcompress=lzo,space_cache,subvol=@snapshots/@home_snaps   0 0" >> /etc/fstab
 
 # echo "# Snapper subvolume" >> /etc/fstab # add snapper subvolume to fstab
-
-
 sed -i "s/ALLOW_USERS=\"/ALLOW_USERS=\"$USER/g" /etc/snapper/configs/home # Allow $USER to modify the files
 sed -i "s/ALLOW_USERS=\"/ALLOW_USERS=\"$USER/g" /etc/snapper/configs/root
 sed 's/PRUNENAMES = "/PRUNENAMES = ".snapshots /g' -i /etc/updatedb.conf # do not index snapshot via mlocate
@@ -82,7 +80,7 @@ Exec = /usr/bin/rsync -a --delete /boot /.bootbackup
 EOF
 
 # enable snapshot before and after install
-yay -Sy --noconfirm snap-pac rsync
+yay -S --noconfirm snap-pac rsync
 
 ## Install firmware:
 ## wireless driver
@@ -99,13 +97,6 @@ pacman -S --noconfirm xorg-server xorg-apps xorg-xinit xorg-xrandr xorg-xkill xo
 echo -e "... install plasma windows manager"
 pacman -S --noconfirm plasma-desktop sddm networkmanager  plasma-nm kscreen powerdevil
 
-echo -e "... configure sddm"
-pacman -S sddm --noconfirm
-sddm --example-config > /etc/sddm.conf
-sed -i 's/Current=/Current=breeze/' /etc/sddm.conf
-sed -i 's/CursorTheme=/CursorTheme=breeze_cursors/' /etc/sddm.conf
-systemctl enable sddm
-
 echo -e ".. install audio server"
 pacman -S --noconfirm alsa-utils pulseaudio pulseaudio-alsa pulseaudio-jack pulseaudio-equalizer plasma-pa pavucontrol pulseaudio-zeroconf 
 
@@ -117,21 +108,8 @@ systemctl enable bluetooth
 echo -e ".. tablet tools"
 yay -S --noconfirm input-wacom-dkms xf86-input-wacom wacom-utility iio-sensor-proxy maliit-keyboard
 
-echo -e ".. basic tools"
-yay -S --noconfirm yakuake kdialog kfind arp-scan htop kdeconnect barrier lsof strace
-
-#echo -e ".. disable kwallet for users"
-#tee /home/${USER}/.config/kwalletrc <<EOF
-#[Wallet]
-#Enabled=false
-#EOF
-
-echo -e "... configure sddm"
-pacman -S sddm --noconfirm
-sddm --example-config > /etc/sddm.conf
-sed -i 's/Current=/Current=breeze/' /etc/sddm.conf
-sed -i 's/CursorTheme=/CursorTheme=breeze_cursors/' /etc/sddm.conf
-systemctl enable sddm
+echo -e ".. basic tools (use pass-git for wayland)"
+yay -S --noconfirm yakuake kdialog kfind arp-scan htop kdeconnect barrier lsof strace pass-git qtpass wl-clipboard 
 
 # # Mount or format data tank:
 mount -o defaults,compress=lzo,noatime,nodev,ssd,discard /dev/mapper/arch /mnt/btrfs-arch
@@ -148,3 +126,10 @@ echo "LABEL=arch	/mnt/data/UAF-data		btrfs	rw,nodev,noatime,compress=lzo,ssd,dis
 mkdir -p /mnt/data/media/photography     
 echo "LABEL=arch	/mnt/data/media/photography		btrfs	rw,nodev,noatime,compress=lzo,ssd,discard,space_cache,subvol=@photography	0	0" >> /etc/fstab
 mount -a
+
+echo -e "... configure sddm"
+pacman -S sddm --noconfirm
+sddm --example-config > /etc/sddm.conf
+sed -i 's/Current=/Current=breeze/' /etc/sddm.conf
+sed -i 's/CursorTheme=/CursorTheme=breeze_cursors/' /etc/sddm.conf
+systemctl enable sddm
