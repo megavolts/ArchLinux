@@ -140,7 +140,7 @@ setfacl -m  u:$NEWUSER:rwx -Rd /mnt/data/
 
 echo -e "... enable 2 fingers scroll for mozilla firefox"
 mkdir /home/$NEWUSER/.config/environment.d/
-echo "PATH=$PATH:$HOME/scripts" >> /home/$NEWUSER/.config/environment.d/envvars.conf
+echo "PATH='$PATH:$HOME/scripts'" >> /home/$NEWUSER/.config/environment.d/envvars.conf
 echo "GUIVAR=value" >> /home/$NEWUSER/.config/environment.d/envvars.conf
 echo "MOZ_ENABLE_WAYLAND=1" >> /home/$NEWUSER/.config/environment.d/envvars.conf
 
