@@ -33,7 +33,6 @@ mkfs.btrfs --force --label arch /dev/mapper/cryptarch
 
 echo -e ".. create subvolumes"
 mount -o defaults,compress=lzo,noatime,nodev,ssd,discard /dev/mapper/cryptarch /mnt/
-mkdir -p /mnt/
 
 btrfs subvolume create /mnt/@root
 btrfs subvolume create /mnt/@home
@@ -82,7 +81,7 @@ sed 's/\/mnt\/swap/\/swap/g' /mnt/etc/fstab
 echo -e " .. > allowing wheel group to sudo"
 sed -i 's/^#\s*\(%wheel\s*ALL=(ALL)\s*ALL\)/\1/' /mnt/etc/sudoers
 
-arch-chroot /mnt -s /bin/zsh
+arch-chroot /mnt /bin/zsh
 
 echo -e "Tuning pacman"
 echo -e ".. > Adding multilib"
@@ -105,12 +104,12 @@ $PASSWORD
 EOF
 echo -e ".. > create user $USER with default password"
 useradd -m -g users -G wheel,audio,disk,lp,network -s /bin/bash $USER  << EOF
-$PASSWORD
-$PASSWORD
+$PWD
+$PWD
 EOF
 #passwd megavolts << EOF
-$PASSWORD
-$PASSWORD
+$PWD
+$PWD
 #EOF
 
 echo -e ".. > Installing aur package manager"
