@@ -2,7 +2,7 @@
 # ssh megavolts@IP
 
 PASSWORD=$1
-USER=$2
+NEWUSER=$2
 HOSTNAME=$3
 
 chsh -s $(which zsh)
@@ -42,8 +42,8 @@ echo "LABEL=arch /.snapshots btrfs rw,noatime,ssd,discard,compress=lzo,space_cac
 echo "LABEL=arch /home/.snapshots  btrfs rw,noatime,ssd,discardcompress=lzo,space_cache,subvol=@snapshots/@home_snaps   0 0" >> /etc/fstab
 
 # echo "# Snapper subvolume" >> /etc/fstab # add snapper subvolume to fstab
-sed -i "s/ALLOW_USERS=\"/ALLOW_USERS=\"$USER/g" /etc/snapper/configs/home # Allow $USER to modify the files
-sed -i "s/ALLOW_USERS=\"/ALLOW_USERS=\"$USER/g" /etc/snapper/configs/root
+sed -i "s/ALLOW_USERS=\"/ALLOW_USERS=\"$NEWUSER/g" /etc/snapper/configs/home # Allow $NEWUSER to modify the files
+sed -i "s/ALLOW_USERS=\"/ALLOW_USERS=\"$NEWUSER/g" /etc/snapper/configs/root
 sed 's/PRUNENAMES = "/PRUNENAMES = ".snapshots /g' -i /etc/updatedb.conf # do not index snapshot via mlocate
 
 systemctl start snapper-timeline.timer snapper-cleanup.timer  # start and enable snapper
@@ -117,15 +117,23 @@ btrfs subvolume create /mnt/btrfs-arch/@media
 btrfs subvolume create /mnt/btrfs-arch/@photography
 btrfs subvolume create /mnt/btrfs-arch/@UAF-data
 
-echo "\n# BTRFS volume"  >> /etc/fstab
+echo "# BTRFS volume"  >> /etc/fstab
 echo "LABEL=tank  /mnt/data btrfs rw,nodev,noatime,ssd,discard,compress=lzo,space_cache,noauto 0 0" >> /etc/fstab
 mkdir -p /mnt/data/media
 echo "LABEL=arch	/mnt/data/media			btrfs	rw,nodev,noatime,compress=lzo,ssd,discard,space_cache,subvol=@media	0	0" >> /etc/fstab
 mkdir -p /mnt/data/UAF-data
 echo "LABEL=arch	/mnt/data/UAF-data		btrfs	rw,nodev,noatime,compress=lzo,ssd,discard,space_cache,subvol=@UAF-data	0	0" >> /etc/fstab
+mount -a
 mkdir -p /mnt/data/media/photography     
 echo "LABEL=arch	/mnt/data/media/photography		btrfs	rw,nodev,noatime,compress=lzo,ssd,discard,space_cache,subvol=@photography	0	0" >> /etc/fstab
-mount -a
+
+## Disable kwallet and install gnome keyring
+#echo -e ".. disable kwallet for users"
+#tee /home/${NEWUSER}/.config/kwalletrc <<EOF
+#[Wallet]
+#Enabled=false
+#EOF
+#pacman -S --noconfirm gnome-keyring  
 
 echo -e "... configure sddm"
 pacman -S sddm --noconfirm
