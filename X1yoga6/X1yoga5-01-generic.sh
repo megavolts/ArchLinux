@@ -66,4 +66,6 @@ systemctl --user start psd
 
 # castnow cast_control mkchromecast
 
+yay -S --noconfirm protonmail-bridge-bin protonvpn-gui
+
 exit
