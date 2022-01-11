@@ -67,5 +67,7 @@ systemctl --user start psd
 # castnow cast_control mkchromecast
 
 yay -S --noconfirm protonmail-bridge-bin protonvpn-gui pass qtpass 
+sed -i '1s/^/"user_ssl_smtp": "false"/' .config/protonmail/bridge/prefs.json
+
 
 exit
