@@ -11,35 +11,59 @@ DISK=/dev/nvme0n1
 NEWUSER=megavolts
 BOOTPART=1
 CRYPTPART=5
-sgdisk -n $ROOTPART:315654144:3907029134 -t $ROOTPART:8300 -c $ROOTPART:"CRYPTARCH" $DISK
+INSTALL=True
 
 echo 'Enter a default passphrase use to encrypt the disk and serve as password for root and megavolts:'
 stty -echo
 read PASSWORD
 stty echo
 
-# echo -e ".. prepare boot partition"
-# mkfs.fat -F32 ${DISK}${BOOTPART}
 
-echo -e ".. wipe partition"
-# Wipe partition with zeros after creating an encrypted container with a random key
-cryptsetup open --type plain ${DISK}p$BOOTPART container --key-file /dev/urandom 
-dd if=/dev/zero of=/dev/mapper/container status=progress bs=1M
-cryptsetup close container
+if $INSTALL
+then
+  sgdisk -n $ROOTPART:315654144:3907029134 -t $ROOTPART:8300 -c $ROOTPART:"CRYPTARCH" $DISK
 
-echo -e ".. encrypting root partition"
-echo -en $PWD | cryptsetup luksFormat --align-payload=8192 -s 512 -c aes-xts-plain64 /dev/disk/by-partlabel/CRYPTARCH -q
-echo -en $PWD | cryptsetup luksOpen /dev/disk/by-partlabel/CRYPTARCH cryptarch
-mkfs.btrfs --force --label arch /dev/mapper/cryptarch
+  # echo -e ".. prepare boot partition"
+  # mkfs.fat -F32 ${DISK}${BOOTPART}
 
+  echo -e ".. wipe partition"
+  # Wipe partition with zeros after creating an encrypted container with a random key
+  cryptsetup open --type plain ${DISK}p$BOOTPART container --key-file /dev/urandom 
+  dd if =/dev/zero of=/dev/mapper/container status=progress bs=1M
+  cryptsetup close container
+  echo -e ".. encrypting root partition"
+  echo -en $PASSWORD | cryptsetup luksFormat --align-payload=8192 -s 512 -c aes-xts-plain64 /dev/disk/by-partlabel/CRYPTARCH -q
+  echo -en $PASSWORD | cryptsetup luksOpen /dev/disk/by-partlabel/CRYPTARCH cryptarch
+  mkfs.btrfs --force --label arch /dev/mapper/cryptarch
+else
+  echo -en $PASSWORD | cryptsetup luksOpen /dev/disk/by-partlabel/CRYPTARCH cryptarch
+fi
 echo -e ".. create subvolumes"
 mount -o defaults,compress=lzo,noatime,nodev,ssd,discard /dev/mapper/cryptarch /mnt/
 
-btrfs subvolume create /mnt/@root
-btrfs subvolume create /mnt/@home
-btrfs subvolume create /mnt/@snapshots
-btrfs subvolume create /mnt/@swap
-btrfs subvolume create /mnt/@data
+if $INSTALL
+then
+  btrfs subvolume create /mnt/@root
+  btrfs subvolume create /mnt/@home
+  btrfs subvolume create /mnt/@snapshots
+  btrfs subvolume create /mnt/@snapshots/@root_snaps	
+  btrfs subvolume create /mnt/@snapshots/@home_snaps	
+  btrfs subvolume create /mnt/@swap
+  btrfs subvolume create /mnt/@data
+else
+  btrfs subvolume delete /mnt/@snapshots/@root_snaps/*/snapshot
+  rm /mnt/@snapshots/@root_snaps/* -R
+  btrfs subvolume delete /mnt/@snapshots/@root_snaps
+  btrfs subvolume delete /mnt/@snapshots
+  rm /mnt/@root/*
+  btrfs subvolume delete /mnt/@root
+  
+  echo -e "... create new root and swap subvolume"
+  btrfs subvolume create /mnt/@root
+  btrfs subvolume create /mnt/@swap
+  btrfs subvolume create /mnt/@snapshots/@root_snaps	
+fi
+  
 umount /mnt
 
 # Mount subvolume
@@ -104,14 +128,11 @@ $PASSWORD
 $PASSWORD
 EOF
 echo -e ".. > create user $NEWUSER with default password"
-useradd -m -g users -G wheel,audio,disk,lp,network -s /bin/bash $NEWUSER  << EOF
+useradd -m -g users -G wheel,audio,disk,lp,network -s /bin/bash $NEWUSER
+passwd $NEWUSER << EOF
 $PASSWORD
 $PASSWORD
 EOF
-#passwd $NEWUSER << EOF
-$PASSWORD
-$PASSWORD
-#EOF
 
 echo -e ".. > Installing aur package manager"
 # create a fake builduser
@@ -124,8 +145,6 @@ buildpkg(){
   sudo -u $NEWUSER bash -c "makepkg -s --noconfirm"
   pacman -U --noconfirm $1*.zst
   cd $CURRENT_dir
-  rm /home/$NEWUSER/$1 -R
-  rm /home/$NEWUSER/$1.tar.gz
   rm ./$1.tar.gz
 }
 
@@ -163,9 +182,11 @@ sed -i 's/fsck)/btrfs)/g' /etc/mkinitcpio.conf
 sed -i 's/filesystems keyboard/keyboard encrypt resume filesystems/g' /etc/mkinitcpio.conf
 
 # modify refind.conf
-cp /boot/refind_linux.conf /boot/refind_linux.conf.old
-wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/X1yoga6/sources/refind.conf -O /boot/refind_linux.conf
-
+if $INSTALL
+then
+  cp /boot/refind_linux.conf /boot/refind_linux.conf.old
+  wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/X1yoga6/sources/refind.conf -O /boot/refind_linux.conf
+fi
 
 # Rebuild kernel
 if [ -f /boot/vmlinuz-linux ]; then
