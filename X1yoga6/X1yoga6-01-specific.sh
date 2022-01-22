@@ -46,16 +46,31 @@ echo "LABEL=arch /.snapshots btrfs rw,noatime,ssd,discard,compress=lzo,space_cac
 echo "LABEL=arch /home/.snapshots  btrfs rw,noatime,ssd,discardcompress=lzo,space_cache,subvol=@snapshots/@home_snaps   0 0" >> /etc/fstab
 
 # echo "# Snapper subvolume" >> /etc/fstab # add snapper subvolume to fstab
-sed -i "s/ALLOW_USERS=\"/ALLOW_USERS=\"$NEWUSER/g" /etc/snapper/configs/home # Allow $NEWUSER to modify the files
-sed -i "s/ALLOW_USERS=\"/ALLOW_USERS=\"$NEWUSER/g" /etc/snapper/configs/root
+sed "s/ALLOW_USERS=\"/ALLOW_USERS=\"$NEWUSER/g" -i /etc/snapper/configs/home # Allow $NEWUSER to modify the files
+sed "s/ALLOW_USERS=\"/ALLOW_USERS=\"$NEWUSER/g" -i /etc/snapper/configs/root
+sed "s/ALLOW_GROUPS=\"/ALLOW_GROUPS=\"wheel/g" -i /etc/snapper/configs/home # Allow $NEWUSER to modify the files
+sed "s/ALLOW_GROUPS=\"/ALLOW_GROUPS=\"wheel/g" -i /etc/snapper/configs/root
+
+sed "s/SYNC_ACL=\"no/SYNC_ACL=\"yes/g" -i /etc/snapper/configs/root
+sed "s/SYNC_ACL=\"no/SYNC_ACL=\"yes/g" -i /etc/snapper/configs/root
+
 sed 's/PRUNENAMES = "/PRUNENAMES = ".snapshots /g' -i /etc/updatedb.conf # do not index snapshot via mlocate
 
 systemctl start snapper-timeline.timer snapper-cleanup.timer  # start and enable snapper
 systemctl enable snapper-timeline.timer snapper-cleanup.timer
 
 # Execute cleanup everyhour:
-sed -i "s/OnUnitActiveSec=1d/OnUnitActiveSec=1h/g"  /etc/systemd/system/timers.target.wants/snapper-cleanup.timer
-sed -i "s/OnCalendar=hourly/OnCalendar=*:0\/5/g"  /usr/lib/systemd/system/snapper-timeline.timer
+SYSTEMD_EDITOR=tee systemctl edit snapper-cleanup.timer <<EOF
+[Timer]
+OnUnitActiveSec=1h
+EOF
+
+# Execute snapshot every 5 minutes:
+SYSTEMD_EDITOR=tee systemctl edit snapper-timeline.timer <<EOF
+[Timer]
+OnCalendar=*:0\/5/
+EOF
+
 setfacl -Rm "u:megavolts:rw" /etc/snapper/configs
 setfacl -Rdm "u:megavolts:rw" /etc/snapper/configs
 
