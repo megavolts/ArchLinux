@@ -5,10 +5,11 @@ PASSWORD=$1
 NEWUSER=$2
 HOSTNAME=$3
 
+yay -S --noconfirm
 chsh -s $(which zsh)
 
-echo $PASSWORD | sudo -S -v
 sudo su
+chsh -s $(which zsh)
 
 echo -e ".. > Optimize mirrorlist"
 yay -S --noconfirm reflector
@@ -18,18 +19,17 @@ pacman -S --noconfirm mlocate
 updatedb
 
 # Enable snapshots with snapper 
-yay -S --noconfirm snapper acl snapper-gui
+yay -S --noconfirm snapper acl snapper-gui-git
 echo -e "... >> Configure snapper"
 snapper -c root create-config /
 snapper -c home create-config /home
 
 # we want the snaps located /at /mnt/btrfs-root/_snaptshot rather than at the root
 btrfs subvolume delete /.snapshots
-btrfs subvolume delete /home/.snapshots
-
-mount /dev/mapper/arch /mnt/btrfs-arch
-btrfs subvolume create /mnt/btrfs-arch/@snapshots/@root_snaps
-btrfs subvolume create /mnt/btrfs-arch/@snapshots/@home_snaps
+if [test is /home/.snapshots exist]
+then
+  btrfs subvolume delete /home/.snapshots
+else
 
 mkdir /.snapshots
 mkdir /home/.snapshots
