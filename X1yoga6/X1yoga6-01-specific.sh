@@ -22,17 +22,21 @@ updatedb
 yay -S --noconfirm snapper acl snapper-gui-git
 echo -e "... >> Configure snapper"
 snapper -c root create-config /
-snapper -c home create-config /home
+
 
 # we want the snaps located /at /mnt/btrfs-root/_snaptshot rather than at the root
 btrfs subvolume delete /.snapshots
-if [test is /home/.snapshots exist]
+
+if [ -d "/home/.snapshots"]
 then
-  btrfs subvolume delete /home/.snapshots
-else
+  rmdir /home/.snapshots
+fi
+snapper -c home create-config /home
+btrfs subvolume delete /home/.snapshots
 
 mkdir /.snapshots
 mkdir /home/.snapshots
+
 mount -o compress=lzo,subvol=@snapshots/@root_snaps /dev/mapper/arch /.snapshots
 mount -o compress=lzo,subvol=@snapshots/@home_snaps /dev/mapper/arch /home/.snapshots
 
@@ -48,6 +52,7 @@ sed 's/PRUNENAMES = "/PRUNENAMES = ".snapshots /g' -i /etc/updatedb.conf # do no
 
 systemctl start snapper-timeline.timer snapper-cleanup.timer  # start and enable snapper
 systemctl enable snapper-timeline.timer snapper-cleanup.timer
+
 # Execute cleanup everyhour:
 sed -i "s/OnUnitActiveSec=1d/OnUnitActiveSec=1h/g"  /etc/systemd/system/timers.target.wants/snapper-cleanup.timer
 sed -i "s/OnCalendar=hourly/OnCalendar=*:0\/5/g"  /usr/lib/systemd/system/snapper-timeline.timer
@@ -102,20 +107,29 @@ pacman -S --noconfirm alsa-utils pulseaudio pulseaudio-alsa pulseaudio-jack puls
 
 echo -e ".. Installing bluetooth"
 yay -S --noconfirm bluez bluez-utils pulseaudio-bluetooth bluedevil
-systemctl start bluetooth
 systemctl enable bluetooth
 
 echo -e ".. tablet tools"
-yay -S --noconfirm input-wacom-dkms xf86-input-wacom wacom-utility iio-sensor-proxy maliit-keyboard
+yay -S --noconfirm input-wacom-dkms xf86-input-wacom  iio-sensor-proxy maliit-keyboard  #wacom-utility
 
 echo -e ".. basic tools (use pass-git for wayland)"
-yay -S --noconfirm yakuake kdialog kfind arp-scan htop kdeconnect barrier lsof strace pass-git qtpass wl-clipboard 
+yay -S --noconfirm yakuake kdialog kfind arp-scan htop kdeconnect barrier lsof strace qtpass wl-clipboard  
 
 # # Mount or format data tank:
 mount -o defaults,compress=lzo,noatime,nodev,ssd,discard /dev/mapper/arch /mnt/btrfs-arch
-btrfs subvolume create /mnt/btrfs-arch/@media
-btrfs subvolume create /mnt/btrfs-arch/@photography
-btrfs subvolume create /mnt/btrfs-arch/@UAF-data
+
+if [ !  -e /mnt/btrfs-arch/@media ]
+then
+  btrfs subvolume create /mnt/btrfs-arch/@media 
+fi
+if [ !  -e /mnt/btrfs-arch/@photography ]
+then
+  btrfs subvolume create /mnt/btrfs-arch/@photography
+fi
+if [ !  -e /mnt/btrfs-arch/@UAF-data ]
+then
+  btrfs subvolume create /mnt/btrfs-arch/@UAF-data
+fi
 
 echo "# BTRFS volume"  >> /etc/fstab
 echo "LABEL=tank  /mnt/data btrfs rw,nodev,noatime,ssd,discard,compress=lzo,space_cache,noauto 0 0" >> /etc/fstab
@@ -126,27 +140,21 @@ echo "LABEL=arch	/mnt/data/UAF-data		btrfs	rw,nodev,noatime,compress=lzo,ssd,dis
 mount -a
 mkdir -p /mnt/data/media/photography     
 echo "LABEL=arch	/mnt/data/media/photography		btrfs	rw,nodev,noatime,compress=lzo,ssd,discard,space_cache,subvol=@photography	0	0" >> /etc/fstab
+mount -a
 
-setfacl -m  u:$NEWUSER:rwx -R /mnt/data/
-setfacl -m  u:$NEWUSER:rwx -Rd /mnt/data/
+setfacl -m u:${NEWUSER}:rwx -R /mnt/data/
+setfacl -m u:${NEWUSER}:rwx -Rd /mnt/data/
 
 ## Disable kwallet and install gnome keyring
-#echo -e ".. disable kwallet for users"
-#tee /home/${NEWUSER}/.config/kwalletrc <<EOF
-#[Wallet]
-#Enabled=false
-#EOF
+echo -e ".. disable kwallet for users"
+tee /home/$NEWUSER/.config/kwalletrc <<EOF
+[Wallet]
+Enabled=false
+EOF
 #pacman -S --noconfirm gnome-keyring  
 
 echo -e "... enable 2 fingers scroll for mozilla firefox"
-mkdir /home/$NEWUSER/.config/environment.d/
+mkdir -p /home/$NEWUSER/.config/environment.d/
 echo "PATH='$PATH:$HOME/scripts'" >> /home/$NEWUSER/.config/environment.d/envvars.conf
 echo "GUIVAR=value" >> /home/$NEWUSER/.config/environment.d/envvars.conf
 echo "MOZ_ENABLE_WAYLAND=1" >> /home/$NEWUSER/.config/environment.d/envvars.conf
-
-echo -e "... configure sddm"
-pacman -S sddm --noconfirm
-sddm --example-config > /etc/sddm.conf
-sed -i 's/Current=/Current=breeze/' /etc/sddm.conf
-sed -i 's/CursorTheme=/CursorTheme=breeze_cursors/' /etc/sddm.conf
-systemctl enable sddm
