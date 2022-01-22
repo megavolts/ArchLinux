@@ -34,7 +34,7 @@ yay -S --noconfirm imagemagick guetzli geeqie inkscape gimp darktable libraw hug
 yay -S --noconfirm vlc ffmpeg jellyfin-bin jellyfin-media-player
 
 # echo -e ".. office"
-yay -S --noconfirm libreoffice-fresh mendeleydesktop texmaker texlive-most
+yay -S --noconfirm libreoffice-fresh mendeleydesktop texmaker texlive-most zotero
 yay -S --noconfirm aspell-fr aspell-en aspell-de hunspell-en_US hunspell-fr hunspell-de hyphen-en hyphen-en hyphen-de libmythes mythes-en mythes-fr libreoffice-extension-grammalecte-fr
 
 # echo -e ".. printing tools"
@@ -48,9 +48,6 @@ gpasswd -a megavolts vboxusers
 # # python packages
 yay -S --noconfirm pycharm-professional python-pip python-setuptools tk python-utils
 yay -S --noconfirm python-numpy python-matplotlib python-scipy python-pandas python-openpyxl python-basemap python-pillow cython jupyter ipython 
-
-# citation
-yay -S --noconfirm mendeleydesktop zotero
 
 echo -e "... don't forget to install Antidote"
 
