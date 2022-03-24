@@ -8,6 +8,12 @@ echo -e "Install software"
 echo -e ".. partition tools"
 yay -S --noconfirm gparted ntfs-3g exfat-utils mtools sshfs
 
+# echo -e "... tools for hotspot"
+yay -S --noconfirm dnsmasq nm-connection-editor
+
+# echo -e "... tools for android"
+yay -S --noconfirm android-tools android-udev  
+
 # echo -e "... installing fonts"
 yay -S --noconfirm  freefonts ttf-inconsolata ttf-hack ttf-anonymous-pro ttf-liberation gnu-free-fonts noto-fonts ttf-bitstream-vera ttf-croscore ttf-dejavu ttf-droid ttf-ibm-plex
 
@@ -50,6 +56,8 @@ yay -S --noconfirm pycharm-professional python-pip python-setuptools tk python-u
 yay -S --noconfirm python-numpy python-matplotlib python-scipy python-pandas python-openpyxl python-basemap python-pillow cython jupyter ipython 
 
 echo -e "... don't forget to install Antidote"
+
+yay -S --noconfirm vdhcoapp-bin
 
 # yaourtpkg 'xdg-desktop-portal xdg-desktop-portal-kde'
 # yaourtpkg 'qownnotes'
