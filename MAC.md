@@ -1,33 +1,44 @@
+# Server
+## Home Media Server
+* machine: Kobol Helios64
+* hostname: unimak
+* webadress: unimak.redtrim.io
+* location: RedTrim
+* MAC eth0: 64:62:66:d0:02:44
+* MAC eth1: 64:62:66:d0:02:45
 
-
-# Server: Mull
-* DELL Precision T3400
-* name: Mull
-* location: WRRB 104B
+## Unraid server: XXX
+* hostname: akutan
+* webadress: megavolts.ch
+* location: UAF/WRRB 104B
 * MAC eth0 : 00:1e:c9:46:57:67
-* 
+* Fixed IP: 137.229.17.153
 
-# Latptop
-* Thinkpad X220
-* adak
+## RedTrim Brain
+* machine: RaspberryPi4
+* hostname:
+* location RedTrim
 * MAC eth0:
 * MAC wlan0:
 
+# Latptop
+## Thinkpad X1
+* Thinkpad X1
+* adak
+* MAC eth0/enp0s13f0u2u1: e0:4f:43:58:df:5e
+* MAC wlan0/wlp0s20f3: f0:57:a6:87:32:41
+
+## Field laptop
+* Thinkpad T14
+*
+*
+*
 
 # Router:
-* Orange Pi 2Eplus
-* kiska
-* MAC eth0: 02:81:c6:e7:c5:62
-* MAC wlan0: 12:81:c6:e7:c5:62
-
-* Raspberry Pi
-* MAC eth0: b8:27:eb:01:bd:78
-
 
 # Tablet P600, n1awifi
-* Akutan
 * MAC wlan0: 00:f4:6f:66:05:f2
-* 
+ 
 
 # LinkIt 7688Duo
 * Arduino board manager: http://download.labs.mediatek.com/package_mtk_linkit_smart_7688_index.json
