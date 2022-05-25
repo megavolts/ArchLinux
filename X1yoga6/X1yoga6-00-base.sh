@@ -50,13 +50,15 @@ then
   btrfs subvolume create /mnt/@snapshots/@home_snaps	
   btrfs subvolume create /mnt/@swap
   btrfs subvolume create /mnt/@data
+  btrfs subvolume create /mnt/@var
+  btrfs subvolume create /mnt/@tmp
 else
   btrfs subvolume delete /mnt/@snapshots/@root_snaps/*/snapshot
   rm /mnt/@snapshots/@root_snaps/* -R
   btrfs subvolume delete /mnt/@snapshots/@root_snaps
-  btrfs subvolume delete /mnt/@snapshots
-  rm /mnt/@root/*
-  btrfs subvolume delete /mnt/@root
+  
+  # mv /mnt/@snapshots
+  mv /mnt/@root /mnt/@root_old
   
   echo -e "... create new root and swap subvolume"
   btrfs subvolume create /mnt/@root
@@ -72,6 +74,10 @@ mkdir -p /mnt/home
 mount -o defaults,compress=lzo,noatime,nodev,ssd,discard,subvol=@home /dev/mapper/cryptarch /mnt/home
 mkdir -p /mnt/mnt/data
 mount -o defaults,compress=lzo,noatime,nodev,ssd,discard,subvol=@data /dev/mapper/cryptarch /mnt/mnt/data
+mkdir -p /mnt/var
+mount -o defaults,compress=lzo,noatime,nodev,ssd,discard,subvol=@var /dev/mapper/cryptarch /mnt/var
+mkdir -p /mnt/tmp
+mount -o defaults,compress=lzo,noatime,nodev,ssd,discard,subvol=@tmp /dev/mapper/cryptarch /mnt/tmp
 
 # Create swapfile
 mkdir -p /mnt/swap
@@ -106,7 +112,7 @@ sed 's/\/mnt\/swap/\/swap/g' /mnt/etc/fstab
 echo -e " .. > allowing wheel group to sudo"
 sed -i 's/^#\s*\(%wheel\s*ALL=(ALL)\s*ALL\)/\1/' /mnt/etc/sudoers
 
-arch-chroot /mnt /bin/zsh
+arch-chroot /mnt
 
 echo -e "Tuning pacman"
 echo -e ".. > Adding multilib"
