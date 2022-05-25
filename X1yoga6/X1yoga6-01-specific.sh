@@ -5,7 +5,7 @@ PASSWORD=$1
 NEWUSER=$2
 HOSTNAME=$3
 
-yay -S --noconfirm
+yay -S --noconfirm zsh
 chsh -s $(which zsh)
 
 sudo su
@@ -19,7 +19,7 @@ pacman -S --noconfirm mlocate
 updatedb
 
 # Enable snapshots with snapper 
-yay -S --noconfirm snapper acl snapper-gui-git
+yay -S --noconfirm snapper acl snapper-gui
 echo -e "... >> Configure snapper"
 snapper -c root create-config /
 
