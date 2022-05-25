@@ -23,7 +23,7 @@ yay -S --noconfirm firefox thunderbird filezilla  nextcloud-client zoom teams sl
 yay -S --noconfirm dolphin ffmpegthumbs kdegraphics-thumbnailers konsole purpose   
 
 # echo -e ".. coding tools"
-yay -S --noconfirm sublime-text-dev
+yay -S --noconfirm sublime-text-4
 
 # echo -e ".. media"
 yay -S --noconfirm dolphin dolphin-plugins qt5-imageformats ffmpegthumbs lzop kdegraphics-thumbnailers kimageformats libappimage unrar unzip
@@ -71,7 +71,7 @@ systemctl --user start psd
 
 # castnow cast_control mkchromecast
 
-yay -S --noconfirm protonmail-bridge-bin protonvpn-gui pass qtpass 
+yay -S --noconfirm protonmail-bridge-bin protonvpn-gui pass-git qtpass 
 sed -i '1s/^/"user_ssl_smtp": "false"/' .config/protonmail/bridge/prefs.json
 
 
