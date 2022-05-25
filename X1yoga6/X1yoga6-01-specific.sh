@@ -128,7 +128,7 @@ echo -e ".. tablet tools"
 yay -S --noconfirm input-wacom-dkms xf86-input-wacom  iio-sensor-proxy maliit-keyboard  #wacom-utility
 
 echo -e ".. basic tools (use pass-git for wayland)"
-yay -S --noconfirm yakuake kdialog kfind arp-scan htop kdeconnect barrier lsof strace qtpass wl-clipboard  
+yay -S --noconfirm yakuake kdialog kfind arp-scan htop kdeconnect barrier lsof strace qtpass wl-clipboard pass-git
 
 # # Mount or format data tank:
 mount -o defaults,compress=lzo,noatime,nodev,ssd,discard /dev/mapper/arch /mnt/btrfs-arch
