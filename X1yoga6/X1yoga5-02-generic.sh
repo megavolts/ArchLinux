@@ -73,6 +73,8 @@ systemctl --user start psd
 
 yay -S --noconfirm protonmail-bridge-bin protonvpn-gui pass-git qtpass 
 sed -i '1s/^/"user_ssl_smtp": "false"/' .config/protonmail/bridge/prefs.json
-
+gpg --batch --passphrase '' --quick-gen-key 'ProtonMail Bridge' default default never
+pass init "ProtonMail Bridge"
+protonmail-bridge --cli
 
 exit
