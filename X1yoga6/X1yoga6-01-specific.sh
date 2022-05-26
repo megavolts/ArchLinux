@@ -107,6 +107,11 @@ yay -S --noconfirm snap-pac rsync
 pacman -S --noconfirm linux-firmware
 #### vvvvvvv ####
 
+## Enable fstrim for ssd
+systemctl --now enable fstrim.trimer
+
+pacman -S --noconfirm packagekit
+
 ## Graphical interface
 echo -e ".. install drivers specific to X1 with Iris"
 pacman -S --noconfirm mesa vulkan-intel vulkan-mesa-layers
