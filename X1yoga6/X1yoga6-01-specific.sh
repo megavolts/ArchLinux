@@ -118,14 +118,18 @@ echo -e "... install plasma windows manager"
 pacman -S --noconfirm plasma-desktop sddm networkmanager  plasma-nm kscreen powerdevil plasma-wayland-session
 
 echo -e ".. install audio server"
-pacman -S --noconfirm alsa-utils pulseaudio pulseaudio-alsa pulseaudio-jack pulseaudio-equalizer plasma-pa pavucontrol pulseaudio-zeroconf 
+#pacman -S --noconfirm alsa-utils pulseaudio pulseaudio-alsa pulseaudio-jack pulseaudio-equalizer plasma-pa pavucontrol pulseaudio-zeroconf 
+yay -S --noconfirm pipewire lib32-pipewire pipewire-docs wire-plumber qpwgraph pipewire-alsa pipewire=pulse pipewire-jack gst-plugin-pipewire
+
 
 echo -e ".. Installing bluetooth"
 yay -S --noconfirm bluez bluez-utils pulseaudio-bluetooth bluedevil
 systemctl enable bluetooth
 
 echo -e ".. tablet tools"
-yay -S --noconfirm input-wacom-dkms xf86-input-wacom  iio-sensor-proxy maliit-keyboard  #wacom-utility
+yay -S --noconfirm input-wacom-dkms xf86-input-wacom  iio-sensor-proxy maliit-keyboard qt5-virtualkeyboard #wacom-utility
+echo "QT_IM_MODULE=qtvirtualkeyboard" >> /etc/environment
+
 
 echo -e ".. basic tools (use pass-git for wayland)"
 yay -S --noconfirm yakuake kdialog kfind arp-scan htop kdeconnect barrier lsof strace qtpass wl-clipboard pass-git
