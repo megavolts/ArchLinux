@@ -50,6 +50,9 @@ yay -S --noconfirm virtualbox virtualbox-guest-iso virtualbox-host-dkms virtualb
 groupadd vboxusers
 gpasswd -a megavolts vboxusers
 #echo "vboxdrv vboxnetadp vboxnetflt" >> /usr/lib/modules-load.d/virtualbox-host-dkms.conf    
+# For cursor in wayland session
+echo "KWIN_FORCE_SW_CURSOR=1" >> /etc/environement
+
 
 # # python packages
 yay -S --noconfirm pycharm-professional python-pip python-setuptools tk python-utils
