@@ -9,7 +9,7 @@ echo -e ".. partition tools"
 yay -S --noconfirm gparted ntfs-3g exfat-utils mtools sshfs
 
 # echo -e "... tools for hotspot"
-yay -S --noconfirm dnsmasq nm-connection-editor
+yay -S --noconfirm dnsmasq nm-connection-editor openconnect networkmanager-openconnect
 
 # echo -e "... tools for android"
 yay -S --noconfirm android-tools android-udev  
@@ -20,15 +20,11 @@ yay -S --noconfirm  freefonts ttf-inconsolata ttf-hack ttf-anonymous-pro ttf-lib
 # echo -e ".. internet software"
 yay -S --noconfirm firefox thunderbird filezilla  nextcloud-client zoom teams slack-wayland telegram-desktop signal-desktop
 
-yay -S --noconfirm dolphin ffmpegthumbs kdegraphics-thumbnailers konsole purpose   
-
 # echo -e ".. coding tools"
 yay -S --noconfirm sublime-text-4
 
 # echo -e ".. media"
-yay -S --noconfirm dolphin dolphin-plugins qt5-imageformats ffmpegthumbs lzop kdegraphics-thumbnailers kimageformats libappimage unrar unzip raw-thumbnailerA
-
-yay -S --noconfirm openconnect networkmanager-openconnect
+yay -S --noconfirm dolphin dolphin-plugins qt5-imageformats ffmpegthumbs lzop kdegraphics-thumbnailers kimageformats libappimage raw-thumbnailer
 yay -S --noconfirm ark unrar p7zip unzip
 
 # echo -e "... viewer"
