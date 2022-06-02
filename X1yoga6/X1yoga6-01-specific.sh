@@ -23,7 +23,6 @@ yay -S --noconfirm snapper acl snapper-gui
 echo -e "... >> Configure snapper"
 snapper -c root create-config /
 
-
 # we want the snaps located /at /mnt/btrfs-root/_snaptshot rather than at the root
 btrfs subvolume delete /.snapshots
 
@@ -135,9 +134,8 @@ echo -e ".. tablet tools"
 yay -S --noconfirm input-wacom-dkms xf86-input-wacom  iio-sensor-proxy maliit-keyboard qt5-virtualkeyboard #wacom-utility
 echo "QT_IM_MODULE=qtvirtualkeyboard" >> /etc/environment
 
-
 echo -e ".. basic tools (use pass-git for wayland)"
-yay -S --noconfirm yakuake kdialog kfind arp-scan htop kdeconnect barrier lsof strace qtpass wl-clipboard pass-git
+yay -S --noconfirm yakuake kdialog kfind arp-scan htop kdeconnect barrier lsof strace wl-clipboard pass-git
 
 # # Mount or format data tank:
 mount -o defaults,compress=lzo,noatime,nodev,ssd,discard /dev/mapper/arch /mnt/btrfs-arch
@@ -175,7 +173,6 @@ tee /home/$NEWUSER/.config/kwalletrc <<EOF
 [Wallet]
 Enabled=false
 EOF
-#pacman -S --noconfirm gnome-keyring  
 
 echo -e "... enable 2 fingers scroll for mozilla firefox"
 mkdir -p /home/$NEWUSER/.config/environment.d/
