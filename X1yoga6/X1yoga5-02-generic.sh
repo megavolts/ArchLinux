@@ -26,7 +26,8 @@ yay -S --noconfirm dolphin ffmpegthumbs kdegraphics-thumbnailers konsole purpose
 yay -S --noconfirm sublime-text-4
 
 # echo -e ".. media"
-yay -S --noconfirm dolphin dolphin-plugins qt5-imageformats ffmpegthumbs lzop kdegraphics-thumbnailers kimageformats libappimage unrar unzip
+yay -S --noconfirm dolphin dolphin-plugins qt5-imageformats ffmpegthumbs lzop kdegraphics-thumbnailers kimageformats libappimage unrar unzip raw-thumbnailerA
+
 yay -S --noconfirm openconnect networkmanager-openconnect
 yay -S --noconfirm ark unrar p7zip unzip
 
