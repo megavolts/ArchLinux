@@ -70,8 +70,8 @@ SYSTEMD_EDITOR=tee systemctl edit snapper-timeline.timer <<EOF
 OnCalendar=*:0\/5/
 EOF
 
-setfacl -Rm "u:megavolts:rw" /etc/snapper/configs
-setfacl -Rdm "u:megavolts:rw" /etc/snapper/configs
+setfacl -Rm "u:megavolts:rwx" /etc/snapper/configs
+setfacl -Rdm "u:megavolts:rwx" /etc/snapper/configs
 
 # update snap config for home directory
 sed  "s|TIMELINE_MIN_AGE=\"1800\"|TIMELINE_MIN_AGE=\"1800\"|g" -i /etc/snapper/configs/home      # keep all backup for 2 days (172800 seconds)
@@ -83,20 +83,23 @@ sed  "s|TIMELINE_LIMIT_YEARLY=\"10\"|TIMELINE_LIMIT_YEARLY=\"5\"|g" -i /etc/snap
 
 # enable snapshot at boot
 systemctl enable snapper-boot.timer
+
 # Copy partition on kernel update to enable backup
 echo /usr/share/libalpm/hooks/50_bootbackup.hook << EOF  
 [Trigger]
 Operation = Upgrade
 Operation = Install
 Operation = Remove
-Type = Package 
-Target = linux* 
-[Action] 
-Depends = rsync 
-Description = Backing up /boot... 
-When = PreTransaction 
+Type = Path
+Target = usr/lib/modules/*/vmlinuz
+
+[Action]
+Depends = rsync
+Description = Backing up /boot...
+When = PostTransaction
 Exec = /usr/bin/rsync -a --delete /boot /.bootbackup
 EOF
+mkdir /.bootbackup
 
 # enable snapshot before and after install
 yay -S --noconfirm snap-pac rsync
