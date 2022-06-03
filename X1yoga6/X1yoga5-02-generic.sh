@@ -15,7 +15,7 @@ yay -S --noconfirm dnsmasq nm-connection-editor openconnect networkmanager-openc
 yay -S --noconfirm android-tools android-udev  
 
 # echo -e "... installing fonts"
-yay -S --noconfirm  freefonts ttf-inconsolata ttf-hack ttf-anonymous-pro ttf-liberation gnu-free-fonts noto-fonts ttf-bitstream-vera ttf-croscore ttf-dejavu ttf-droid ttf-ibm-plex
+yay -S --noconfirm  freefonts ttf-inconsolata ttf-hanazono ttf-hack ttf-anonymous-pro ttf-liberation gnu-free-fonts noto-fonts ttf-bitstream-vera ttf-croscore ttf-dejavu ttf-droid ttf-ibm-plex
 
 # echo -e ".. internet software"
 yay -S --noconfirm firefox thunderbird filezilla  nextcloud-client zoom teams slack-wayland telegram-desktop signal-desktop
