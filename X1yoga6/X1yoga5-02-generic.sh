@@ -2,6 +2,12 @@
 #/bin/bash!
 # ssh megavolts@IP
 
+# Disable COW for thunderbird and baloo
+mkdir /home/$USER/.thunderbird
+chattr +C /home/$USER/.thunderbird
+mkdir /home/$USER/.local/share/baloo/
+chattr +C /home/$USER/.local/share/baloo/
+
 PWD=$1
 
 echo -e "Install software"
@@ -24,7 +30,8 @@ yay -S --noconfirm firefox thunderbird filezilla  nextcloud-client zoom teams sl
 yay -S --noconfirm sublime-text-4
 
 # echo -e ".. media"
-yay -S --noconfirm dolphin dolphin-plugins qt5-imageformats ffmpegthumbs lzop kdegraphics-thumbnailers kimageformats libappimage raw-thumbnailer
+yay -S --noconfirm dolphin dolphin-plugins qt5-imageformats ffmpegthumbs lzop kdegraphics-thumbnailers kimageformats libappimage raw-thumbnailer kio-gdrive
+
 yay -S --noconfirm ark unrar p7zip unzip
 
 # echo -e "... viewer"
