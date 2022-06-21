@@ -74,11 +74,12 @@ echo -e "... configure profile-sync-daemon to improve speed, reduced wear to phy
 echo "megavolts ALL=(ALL) NOPASSWD: /usr/bin/psd-overlay-helper" >> /etc/sudoers
 mkdir /home/megavolts/.config/psd/
 wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/config/psd.conf -O /home/megavolts/.config/psd/psd.conf
-systemctl --user start psd
+systemctl enable --now --user psd
 
 # castnow cast_control mkchromecast
 
-yay -S --noconfirm protonmail-bridge-bin protonvpn-gui pass-git qtpass 
+yay -S --noconfirm protonmail-bridge-bin protonvpn-gui pass-git qtpass secret-service
+systemctl enable --now --user secretserviced.service 
 sed -i '1s/^/"user_ssl_smtp": "false"/' .config/protonmail/bridge/prefs.json
 gpg --batch --passphrase '' --quick-gen-key 'ProtonMail Bridge' default default never
 pass init "ProtonMail Bridge"
