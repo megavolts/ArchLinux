@@ -24,10 +24,11 @@ yay -S --noconfirm android-tools android-udev
 yay -S --noconfirm  freefonts ttf-inconsolata ttf-hanazono ttf-hack ttf-anonymous-pro ttf-liberation gnu-free-fonts noto-fonts ttf-bitstream-vera ttf-croscore ttf-dejavu ttf-droid ttf-ibm-plex
 
 # echo -e ".. internet software"
-yay -S --noconfirm firefox thunderbird filezilla  nextcloud-client zoom teams slack-wayland telegram-desktop signal-desktop
+yay -S --noconfirm firefox thunderbird filezilla  nextcloud-client zoom teams slack-wayland telegram-desktop signal-desktop firefox-kde-opensuse
+
 
 # echo -e ".. coding tools"
-yay -S --noconfirm sublime-text-4
+yay -S --noconfirm sublime-text-4 terminator
 
 # echo -e ".. media"
 yay -S --noconfirm dolphin dolphin-plugins qt5-imageformats ffmpegthumbs lzop kdegraphics-thumbnailers kimageformats libappimage raw-thumbnailer kio-gdrive
@@ -38,10 +39,12 @@ yay -S --noconfirm ark unrar p7zip unzip
 yay -S --noconfirm okular spectacle discount kdegraphics-mobipocket
 
 # echo -e "... images"
-yay -S --noconfirm imagemagick guetzli geeqie inkscape gimp darktable libraw hugin
+yay -S --noconfirm imagemagick guetzli geeqie inkscape gimp darktable libraw hugin digikam kipi-plugins
+
 
 # echo -e "... musics and videos"
-yay -S --noconfirm vlc ffmpeg jellyfin-bin jellyfin-media-player
+yay -S --noconfirm vlc ffmpeg jellyfin-bin jellyfin-media-player picard picard-plugins-git
+
 
 # echo -e ".. office"
 yay -S --noconfirm libreoffice-fresh mendeleydesktop texmaker texlive-most zotero
@@ -49,6 +52,9 @@ yay -S --noconfirm aspell-fr aspell-en aspell-de hunspell-en_US hunspell-fr huns
 
 # echo -e ".. printing tools"
 yay -S --noconfirm cups system-config-printer
+
+# echo -e ".. confing tools"
+yay -S --noconfirm rysnc kinfocenter kruler sonnet fwupd discover packagekit-qt5
 
 yay -S --noconfirm virtualbox virtualbox-guest-iso virtualbox-host-dkms virtualbox-ext-oracle
 groupadd vboxusers
