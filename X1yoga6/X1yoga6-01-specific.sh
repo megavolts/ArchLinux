@@ -134,11 +134,16 @@ yay -S --noconfirm bluez bluez-utils pulseaudio-bluetooth bluedevil
 systemctl enable bluetooth
 
 echo -e ".. tablet tools"
-yay -S --noconfirm input-wacom-dkms xf86-input-wacom  iio-sensor-proxy maliit-keyboard qt5-virtualkeyboard #wacom-utility
+yay -S --noconfirm input-wacom-dkms xf86-input-wacom  iio-sensor-proxy maliit-keyboard qt5-virtualkeyboard kded-rotation-git
 echo "QT_IM_MODULE=qtvirtualkeyboard" >> /etc/environment
 
+# black keyboard theme
+gsettings set org.maliit.keyboard.maliit theme BreezeDark
+
+
 echo -e ".. basic tools (use pass-git for wayland)"
-yay -S --noconfirm yakuake kdialog kfind arp-scan htop kdeconnect barrier lsof strace wl-clipboard pass-git
+yay -S --noconfirm yakuake kdialog kfind arp-scan htop kdeconnect barrier lsof strace wl-clipboard pass-git kwallet-pam sddm-kcm
+
 
 # # Mount or format data tank:
 mount -o defaults,compress=lzo,noatime,nodev,ssd,discard /dev/mapper/arch /mnt/btrfs-arch
@@ -171,11 +176,15 @@ setfacl -m u:${NEWUSER}:rwx -R /mnt/data/
 setfacl -m u:${NEWUSER}:rwx -Rd /mnt/data/
 
 ## Disable kwallet and install gnome keyring
-echo -e ".. disable kwallet for users"
-tee /home/$NEWUSER/.config/kwalletrc <<EOF
-[Wallet]
-Enabled=false
-EOF
+#echo -e ".. disable kwallet for users"
+#tee /home/$NEWUSER/.config/kwalletrc <<EOF
+#[Wallet]
+#Enabled=false
+#EOF
+
+echo "KWallet login"
+echo "auth            optional        pam_kwallet5.so" >> /etc/pam.d/sddm
+echo "session         optional        pam_kwallet5.so auto_start" >> /etc/pam.d/sddm
 
 echo -e "... enable 2 fingers scroll for mozilla firefox"
 mkdir -p /home/$NEWUSER/.config/environment.d/
