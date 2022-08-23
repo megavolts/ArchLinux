@@ -107,10 +107,10 @@ yay -S --noconfirm snap-pac rsync
 ## Install firmware:
 ## wireless driver
 pacman -S --noconfirm linux-firmware
-#### vvvvvvv ####
 
 ## Enable fstrim for ssd
-systemctl --now enable fstrim.trimer
+pacman -S util-linux
+systemctl enable fstrim.trimer --now 
 
 pacman -S --noconfirm packagekit
 
@@ -126,8 +126,8 @@ pacman -S --noconfirm plasma-desktop sddm networkmanager  plasma-nm kscreen powe
 
 echo -e ".. install audio server"
 #pacman -S --noconfirm alsa-utils pulseaudio pulseaudio-alsa pulseaudio-jack pulseaudio-equalizer plasma-pa pavucontrol pulseaudio-zeroconf 
-yay -S --noconfirm pipewire lib32-pipewire pipewire-docs wire-plumber qpwgraph pipewire-alsa pipewire=pulse pipewire-jack gst-plugin-pipewire
-
+pacman -Rns pipewire-media-session
+yay -Sy --noconfirm pipewire lib32-pipewire pipewire-docs wire-plumber qpwgraph pipewire-alsa pipewire=pulse pipewire-jack gst-plugin-pipewire
 
 echo -e ".. Installing bluetooth"
 yay -S --noconfirm bluez bluez-utils pulseaudio-bluetooth bluedevil
@@ -140,10 +140,8 @@ echo "QT_IM_MODULE=qtvirtualkeyboard" >> /etc/environment
 # black keyboard theme
 gsettings set org.maliit.keyboard.maliit theme BreezeDark
 
-
 echo -e ".. basic tools (use pass-git for wayland)"
 yay -S --noconfirm yakuake kdialog kfind arp-scan htop kdeconnect barrier lsof strace wl-clipboard pass-git kwallet-pam sddm-kcm
-
 
 # # Mount or format data tank:
 mount -o defaults,compress=lzo,noatime,nodev,ssd,discard /dev/mapper/arch /mnt/btrfs-arch
@@ -167,10 +165,11 @@ mkdir -p /mnt/data/media
 echo "LABEL=arch	/mnt/data/media			btrfs	rw,nodev,noatime,compress=lzo,ssd,discard,space_cache,subvol=@media	0	0" >> /etc/fstab
 mkdir -p /mnt/data/UAF-data
 echo "LABEL=arch	/mnt/data/UAF-data		btrfs	rw,nodev,noatime,compress=lzo,ssd,discard,space_cache,subvol=@UAF-data	0	0" >> /etc/fstab
-mount -a
 mkdir -p /mnt/data/media/photography     
 echo "LABEL=arch	/mnt/data/media/photography		btrfs	rw,nodev,noatime,compress=lzo,ssd,discard,space_cache,subvol=@photography	0	0" >> /etc/fstab
-mount -a
+
+systemctl daemon-reload
+mount-a
 
 setfacl -m u:${NEWUSER}:rwx -R /mnt/data/
 setfacl -m u:${NEWUSER}:rwx -Rd /mnt/data/
