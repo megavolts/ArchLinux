@@ -12,7 +12,7 @@ PWD=$1
 
 echo -e "Install software"
 echo -e ".. partition tools"
-yay -S --noconfirm gparted ntfs-3g exfat-utils mtools sshfs
+yay -S --noconfirm gparted ntfs-3g exfat-utils mtools sshfs bindfs
 
 # echo -e "... tools for hotspot"
 yay -S --noconfirm dnsmasq nm-connection-editor openconnect networkmanager-openconnect
