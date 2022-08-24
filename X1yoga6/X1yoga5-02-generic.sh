@@ -7,8 +7,8 @@ mkdir /home/$USER/.thunderbird
 chattr +C /home/$USER/.thunderbird
 mkdir /home/$USER/.local/share/baloo/
 chattr +C /home/$USER/.local/share/baloo/
-mkdir /home/$USER/.config/protonmail/bridge 
-chattr +C /home/$USER/.config/protonmail/bridge 
+mkdir /home/$USER/.config/protonmail/bridge/cache 
+chattr +C /home/$USER/.config/protonmail/bridge/cache
 mkdir /home/$USER/.cache/yay
 chattr +C /home/$USER/.cache/yay
 
