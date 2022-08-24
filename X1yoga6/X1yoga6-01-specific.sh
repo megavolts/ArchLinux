@@ -19,7 +19,7 @@ pacman -S --noconfirm mlocate
 updatedb
 
 # Enable snapshots with snapper 
-yay -S --noconfirm snapper acl snapper-gui
+yay -S --noconfirm snapper acl snapper-gui-git
 echo -e "... >> Configure snapper"
 snapper -c root create-config /
 
