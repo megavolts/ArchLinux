@@ -140,6 +140,13 @@ echo "QT_IM_MODULE=qtvirtualkeyboard" >> /etc/environment
 
 # black keyboard theme
 gsettings set org.maliit.keyboard.maliit theme BreezeDark
+gsettings set org.maliit.keyboard.maliit enabled-languages "['en', 'fr-ch', 'emoji']"
+
+mkdir git
+cd git 
+git clone
+cmake
+make install https://invent.kde.org/nicolasfella/maliit-kcm.git
 
 echo -e ".. basic tools (use pass-git for wayland)"
 yay -S --noconfirm yakuake kdialog kfind arp-scan htop kdeconnect barrier lsof strace wl-clipboard pass-git kwallet-pam sddm-kcm
