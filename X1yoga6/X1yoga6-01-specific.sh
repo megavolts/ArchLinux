@@ -134,7 +134,8 @@ yay -S --noconfirm bluez bluez-utils pulseaudio-bluetooth bluedevil
 systemctl enable bluetooth
 
 echo -e ".. tablet tools"
-yay -S --noconfirm input-wacom-dkms xf86-input-wacom  iio-sensor-proxy maliit-keyboard qt5-virtualkeyboard kded-rotation-git
+yay -S --noconfirm input-wacom-dkms xf86-input-wacom  iio-sensor-proxy maliit-keyboard qt5-virtualkeyboard kded-rotation-git detect-tablet-mode-git
+
 echo "QT_IM_MODULE=qtvirtualkeyboard" >> /etc/environment
 
 # black keyboard theme
