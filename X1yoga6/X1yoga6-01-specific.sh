@@ -134,8 +134,9 @@ yay -S --noconfirm bluez bluez-utils pipewire-pulse bluedevil
 systemctl enable bluetooth
 
 echo -e ".. tablet tools"
-yay -S --noconfirm input-wacom-dkms xf86-input-wacom  iio-sensor-proxy maliit-keyboard qt5-virtualkeyboard kded-rotation-git detect-tablet-mode-git
-
+yay -S --noconfirm input-wacom-dkms xf86-input-wacom  iio-sensor-proxy maliit-keyboard  kded-rotation-git detect-tablet-mode-git xdg-desktop-portal xdg-desktop-portal-kde
+# qt5-virtualkeyboard, not needed?
+echo "GTK_USE_PORTAL=1" >> /etc/environment
 # black keyboard theme
 gsettings set org.maliit.keyboard.maliit theme BreezeDark
 gsettings set org.maliit.keyboard.maliit enabled-languages "['en', 'fr-ch', 'emoji']"
