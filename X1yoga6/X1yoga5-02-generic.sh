@@ -31,7 +31,7 @@ yay -S --noconfirm android-tools android-udev
 yay -S --noconfirm  freefonts ttf-inconsolata ttf-hanazono ttf-hack ttf-anonymous-pro ttf-liberation gnu-free-fonts noto-fonts ttf-bitstream-vera ttf-croscore ttf-dejavu ttf-droid ttf-ibm-plex
 
 # echo -e ".. internet software"
-yay -S --noconfirm firefox thunderbird filezilla  nextcloud-client zoom teams slack-wayland telegram-desktop signal-desktop firefox-kde-opensuse
+yay -S --noconfirm firefox thunderbird filezilla  nextcloud-client zoom teams slack-wayland telegram-desktop signal-desktop
 
 # echo -e ".. coding tools"
 yay -S --noconfirm sublime-text-4 terminator zettlr
