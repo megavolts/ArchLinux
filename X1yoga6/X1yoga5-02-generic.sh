@@ -14,6 +14,9 @@ chattr +C /home/$USER/.cache/yay
 
 PWD=$1
 
+/etc/updatedb.conf
+PRUNENAMES = ".snapshots"
+
 echo -e "Install software"
 echo -e ".. partition tools"
 yay -S --noconfirm gparted ntfs-3g exfat-utils mtools sshfs bindfs
@@ -94,5 +97,7 @@ sed -i '1s/^/"user_ssl_smtp": "false"/' .config/protonmail/bridge/prefs.json
 gpg --batch --passphrase '' --quick-gen-key 'ProtonMail Bridge' default default never
 pass init "ProtonMail Bridge"
 protonmail-bridge --cli
+
+
 
 exit
