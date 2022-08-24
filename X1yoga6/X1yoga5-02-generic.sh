@@ -7,6 +7,10 @@ mkdir /home/$USER/.thunderbird
 chattr +C /home/$USER/.thunderbird
 mkdir /home/$USER/.local/share/baloo/
 chattr +C /home/$USER/.local/share/baloo/
+mkdir /home/$USER/.config/protonmail/bridge 
+chattr +C /home/$USER/.config/protonmail/bridge 
+mkdir /home/$USER/.cache/yay
+chattr +C /home/$USER/.cache/yay
 
 PWD=$1
 
@@ -26,9 +30,8 @@ yay -S --noconfirm  freefonts ttf-inconsolata ttf-hanazono ttf-hack ttf-anonymou
 # echo -e ".. internet software"
 yay -S --noconfirm firefox thunderbird filezilla  nextcloud-client zoom teams slack-wayland telegram-desktop signal-desktop firefox-kde-opensuse
 
-
 # echo -e ".. coding tools"
-yay -S --noconfirm sublime-text-4 terminator
+yay -S --noconfirm sublime-text-4 terminator zettlr
 
 # echo -e ".. media"
 yay -S --noconfirm dolphin dolphin-plugins qt5-imageformats ffmpegthumbs lzop kdegraphics-thumbnailers kimageformats libappimage raw-thumbnailer kio-gdrive
@@ -52,9 +55,10 @@ yay -S --noconfirm aspell-fr aspell-en aspell-de hunspell-en_US hunspell-fr huns
 
 # echo -e ".. printing tools"
 yay -S --noconfirm cups system-config-printer
+systemctl enable --now cups.service
 
 # echo -e ".. confing tools"
-yay -S --noconfirm rysnc kinfocenter kruler sonnet fwupd discover packagekit-qt5
+yay -S --noconfirm rsync kinfocenter kruler sonnet fwupd discover packagekit-qt5
 
 yay -S --noconfirm virtualbox virtualbox-guest-iso virtualbox-host-dkms virtualbox-ext-oracle
 groupadd vboxusers
@@ -66,7 +70,7 @@ echo "KWIN_FORCE_SW_CURSOR=1" >> /etc/environement
 
 # # python packages
 yay -S --noconfirm pycharm-professional python-pip python-setuptools tk python-utils
-yay -S --noconfirm python-numpy python-matplotlib python-scipy python-pandas python-openpyxl python-basemap python-pillow cython jupyter ipython 
+yay -S --noconfirm python-numpy python-matplotlib python-scipy python-pandas python-openpyxl python-basemap python-pillow cython jupyterlab jupyter-notebook ipython 
 
 echo -e "... don't forget to install Antidote"
 
