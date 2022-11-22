@@ -1,6 +1,6 @@
 #/bin/bash!
 PASSWORD=$1
-USER=$2
+NEWUSER=$2
 HOSTNAME=$3
 
 python-setuptools python-pip tk xorg-xauth dhcpcd dhclient 
@@ -20,9 +20,9 @@ pacman -Syu --noconfirm
 echo -e ".. > Installing aur package manager"
 
 # add megavolts users
-echo -e ".. > create user $USER with default password"
-useradd -m -g users -G wheel,audio,disk,lp,network -s /bin/zsh $USER
-passwd megavolts << EOF
+echo -e ".. > create user $NEWUSER with default password"
+useradd -m -g users -G wheel,audio,disk,lp,network -s /bin/zsh $NEWUSER
+passwd $NEWUSER << EOF
 $PASSWORD
 $PASSWORD
 EOF
@@ -32,23 +32,23 @@ buildpkg(){
   CURRENT_DIR=$pwd
   PKG=$1
   wget https://aur.archlinux.org/cgit/aur.git/snapshot/$PKG.tar.gz
-  tar -xvzf $PKG.tar.gz -C /home/$USER
-  chown ${USER}:users /home/$USER/$1 -R
-  cd /home/$USER/$PKG
-  sudo -u $USER bash -c "makepkg -s --noconfirm"
+  tar -xvzf $PKG.tar.gz -C /home/$NEWUSER
+  chown ${NEWUSER}:users /home/$NEWUSER/$1 -R
+  cd /home/$NEWUSER/$PKG
+  sudo -u $NEWUSER bash -c "makepkg -s --noconfirm"
   pacman -U $PKG*.zst --noconfirm
   cd $CURRENT_dir 
-  rm /home/$USER/$PKG -R
+  rm /home/$NEWUSER/$PKG -R
 }
 
 echo -e " .. > allowing wheel group to sudo"
 sed  's/# %wheel ALL=(ALL) ALL/%  wheel ALL=(ALL) ALL/' -s /etc/sudoers
 
 buildpkg package-query
-buildpkg yaourt
+buildpkg yay
 
 yaourtpkg() {
-  sudo -u $USER bash -c "yaourt -S --noconfirm $1"
+  sudo -u $NEWUSER bash -c "yaourt -S --noconfirm $1"
 }
 
 echo -e ".. > Optimize mirrorlist"
