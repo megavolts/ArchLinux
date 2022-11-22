@@ -21,7 +21,7 @@ stty echo
 
 echo -e ".. wipe partition"
 # Wipe partition with zeros after creating an encrypted container with a random key
-cryptsetup open --type plain ${DISK}$BOOTPART container --key-file /dev/urandom 
+cryptsetup open --type plain ${DISK}p$BOOTPART container --key-file /dev/urandom 
 dd if=/dev/zero of=/dev/mapper/container status=progress bs
 cryptsetup close container
 
@@ -48,15 +48,6 @@ mount -o defaults,compress=lzo,noatime,nodev,ssd,discard,subvol=@home /dev/mappe
 mkdir -p /mnt/mnt/data
 mount -o defaults,compress=lzo,noatime,nodev,ssd,discard,subvol=@data /dev/mapper/cryptarch /mnt/mnt/data
 
-# Create swapfile
-mkdir /mnt/@swap/swap -p
-truncate -s 0 /mnt/@swap/swapfile
-chattr +C /mnt/@swap/swapfile
-btrfs property set /mnt/@swap/swapfile compression none
-fallocate -l 16G /mnt/@swap/swapfile
-chmod 600 /mnt/@swap/swapfile
-mkswap /mnt/@swap/swapfile -L swap
-swapon /mnt/@swap/swapfile
 
 ##
 echo -e "prepare disk for installation"
@@ -75,7 +66,7 @@ genfstab -L -p /mnt >> /mnt/etc/fstab
 mkdir -p /mnt/mnt/btrfs-arch
 echo "# arch root btrfs volume" >> /mnt/etc/fstab
 echo "LABEL=arch  /mnt/btrfs-arch btrfs rw,nodev,noatime,ssd,discard,compress=lzo,space_cache,noauto 0 0" >> /mnt/etc/fstab
-sed 's/\/mnt\/swap/\/swap/g' /mnt/etc/fstab
+#sed 's/\/mnt\/swap/\/swap/g' /mnt/etc/fstab
 
 
 # ## Tuning
