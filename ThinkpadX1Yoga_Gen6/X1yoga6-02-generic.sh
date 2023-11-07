@@ -63,6 +63,7 @@ sudo systemctl enable --now cups.service
 # echo -e ".. confing tools"
 yay -S --noconfirm rsync kinfocenter fwupd discover packagekit-qt5 kruler
 yay -S --noconfirm c++utilities qtutilities qtforkawesome syncthing syncthingtray nextcloud-client
+systemctl --user --now enable syncthing
 
 yay -S --noconfirm virtualbox virtualbox-guest-iso virtualbox-host-dkms virtualbox-ext-oracle
 sudo groupadd vboxusers
