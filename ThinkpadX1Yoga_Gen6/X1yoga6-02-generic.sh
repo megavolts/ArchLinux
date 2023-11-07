@@ -35,7 +35,7 @@ yay -S --noconfirm  freefonts ttf-inconsolata ttf-hanazono ttf-hack ttf-anonymou
 yay -S --noconfirm firefox thunderbird filezilla zoom teams telegram-desktop signal-desktop protonmail-bridge-bin protonvpn-gui 
 
 # echo -e ".. coding tools"
-yay -S --noconfirm sublime-text-4 terminator zettlr
+yay -S --noconfirm sublime-text-4 terminator zettlr screen
 
 # echo -e ".. media"
 yay -S --noconfirm dolphin dolphin-plugins ffmpegthumbs lzop kdegraphics-thumbnailers libappimage kio-gdrive qt5-imageformats ark unrar p7zip unzip kimageformats5 kdegraphics-mobipocket
@@ -64,6 +64,7 @@ sudo systemctl enable --now cups.service
 yay -S --noconfirm rsync kinfocenter fwupd discover packagekit-qt5 kruler
 yay -S --noconfirm c++utilities qtutilities qtforkawesome syncthing syncthingtray nextcloud-client
 systemctl --user --now enable syncthing
+systemctl --user --now enable ssh-agent
 
 yay -S --noconfirm virtualbox virtualbox-guest-iso virtualbox-host-dkms virtualbox-ext-oracle
 sudo groupadd vboxusers
