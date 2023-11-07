@@ -1,18 +1,30 @@
+
 # /bin/bash
+# 10/30/2023
 # Dual boot with windows
-#
-#  1            2048         1050623   512.0 MiB   EF00  EFI system partition
-#  2         1050624         1083391    16.0 MiB         Microsoft Reserved
-#  3         1083392       314402815   149.4 GiB         Microsoft Windows
-#  4       314402816       315654143   611.0 MiB         Windows recovery environment
-#  5       315654144      3907029134     1.7 TiB   8300  Linux filesystem on LVM
+# With 1 DISK, 4TB
+# /dev/nvme0n1p1  512.0MiB  EF00  EFI system partition
+# /dev/nvme1n1p1    8300 Linux Filesystem on LVM
+# /dev/nvme1n1p2 1.5TiB
+#   1            2048         1050623   512.0 MiB   EF00  EFI system partition
+#   2         1050624         1083391   16.0 MiB    0C01  Microsoft reserved ...
+#   3         1083392       537954303   256.0 GiB   0700  Basic data partition
+#   4       537954304       571508735   16.0 GiB    2700  Recovery
+# IF NTFSDATA
+#   5       571508736      5666551807   2.4 TiB     8300  cryptarch
+#   6      5666551808      7814035455   1024.0 GiB  0700  ntfsdata
+# ELSE 
+#   6      571508736       7814035455   3.4 TiB     8300  cryptarch
+# btrfs with flat layout: /, /var/
 
 DISK=/dev/nvme0n1
 NEWUSER=megavolts
 BOOTPART=1
 CRYPTPART=5
 INSTALL=True
-
+NTFSDATA=True
+WIPEDISK=True
+TZDATA=America/Anchorage
 echo 'Enter a default passphrase use to encrypt the disk and serve as password for root and megavolts:'
 stty -echo
 read PASSWORD
@@ -32,92 +44,125 @@ then
   dd if =/dev/zero of=/dev/mapper/container status=progress bs=1M
   cryptsetup close container
   echo -e ".. encrypting root partition"
-  echo -en $PASSWORD | cryptsetup luksFormat --align-payload=8192 -s 512 -c aes-xts-plain64 /dev/disk/by-partlabel/CRYPTARCH -q
-  echo -en $PASSWORD | cryptsetup luksOpen /dev/disk/by-partlabel/CRYPTARCH cryptarch
-  mkfs.btrfs --force --label arch /dev/mapper/cryptarch
+  echo -en $PASSWORD | cryptsetup luksFormat --align-payload=4096 -s 512 -c aes-xts-plain64 /dev/disk/by-partlabel/CRYPTARCH -q
+  echo -en $PASSWORD | cryptsetup luksOpen /dev/disk/by-partlabel/cryptarch arch
+  mkfs.btrfs --force --label arch /dev/mapper/arch
 else
-  echo -en $PASSWORD | cryptsetup luksOpen /dev/disk/by-partlabel/CRYPTARCH cryptarch
+  echo -en $PASSWORD | cryptsetup luksOpen /dev/disk/by-partlabel/CRYPTARCH arch
+  if $WIPEDISK
+      echo -e ".. wipe partition"
+      dd if=/dev/zero of=/dev/mapper/arch status=progress bs=1M
+      echo -e ".. encrypting root partition"
+      echo -en $PASSWORD | cryptsetup luksFormat --align-payload=4096 /dev/disk/by-partlabel/cryptarch -q
+      echo -en $PASSWORD | cryptsetup luksOpen /dev/disk/by-partlabel/cryptarch arch
+      mkfs.btrfs --force --label arch /dev/mapper/arch
+  fi
 fi
-echo -e ".. create subvolumes"
-mount -o defaults,compress=lzo,noatime,nodev,ssd,discard /dev/mapper/cryptarch /mnt/
 
-if $INSTALL
+echo -e ".. create subvolumes"
+mount -o defaults,compress=lzo,noatime,nodev,ssd,discard /dev/mapper/arch /mnt/
+
+if $INSTALL or $WIPEDISK
 then
+  echo -e "... create new root, var and tmp subvolume"
   btrfs subvolume create /mnt/@root
   btrfs subvolume create /mnt/@home
-  btrfs subvolume create /mnt/@snapshots
-  btrfs subvolume create /mnt/@snapshots/@root_snaps	
-  btrfs subvolume create /mnt/@snapshots/@home_snaps	
-  btrfs subvolume create /mnt/@swap
   btrfs subvolume create /mnt/@data
-  btrfs subvolume create /mnt/@var
-  btrfs subvolume create /mnt/@tmp
 else
-  btrfs subvolume delete /mnt/@snapshots/@root_snaps/*/snapshot
-  rm /mnt/@snapshots/@root_snaps/* -R
-  btrfs subvolume delete /mnt/@snapshots/@root_snaps
-  
-  # mv /mnt/@snapshots
+  # move old root subvolume
   mv /mnt/@root /mnt/@root_old
-  
-  echo -e "... create new root and swap subvolume"
+
+  # preserve home and data subvolume, delete other
+  btrfs subvolume delete /mnt/{@tmp,@var_log,@var_tmp,@var_cache}
+
+  echo -e "... create new root"
+  # create new root subvolume
   btrfs subvolume create /mnt/@root
-  btrfs subvolume create /mnt/@swap
-  btrfs subvolume create /mnt/@snapshots/@root_snaps	
 fi
   
+# create necssary subvolume
+# arch wiki recommentd
+btrfs subvolume create /mnt/@var_log
+# to prevent slowdown
+btrfs subvolume create /mnt/@var_tmp  
+btrfs subvolume create /mnt/@var_cache # use to only create subvolume for /var/cache/pacman/pkg
+btrfs subvolume create /mnt/@opt  #/opt contains large softwares, and doens't need to be snapshotted
+
+
+# create swapfile
+btrfs filesystem mkswapfile --size=32G /mnt/@swapfile
+mkswap /mnt/@swapfile
+
 umount /mnt
 
 # Mount subvolume
-mount -o defaults,compress=lzo,noatime,nodev,ssd,discard,subvol=@root /dev/mapper/cryptarch /mnt
+mount -o defaults,compress=lzo,noatime,ssd,discard,commit=120,subvol=@root /dev/mapper/arch /mnt
 mkdir -p /mnt/home
-mount -o defaults,compress=lzo,noatime,nodev,ssd,discard,subvol=@home /dev/mapper/cryptarch /mnt/home
+mount -o defaults,compress=lzo,noatime,ssd,discard,subvol=@home /dev/mapper/arch /mnt/home
 mkdir -p /mnt/mnt/data
-mount -o defaults,compress=lzo,noatime,nodev,ssd,discard,subvol=@data /dev/mapper/cryptarch /mnt/mnt/data
-mkdir -p /mnt/var
-mount -o defaults,compress=lzo,noatime,nodev,ssd,discard,subvol=@var /dev/mapper/cryptarch /mnt/var
-mkdir -p /mnt/tmp
-mount -o defaults,compress=lzo,noatime,nodev,ssd,discard,subvol=@tmp /dev/mapper/cryptarch /mnt/tmp
-
-# Create swapfile
-mkdir -p /mnt/swap
-mount -o defaults,compress=lzo,noatime,nodev,ssd,discard,subvol=@swap /dev/mapper/cryptarch /mnt/swap
-
-truncate -s 0 /mnt/swap/swapfile
-chattr +C /mnt/swap/swapfile
-btrfs property set /mnt/swap/swapfile compression none
-fallocate -l 16G /mnt/swap/swapfile
-chmod 600 /mnt/swap/swapfile
-mkswap /mnt/swap/swapfile -L swap
-swapon /mnt/swap/swapfile
+mount -o defaults,compress=lzo,noatime,ssd,discard,subvol=@data /dev/mapper/arch /mnt/mnt/data
+mkdir -p /mnt/var/{log,tmp}
+mount -o defaults,compress=lzo,noatime,ssd,discard,subvol=@var_log /dev/mapper/arch /mnt/var/log
+mount -o defaults,compress=lzo,noatime,ssd,discard,subvol=@var_tmp /dev/mapper/arch /mnt/var/tmp
+mkdir -p /mnt/btrfs-arch/
+mount -o defaults,compress=lzo,noatime,ssd,discard /dev/mapper/arch /mnt/mnt/btrfs-arch
+swapon /mnt/mnt/btrfs-arch/@swapfile
 
 ##
 echo -e "prepare disk for installation"
-#mkfs.vfat -F32 ${DISK}$BOOTPART
+if INSTALL
+then
+  mkfs.vfat -F32 ${DISK}$BOOTPART
+fi
 mkdir /mnt/boot
 mount ${DISK}p$BOOTPART /mnt/boot
 
 # Install Arch Linux
 pacman -Sy
-#pacstrap  /mnt $(pacman -Sqg base | sed 's/^linux$/&-zen/') base-devel openssh sudo ntp wget grml-zsh-config btrfs-progs networkmanager linux-firmware sof-firmware yajl linux-zen mkinitcpio
-pacstrap  /mnt base linux-zen linux-zen-headers base-devel openssh sudo ntp wget grml-zsh-config btrfs-progs networkmanager usbutils linux-firmware sof-firmware yajl mkinitcpio git go nano zsh
+pacstrap  /mnt linux-zen linux-zen-headers base base-devel openssh sudo ntp wget grml-zsh-config btrfs-progs networkmanager usbutils util-linux linux-firmware sof-firmware yajl mkinitcpio git go nano zsh mlocaste
 
 echo -e "Create fstab"
 genfstab -L -p /mnt >> /mnt/etc/fstab
-mkdir -p /mnt/mnt/btrfs-arch
-echo "# arch root btrfs volume" >> /mnt/etc/fstab
-echo "LABEL=arch  /mnt/btrfs-arch btrfs rw,nodev,noatime,ssd,discard,compress=lzo,space_cache,noauto 0 0" >> /mnt/etc/fstab
-sed 's/\/mnt\/swap/\/swap/g' /mnt/etc/fstab
 
+# add /tmp
+echo "tmpfs   /tmp    tmpfs  rw,nr_inodes=5k,noexec,nodev,nosuid,uid=user,gid=group,mode=1700 0 0" >> /mnt/etc/fstab
+
+# Allow wheel to use sudo
 echo -e " .. > allowing wheel group to sudo"
-sed -i 's/^#\s*\(%wheel\s*ALL=(ALL)\s*ALL\)/\1/' /mnt/etc/sudoers
+sed -i 's/^#\s*\(%wheel\s\+ALL=(ALL\:ALL)\s\+ALL\)/\1/' /mnt/etc/sudoers
 
-arch-chroot /mnt
+echo -e "Configure system"
+# set timezone
+echo -e ".. > set timezone to America/Anchorage"
+ln -sf /usr/share/zoneinfo/${TZDATA} /mnt/etc/localtime
+arch-chroot /mnt hwclock --systohc
+echo ${TZDATA} >> /mnt/etc/timezone
+
+# generate locales for en_US
+echo -e ".. > set locale to en_US"
+sed -e 's/#en_US/en_US/g' -i /mnt/etc/locale.gen
+echo "LANG=en_US.UTF-8" > /mnt/etc/locale.conf
+arch-chroot /mnt locale-gen
+
+# set keyboard
+echo -e ".. > set keyboard"
+pacman -S terminus-font
+echo "FONT=ter-132n" >> /etc/vconsole.conf
+
+# set hostname
+echo -e ".. > set hostname & network manager"
+echo $HOSTNAME > /mnt/etc/hostname
+echo "127.0.1.1 localhost $HOSTNAME.localdomain    $HOSTNAME" >> /mnt/etc/hosts
+echo "::1 localhost $HOSTNAME" >> /mnt/etc/hosts
+
+arch-chroot /mnt bin/zsh
 
 echo -e "Tuning pacman"
 echo -e ".. > Adding multilib"
 sed -i 's|#[multilib]|[multilib]|' /etc/pacman.conf
 sed -i "/\[multilib\]/,/Include/"'s/^#//' /etc/pacman.conf
+sed -i 's|#ParallelDownloads|ParallelDownloads|' /etc/pacman.conf
+
 echo -e ".. update pacman and system "
 pacman -Syy
 pacman -S --noconfirm archlinux-keyring
@@ -126,7 +171,6 @@ pacman-key --populate archlinux
 pacman -Syu --noconfirm
 
 # create $USER
-
 echo -e "Setting up users"
 echo -e ".. > setting root password"
 passwd root << EOF
@@ -134,11 +178,26 @@ $PASSWORD
 $PASSWORD
 EOF
 echo -e ".. > create user $NEWUSER with default password"
-useradd -m -g users -G wheel,audio,disk,lp,network -s /bin/bash $NEWUSER
+useradd -m -g users -G wheel,audio,disk,lp,network -s /bin/zsh $NEWUSER
 passwd $NEWUSER << EOF
 $PASSWORD
 $PASSWORD
 EOF
+
+# Disable COW for thunderbird and baloo
+mkdir -p /home/$NEWUSER/.thunderbird
+chattr +C /home/$NEWUSER/.thunderbird
+mkdir -p /home/$NEWUSER/.local/share/baloo/
+chattr +C /home/$NEWUSER/.local/share/baloo/
+mkdir -p /home/$NEWUSER/.config/protonmail/bridge/cache 
+chattr +C /home/$NEWUSER/.config/protonmail/bridge/cache
+mkdir -p /home/$NEWUSER/.cache/yay
+chattr +C /home/$NEWUSER/.cache/yay
+
+btrfs subvolume create /mnt/btrfs-arch/@yay
+echo "# megavolts btrfs nocow yay subvolume" >> /etc/fstab
+echo "LABEL=arch     /home/$NEWUSER/.cache/yay    btrfs    rw,noatime,ssd,discard,space_cache=v2,commit=120,nodatacow,subvol=@yay    0 0" >> /etc/fstab
+systemctl daemon-reload && mount -a
 
 echo -e ".. > Installing aur package manager"
 # create a fake builduser
@@ -151,29 +210,11 @@ buildpkg(){
   sudo -u $NEWUSER bash -c "makepkg -s --noconfirm"
   pacman -U --noconfirm $1*.zst
   cd $CURRENT_dir
-  rm ./$1.tar.gz
+  rm /home/$NEWUSER/$1/ -r
 }
 
 buildpkg package-query
 buildpkg yay
-
-wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/X220/source/mirrorupgrade.hook -P /etc/pacman.d/hooks/
-echo -e "Configure system"
-echo "FONT=lat9w-16" >> /etc/vconsole.conf
-echo -e ".. > changing locales"
-wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/X220/source/locale.gen -O /etc/locale.gen
-echo "LANG=en_US.UTF-8" > /etc/locale.conf
-locale-gen
-localectl set-locale LANG=en_US.UTF-8
-
-echo -e ".. > set timezone to America/Anchorage"
-timedatectl set-ntp 1
-timedatectl set-timezone America/Anchorage
-
-echo -e ".. > setting hostname & network manager"
-hostnamectl set-hostname $HOSTNAME
-echo "127.0.1.1    $HOSTNAME.localdomain    $HOSTNAME" >> /etc/hosts
-echo $HOSTNAME > /etc/hostname
 
 echo -e ".. > start services"
 systemctl enable NetworkManager
@@ -185,13 +226,17 @@ systemctl enable btrfs-scrub@-.timer
 sed -i 's/fsck)/btrfs)/g' /etc/mkinitcpio.conf
 
 # add encrypt and keyboard hook before filesystems
-sed -i 's/filesystems keyboard/keyboard encrypt resume filesystems/g' /etc/mkinitcpio.conf
+sed -i 's/autodetect/autodetect keyboard encrypt resume filesystems/g' /etc/mkinitcpio.conf
 
 # modify refind.conf
+ROFFSET=$(btrfs inspect-internal map-swapfile -r /btrfs-arch/@swapfile)
 if $INSTALL
 then
+  pacman -S refind
+  refind-install
   cp /boot/refind_linux.conf /boot/refind_linux.conf.old
   wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/X1yoga6/sources/refind.conf -O /boot/refind_linux.conf
+  sed -i "s|ROFFSET|$ROFFSET|g" /boot/refind_linux.conf
 fi
 
 # Rebuild kernel
@@ -201,9 +246,13 @@ fi
 if [ -f /boot/vmlinuz-linux-zen ]; then
 	mkinitcpio -p linux-zen
 fi
-exit
 
-umount /mnt/{boot,home,data}
+
+
+exit
+swapoff /mnt/btrfs-arch/@swapfile
+umount /mnt/{boot,home,data,var/log,var/tmp,btrfs-arch}
+
 reboot
 
 
