@@ -22,7 +22,6 @@ setfacl -Rdm "u:${NEWUSER}:rwx" /opt
 setfacl -Rm "u:${NEWUSER}:rwx" /mnt/data
 setfacl -Rdm "u:${NEWUSER}:rwx" /mnt/data
 
-
 # enable fstrim for ssd
 systemctl enable --now fstrim.timer
 

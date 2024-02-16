@@ -81,9 +81,3 @@ systemctl enable snapper-boot.timer
 sudo yay -S rmlint shredder-rmlint
 
 yay -S duperemove
-
-# echo -e ".. tablet tools"
-yay -S --noconfirm input-wacom-dkms xf86-input-wacom  iio-sensor-proxy maliit-keyboard  kded-rotation-git detect-tablet-mode-git
-# Is this necessary
-echo "[General]" >> /etc/sddm.conf.d/virtualkbd.conf
-echo "InputMethod=qtvirtualkeyboard" >> /etc/sddm.conf.d/virtualkbd.conf
