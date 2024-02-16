@@ -137,4 +137,4 @@ yays -S zerotier-one
 
 [ ] REMOTE DESKTOP SET UP WITH KRFB
 [ ] syncthingtray
-[ ] configure GUI rmlint shreeder
+[ ] configure GUI rmlint
