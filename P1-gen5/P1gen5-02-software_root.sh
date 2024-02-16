@@ -85,7 +85,7 @@ yays virtualbox virtualbox-guest-iso virtualbox-host-dkms virtualbox-ext-oracle
 
 # Enable snapshots with snapper
 echo -e "Install snapper, a snapshots manager "
-yays snapper snapper-gut-git snap-pac
+yays snapper snapper-gui-git snap-pac
 
 echo -e ".. Configure snapper"
 echo -e "... Create root config"
@@ -106,24 +106,24 @@ mkdir /.snapshots
 mkdir /home/.snapshots
 echo -e ".. add entry to fstab and mount"
 echo "# Snapper subvolume"
-echo "LABEL=data /.snapshots btrfs rw,noatime,ssd,discard,compress=zstd:3,space_cache,subvol=@snapshots/@root_snaps   0 0" >> /etc/fstab
+echo "LABEL=arch /.snapshots btrfs rw,noatime,ssd,discard,compress=zstd:3,space_cache,subvol=@snapshots/@root_snaps   0 0" >> /etc/fstab
 echo "LABEL=data /home/.snapshots  btrfs rw,noatime,ssd,discardcompress=zstd:3,space_cache,subvol=@snapshots/@home_snaps   0 0" >> /etc/fstab
 systemctl daemon-reload && mount -a
 
 echo -e ".. Edit home and root configuration"
 echo -e "... Allow user $USR to modify snapper config"
-setfacl -Rm "u:$USR:rwx" /etc/snapper/configs
-setfacl -Rdm "u:$USR:rwx" /etc/snapper/configs
+setfacl -Rm "u:${USER}:rwx" /etc/snapper/configs
+setfacl -Rdm "u:${USER}:rwx" /etc/snapper/configs
 
 echo -e "... Allow user $USR and usergroup wheel to modify snapper"
-sed -i "s|ALLOW_USERS=\"|ALLOW_USERS=\"$USR|g" /etc/snapper/configs/home
-sed -i "s|ALLOW_USERS=\"|ALLOW_USERS=\"$USR|g" /etc/snapper/configs/root
+sed -i "s|ALLOW_USERS=\"|ALLOW_USERS=\"${USER}|g" /etc/snapper/configs/home
+sed -i "s|ALLOW_USERS=\"|ALLOW_USERS=\"${USER}|g" /etc/snapper/configs/root
 sed -i "s|ALLOW_GROUPS=\"|ALLOW_GROUPS=\"wheel|g" /etc/snapper/configs/home # Allow $NEWUSER to modify the files
 sed -i "s|ALLOW_GROUPS=\"|ALLOW_GROUPS=\"wheel|g" /etc/snapper/configs/root
 
 echo -e "... Enable ACL"
+sed "s|SYNC_ACL=\"no|SYNC_ACL=\"yes|g" -i /etc/snapper/configs/home
 sed "s|SYNC_ACL=\"no|SYNC_ACL=\"yes|g" -i /etc/snapper/configs/root
-sed "s|SYNC_ACL=\"no|SYNC_ACL=\"yesvg" -i /etc/snapper/configs/root
 
 echo -e "... Change Timeline limit for snapshot retention"
 
@@ -131,9 +131,16 @@ echo -e "... Change Timeline limit for snapshot retention"
 sed  -i "s|TIMELINE_MIN_AGE=\"1800\"|TIMELINE_MIN_AGE=\"1800\"|g"         /etc/snapper/configs/home
 sed  -i "s|TIMELINE_LIMIT_HOURLY=\"10\"|TIMELINE_LIMIT_HOURLY=\"96\"|g"   /etc/snapper/configs/home  # keep hourly backup for 48 hours
 sed  -i "s|TIMELINE_LIMIT_DAILY=\"10\"|TIMELINE_LIMIT_DAILY=\"14\"|g"     /etc/snapper/configs/home  # keep daily backup for 14 days
-sed  -i "s|TIMELINE_LIMIT_WEEKLY=\"0\"|TIMELINE_LIMIT_WEEKLY=\"0\"|g"     /etc/snapper/configs/home  # keep weekly backup for 4 weeks
+sed  -i "s|TIMELINE_LIMIT_WEEKLY=\"0\"|TIMELINE_LIMIT_WEEKLY=\"3\"|g"     /etc/snapper/configs/home  # keep weekly backup for 4 weeks
 sed  -i "s|TIMELINE_LIMIT_MONTHLY=\"10\"|TIMELINE_LIMIT_MONTHLY=\"12\"|g" /etc/snapper/configs/home  # keep monthly backup for 12 months
 sed  -i "s|TIMELINE_LIMIT_YEARLY=\"10\"|TIMELINE_LIMIT_YEARLY=\"5\"|g"     /etc/snapper/configs/home  # keep yearly backup for 5 years
+# update snap config for root directory
+sed  -i "s|TIMELINE_MIN_AGE=\"1800\"|TIMELINE_MIN_AGE=\"0\"|g"         /etc/snapper/configs/root  # Allow all snapshots to be removed, independantly of age
+sed  -i "s|TIMELINE_LIMIT_HOURLY=\"10\"|TIMELINE_LIMIT_HOURLY=\"4\"|g"   /etc/snapper/configs/root  # keep hourly backup for 4 hours
+sed  -i "s|TIMELINE_LIMIT_DAILY=\"10\"|TIMELINE_LIMIT_DAILY=\"7\"|g"     /etc/snapper/configs/root  # keep daily backup for 7 days
+sed  -i "s|TIMELINE_LIMIT_WEEKLY=\"0\"|TIMELINE_LIMIT_WEEKLY=\"4\"|g"     /etc/snapper/configs/root  # keep weekly backup for 4 weeks
+sed  -i "s|TIMELINE_LIMIT_MONTHLY=\"10\"|TIMELINE_LIMIT_MONTHLY=\"12\"|g" /etc/snapper/configs/root  # keep monthly backup for 12 months
+sed  -i "s|TIMELINE_LIMIT_YEARLY=\"10\"|TIMELINE_LIMIT_YEARLY=\"5\"|g"     /etc/snapper/configs/root  # keep yearly backup for 5 years
 
 echo -e ".. Remove snapshots from mlocate database"
 sed -i 's/PRUNENAMES = "/PRUNENAMES = ".snapshots /g' /etc/updatedb.conf
@@ -144,21 +151,26 @@ systemctl start --now snapper-timeline.timer snapper-cleanup.timer  # start and 
 echo -e " ... Execute snapshots cleanup everyhour"
 SYSTEMD_EDITOR=tee systemctl edit snapper-cleanup.timer <<EOF
 [Timer]
+OnBoot=10min
 OnUnitActiveSec=1h
 EOF
 
 echo -e "... Take a snapshots every 5 minutes"
 SYSTEMD_EDITOR=tee systemctl edit snapper-timeline.timer <<EOF
 [Timer]
-OnCalendar=*:0\/5/
+OnCalendar=*:0/5
 EOF
 
 # enable snapshot at boot
-echo -e "... Take a snapshots at boot"
+echo -e "... Take a snapshots at boot after mounting /.snapshots"
 systemctl enable snapper-boot.timer
+SYSTEMD_EDITOR=tee systemctl edit snapper-boot.service <<EOF
+[Unit]
+After=\\\\x2eboot.mount
+EOF
 
 # BTRFS maintenance
-yays rmling shredder-rmlint duperemove bees
+yays rmling rmlint-shredder duperemove bees
 mkdir /opt/$USR
 cat <<EOF | sudo tee -a /opt/$USR/btrfs_maintenance.sh > /dev/null
 #! /bin/bash
@@ -222,6 +234,9 @@ systemctl start --now smb
 
 echo -e "... create samba user"
 echo -en $PASSWORD | smbpasswd -a $USR
+
+echo -e " ..  Install pacman and downgrade tools"
+yays paccache-hook pacman-contrib downgrade
 
 
 systemctl enable --now sddm

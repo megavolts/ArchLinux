@@ -36,6 +36,8 @@ buildpkg(){
 buildpkg package-query
 buildpkg yay
 yays(){sudo -u megavolts yay -S --removemake --cleanafter --noconfirm $1}
+
+
 ############################################################
 # ROOT options
 echo -e "Set root password"

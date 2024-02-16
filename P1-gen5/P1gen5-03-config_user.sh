@@ -79,17 +79,19 @@ pass init "ProtonMail Bridge"
 protonmail-bridge --cli
 
 # Set remote desktop
-yay -S krfb
+yay -S krfb krdc freerdp
 
+
+yay -S flatpak flatpak-kcm flatseal
 # Set up back in time
 yay -S backintime
 
-# Set ssh for github
+# Enable ssh agent for session
 echo -e ".. Have SSH agents storing keys"
 echo "AddKeysToAgent yes" >> .ssh/config
+echo 'SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/ssh-agent.socket"' > ~/.config/environment.d/ssh_auth_socket.conf
+systemctl --user enable --now ssh-agent
 
-systemctl start --now --user ssh-agent.service
-echo "SSH_AUTH_SOCK=$XDG_RUNTIME_DIR/ssh-agent.socket" > .config/environment.d/ssh_agent_service.conf
 # sudo cat <<EOF | sudo tee -a /home/$USR/.config/environment.d/ssh_agent.conf > /dev/null
 # if ! pgrep -u "$USER" ssh-agent > /dev/null; then
 #     ssh-agent -t 2h > "$XDG_RUNTIME_DIR/ssh-agent.env"
@@ -136,5 +138,3 @@ yays -S zerotier-one
 
 
 [ ] REMOTE DESKTOP SET UP WITH KRFB
-[ ] syncthingtray
-[ ] configure GUI rmlint

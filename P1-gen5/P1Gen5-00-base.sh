@@ -83,27 +83,24 @@ mount -o defaults,compress=zstd:3,noatime,nodev,ssd,discard /dev/mapper/data /mn
 
 if $WIPEROOT
   echo -e "... Delete old @root_snaps and recreating it"
-  if [ ! -d /mnt/data/@snapshots/ ]; then
-    btrfs subvolume create /mnt/data/@snapshots
+  if [ ! -d /mnt/root/@snapshots/ ]; then
+    btrfs subvolume create /mnt/root/@snapshots
   else
-    btrfs subvolume delete /mnt/data/@snapshots/@root_snaps
+    btrfs subvolume delete /mnt/root/@snapshots/@root_snaps
   fi
-  btrfs subvolume create /mnt/data/@snapshots/@root_snaps
+  btrfs subvolume create /mnt/root/@snapshots/@root_snaps
 fi
 
 if $WIPEDATA
   echo -e "... create new home, data and snapshots suvolume"
   btrfs subvolume create /mnt/data/@home
-
   btrfs subvolume create /mnt/data/@data
   if [ ! -d /mnt/data/@snapshots/ ]; then
     btrfs subvolume create /mnt/data/@snapshots
   fi
-  if [ ! -d /mnt/data/@snapshots/@root_snaps ]; then
-    btrfs subvolume create /mnt/data/@snapshots/@root_snaps
+  if [ ! -d /mnt/data/@snapshots/@home_snaps ]; then
+    btrfs subvolume create /mnt/data/@snapshots/@home_snaps
   fi
-  btrfs subvolume create /mnt/data/@snapshots/@home_snaps  
-  btrfs subvolume create /mnt/data/@snapshots/@data_snaps  
 fi
 umount /mnt{/data,/}
 
@@ -118,9 +115,10 @@ mount -o defaults,compress=zstd:3,noatime,nodev,ssd,discard,space_cache=v2 /dev/
 
 echo -e ".. create and activate swapfile"
 # Create swapfile if not existing
-btrfs filesystem mkswapfile --size=64G /mnt/mnt/btrfs/root/swapfile
-swapon /mnt/mnt/btrfs/root/swapfile
-RESUME_OFFSET=$(btrfs inspect-internal map-swapfile -r /mnt/mnt/btrfs/root/@swapfile)
+btrfs subvolume create /mnt/btrfs/root/@swap
+btrfs filesystem mkswapfile --size=64G /mnt/mnt/btrfs/root/@swap/swapfile
+swapon /mnt/mnt/btrfs/root/@swap/swapfile
+RESUME_OFFSET=$(btrfs inspect-internal map-swapfile -r /mnt/mnt/btrfs/root/@swap/swapfile)
 
 echo -e ".. create root subvolume mountpoints"
 mkdir -p /mnt/{boot,.boot,tmp,var/log,var/tmp,var/abs,var/cache/pacman/pkg,home,mnt/data}
