@@ -81,6 +81,9 @@ protonmail-bridge --cli
 # Set remote desktop
 yay -S krfb
 
+# Set up back in time
+yay -S backintime
+
 # Set ssh for github
 echo -e ".. Have SSH agents storing keys"
 echo "AddKeysToAgent yes" >> .ssh/config
@@ -117,7 +120,14 @@ git clone clone git@github.com:megavolts/adguard.git
 chmod +x adguard/init.sh
 ./adguard/init.sh
 
+sudo cat <<EOF | sudo tee -a /etc/resolv.conf.head > /dev/null
+127.0.0.1
+10.147.17.153
+10.147.17.8
+EOF
 
+# set up zerotier-one
+yays -S zerotier-one
 # # TO CHECK IF NEEDED
 
 # echo "KWallet login"
@@ -125,9 +135,6 @@ chmod +x adguard/init.sh
 # echo "session         optional        pam_kwallet5.so auto_start" >> /etc/pam.d/sddm
 
 
-# # IF pass git is required, install pass-git
-# sudo -u megavolts yay -S --noconfirm pass-git
-
-
-# # FIX user permssion in folder
-# find ~ \! -uid `id -u` -o \! -gid `id -g`
+[ ] REMOTE DESKTOP SET UP WITH KRFB
+[ ] syncthingtray
+[ ] configure GUI rmlint shreeder

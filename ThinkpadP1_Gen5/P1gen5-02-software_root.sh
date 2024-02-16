@@ -29,7 +29,8 @@ echo -e ".. partition tools"
 yays gparted ntfs-3g exfat-utils mtools sshfs bindfs
 
 echo -e "... network tools"
-yays dnsmasq nm-connection-editor openconnect networkmanager-openconnect
+yays dnsmasq nm-connection-editor openconnect networkmanager-openconnect avahi
+systemctl enable --now avahi-daemon
 
 echo -e "... android tools"
 yays android-tools android-udev  
@@ -158,6 +159,28 @@ systemctl enable snapper-boot.timer
 
 # BTRFS maintenance
 yays rmling shredder-rmlint duperemove bees
+mkdir /opt/$USR
+cat <<EOF | sudo tee -a /opt/$USR/btrfs_maintenance.sh > /dev/null
+#! /bin/bash
+/usr/bin/btrfs balance start -dusage=10 -dlimit=2..20 -musage=10 -mlimit=2..20 \$1 &&
+/usr/bin/btrfs balance start -dusage=25 -dlimit=2..10 -musage=25 -mlimit=2..10 \$1
+EOF
+
+cat <<EOF | sudo tee -a /opt/$USR/btrfs_maintenance-scrub.sh > /dev/null
+#! /bin/bash
+/usr/bin/btrfs scrub start \$1 &&
+/usr/bin/btrfs scrub status -d \$1
+EOF
+
+cat <<EOF | sudo tee -a /opt/$USR/btrfs_maintenance-all.sh > /dev/null
+#! /bin/bash
+/usr/bin/btrfs balance start -dusage=10 -dlimit=2..20 -musage=10 -mlimit=2..20 \$1 &&
+/usr/bin/btrfs balance start -dusage=25 -dlimit=2..10 -musage=25 -mlimit=2..10 \$1 &&
+/usr/bin/btrfs scrub start \$1 &&
+/usr/bin/btrfs scrub status -d \$1 &
+/usr/bin/btrfs filesystem defragment -r \$1
+EOF
+chmod +x /opt/$USR/*
 
 echo -e ".. Configure bees"
 for BTRFS_DEV in root database
@@ -176,6 +199,30 @@ do
   echo "DB_SIZE=1073741824" /etc/bees/$BTRFS_DEV.conf
   systemctl enable --now beesd@UUID_DEV
 done
+
+# Set up Zerotier
+yays -S zerotier-one
+systemctl enable --now zerotier-one.service
+zerotier-cli join 233ccaac278f1c3d
+
+# Enable samba
+echo -e ".. Install samba"
+yay samba
+mdir /etc/samba
+echo -e "... Edit samba configuration"
+wget wget -O /etc/samba/smb.conf https://raw.githubusercontent.com/zentyal/samba/master/examples/smb.conf.default
+sed -i "s|   log file = /usr/local/samba/var/log.%m|#   log file = /usr/local/samba/var/log.%m|g" /etc/samba/smb.conf
+sed -i "/#   log file = \/usr\/local\/samba\/var\/log.\%m/a   logging = systemd" /etc/samba/smb.conf
+sed -i "s|Samba Server|Atka|g" /etc/samba/smb.conf
+sed -i "s|\[homes\]|#\[homes\]|g" /etc/samba/smb.conf
+sed -i "s|   comment = Home Directories|#   comment = Home Directories|g" /etc/samba/smb.conf
+sed -i "s|   browseable = no|#   browseable = no|g" /etc/samba/smb.conf
+sed -i "s|   writable = yes|#   writable = yes|g" /etc/samba/smb.conf
+systemctl start --now smb
+
+echo -e "... create samba user"
+echo -en $PASSWORD | smbpasswd -a $USR
+
 
 systemctl enable --now sddm
 
