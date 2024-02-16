@@ -87,9 +87,10 @@ yay -S flatpak flatpak-kcm flatseal
 yay -S backintime
 
 # Enable ssh agent for session
+yay -S ksshaskpass
 echo -e ".. Have SSH agents storing keys"
-echo "AddKeysToAgent yes" >> .ssh/config
-echo 'SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/ssh-agent.socket"' > ~/.config/environment.d/ssh_auth_socket.conf
+# echo "AddKeysToAgent yes" >> .ssh/config
+# echo 'SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/ssh-agent.socket"' > ~/.config/environment.d/ssh_auth_socket.conf
 systemctl --user enable --now ssh-agent
 
 # sudo cat <<EOF | sudo tee -a /home/$USR/.config/environment.d/ssh_agent.conf > /dev/null
