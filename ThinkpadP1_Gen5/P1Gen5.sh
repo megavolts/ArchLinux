@@ -1,79 +1,4 @@
 
-# echo -e ".. virtualization tools"
-yay -S --noconfirm virtualbox virtualbox-guest-iso virtualbox-host-dkms virtualbox-ext-oracle
-# # For cursor in wayland session
-# echo "KWIN_FORCE_SW_CURSOR=1" >> /etc/environement
-
-
-# BTRFS data subvolume
-if [ !  -e /mnt/btrfs/data/@media ]
-then
-  btrfs subvolume create /mnt/btrfs/data/@media 
-fi
-if [ !  -e /mnt/btrfs/data/@photography ]
-then
-  btrfs subvolume create /mnt/btrfs/data/@photography
-fi
-if [ !  -e /mnt/btrfs/data/@UAF-data ]
-then
-  btrfs subvolume create /mnt/btrfs/data/@UAF-data
-fi
-
-mkdir -p /mnt/data/{media,UAF-data}
-mkdir -p /mnt/data/media/{photography,wallpaper,meme,graphisme,tvseries,movies,videos,musics}
-echo "/dev/mapper/data  /mnt/data/media               btrfs rw,nodev,noatime,compress=zstd:3,ssd,discard,space_cache=v2,subvol=@media 0 0" >> /etc/fstab
-echo "/dev/mapper/data  /mnt/data/UAF-data            btrfs rw,nodev,noatime,compress=zstd:3,ssd,discard,space_cache=v2,subvol=@UAF-data  0 0" >> /etc/fstab
-echo "/dev/mapper/data  /mnt/data/media/photography   btrfs rw,nodev,noatime,compress=zstd:3,ssd,discard,space_cache=v2,subvol=@photography 0 0" >> /etc/fstab
-
-systemctl daemon-reload
-mount -a
-
-
-
-# Create directory:
-# Create media directory
-mkdir -p /home/$USER/Pictures/{photography,meme,wallpaper,graphisme}
-mkdir -p /home/$USER/Videos/{tvseries,movies,videos}
-mkdir -p /home/$USER/Musics
-mkdir -p /home/$USER/.thunderbird
-mkdir -p /home/$USER/.local/share/baloo/
-mkdir -p /home/$USER/.config/protonmail/bridge/cache 
-
-# Disable COW for thunderbird, baloo, protonmail
-chattr +C /home/$USER/.thunderbird
-chattr +C /home/$USER/.local/share/baloo/
-chattr +C /home/$USER/.cache/yay
-chattr +C /home/$USER/.config/protonmail/
-
-
-echo -e "... create yay subvolume for megavolts"
-sudo rm -R /home/$NEWUSER/.cache/yay
-sudo btrfs subvolume create /mnt/btrfs/data/@$NEWUSER
-sudo btrfs subvolume create /mnt/btrfs/data/@$NEWUSER/@cache_yay
-sudo btrfs subvolume create /mnt/btrfs/data/@$NEWUSER/@download
-
-
-echo -e "... configure megavolts user directory"
-cat << EOF >> /etc/fstab
-## USER: megavolts
-# yay cache
-/dev/mapper/data  /home/$NEWUSER/.cache/yay  btrfs rw,nodev,noatime,nocow,compress=zstd:3,ssd,discard,space_cache=v2,subvol=/@$USER/@cache_yay 0 0"
-
-# Download
-/dev/mapper/data  /home/$NEWUSER/Downloads btrfs rw,nodev,noatime,compress=zstd:3,ssd,discard,clear_cache,nospace_cache,subvol=/@$USER/@download,uid=1000,gid=984,umask=022 0 0
-
-# Media overlay
-/mnt/data/media/musics      /home/$NEWUSER/Musics                fuse.bindfs     perms=0755,mirror-only=$NEWUSER 0 0
-/mnt/data/media/photography /home/$NEWUSER/Pictures/photography  fuse,bindfs     perms=0755,mirror-only=$NEWUSER 0 0
-/mnt/data/media/wallpaper   /home/$NEWUSER/Pictures/wallpaper    fuse,bindfs     perms=0755,mirror-only=$NEWUSER 0 0
-/mnt/data/media/meme        /home/$NEWUSER/Pictures/meme         fuse,bindfs     perms=0755,mirror-only=$NEWUSER 0 0
-/mnt/data/media/graphisme   /home/$NEWUSER/Pictures/graphisme    fuse,bindfs     perms=0755,mirror-only=$NEWUSER 0 0
-/mnt/data/media/tvseries    /home/$NEWUSER/Videos/tvseries       fuse,bindfs     perms=0755,mirror-only=$NEWUSER 0 0
-/mnt/data/media/movies      /home/$NEWUSER/Videos/movies         fuse,bindfs     perms=0755,mirror-only=$NEWUSER 0 0
-/mnt/data/media/videos      /home/$NEWUSER/Videos/videos         fuse,bindfs     perms=0755,mirror-only=$NEWUSER 0 0
-EOF
-
-sudo systemctl daemon-reload && sudo mount -a
 
 systemctl enable --now --user secretserviced.service 
 sed -i '1s/^/"user_ssl_smtp": "false"/' .config/protonmail/bridge/prefs.json
@@ -152,3 +77,13 @@ PRUNENAMES = ".snapshots"
 # enable snapshot at boot
 systemctl enable snapper-boot.timer
 
+
+sudo yay -S rmlint shredder-rmlint
+
+yay -S duperemove
+
+# echo -e ".. tablet tools"
+yay -S --noconfirm input-wacom-dkms xf86-input-wacom  iio-sensor-proxy maliit-keyboard  kded-rotation-git detect-tablet-mode-git
+# Is this necessary
+echo "[General]" >> /etc/sddm.conf.d/virtualkbd.conf
+echo "InputMethod=qtvirtualkeyboard" >> /etc/sddm.conf.d/virtualkbd.conf
