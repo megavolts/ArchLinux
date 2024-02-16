@@ -122,7 +122,7 @@ btrfs filesystem mkswapfile --size=64G /mnt/mnt/btrfs/root/swapfile
 swapon /mnt/mnt/btrfs/root/swapfile
 RESUME_OFFSET=$(btrfs inspect-internal map-swapfile -r /mnt/mnt/btrfs/root/@swapfile)
 
-echo -e ".. create root subvolume mountpoints and mount"
+echo -e ".. create root subvolume mountpoints"
 mkdir -p /mnt/{boot,.boot,tmp,var/log,var/tmp,var/abs,var/cache/pacman/pkg,home,mnt/data}
 mount -o defaults,compress=zstd:3,noatime,nodev,nodatacow,ssd,discard,subvol=@tmp /dev/mapper/root /mnt/tmp
 mount -o defaults,compress=zstd:3,noatime,nodev,nodatacow,ssd,discard,subvol=@var_log /dev/mapper/root /mnt/var/log
@@ -132,6 +132,25 @@ mount -o defaults,compress=zstd:3,noatime,nodev,nodatacow,ssd,discard,subvol=@va
 mount -o defaults,compress=zstd:3,noatime,nodev,ssd,discard,space_cache=v2,subvol=@home /dev/mapper/data /mnt/home
 mount -o defaults,compress=zstd:3,noatime,nodev,ssd,discard,space_cache=v2,subvol=@data /dev/mapper/data /mnt/mnt/data
 
+
+# BTRFS data subvolume
+echo -e ".. create media subvolume on data and mount"
+if [ !  -e /mnt/btrfs/data/@media ]; then
+  btrfs subvolume create /mnt/btrfs/data/@media 
+fi
+if [ !  -e /mnt/btrfs/data/@photography ]; then
+  btrfs subvolume create /mnt/btrfs/data/@photography
+fi
+if [ !  -e /mnt/btrfs/data/@UAF-data ]; then
+  btrfs subvolume create /mnt/btrfs/data/@UAF-data
+fi
+mkdir -p /mnt/data/{media,UAF-data}
+mkdir -p /mnt/data/media/{photography,wallpaper,meme,graphisme,tvseries,movies,videos,musics}
+mount -o defaults,nodev,noatime,compress=zstd:3,ssd,discard,space_cache=v2,subvol=@media /dev/mapper/data /mnt/data/media
+mount -o defaults,nodev,noatime,compress=zstd:3,ssd,discard,space_cache=v2,subvol=@UAF-data /dev/mapper/data /mnt/data/UAF-data
+mount -o defaults,nodev,noatime,compress=zstd:3,ssd,discard,space_cache=v2,subvol=@photography /dev/mapper/data /mnt/data/media/photography
+
+# boot partition EFI and EFI_LINUX
 echo -e ".. mount windows disk boot partition to /mnt/boot"
 mount ${WINDISK}p${WINBOOTPART} /mnt/boot
 echo -e ".. mount linux disk boot partition to /mnt/.boot"

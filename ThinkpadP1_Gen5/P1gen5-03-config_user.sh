@@ -78,6 +78,45 @@ gpg --batch --passphrase '' --quick-gen-key 'ProtonMail Bridge' default default 
 pass init "ProtonMail Bridge"
 protonmail-bridge --cli
 
+# Set remote desktop
+yay -S krfb
+
+# Set ssh for github
+echo -e ".. Have SSH agents storing keys"
+echo "AddKeysToAgent yes" >> .ssh/config
+
+systemctl start --now --user ssh-agent.service
+echo "SSH_AUTH_SOCK=$XDG_RUNTIME_DIR/ssh-agent.socket" > .config/environment.d/ssh_agent_service.conf
+# sudo cat <<EOF | sudo tee -a /home/$USR/.config/environment.d/ssh_agent.conf > /dev/null
+# if ! pgrep -u "$USER" ssh-agent > /dev/null; then
+#     ssh-agent -t 2h > "$XDG_RUNTIME_DIR/ssh-agent.env"
+# fi
+# if [[ ! -f "$SSH_AUTH_SOCK" ]]; then
+#     source "$XDG_RUNTIME_DIR/ssh-agent.env" >/dev/null
+# fi
+# EOF
+
+# Docker and install
+echo -e "Install docker"
+yay -S docker docker-compose
+sudo systemctl enable --now docker
+sudo cat <<EOF | sudo tee -a /etc/environment > /dev/null
+DOCKERDIR=/opt/docker
+APPDATA=/opt/docker/appdata
+EOF
+source /etc/environment
+mkdir {$DOCKERDIR,$APPDIR}
+echo -e ".. Set swag"
+cd $DOCKERDIR
+git clone clone git@github.com:megavolts/swag.git
+chmod +x swag/init.sh
+./swag/init.sh
+
+echo -e ".. Set adguard & unbound"
+git clone clone git@github.com:megavolts/adguard.git
+chmod +x adguard/init.sh
+./adguard/init.sh
+
 
 # # TO CHECK IF NEEDED
 
