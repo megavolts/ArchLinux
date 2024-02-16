@@ -143,6 +143,10 @@ pacman -Sy
 pacman -S --noconfirm archlinux-keyring
 pacstrap /mnt base linux-zen linux-zen-headers base-devel openssh sudo ntp wget grml-zsh-config btrfs-progs networkmanager usbutils linux-firmware sof-firmware yajl mkinitcpio git go nano zsh terminus-font refind intel-ucode rsync
 
+echo -e ".. install basic console tools"
+pacstrap /mnt mlocate acl util-linux fwupd arp-scan htop lsof strace screen refind terminus-font
+
+
 echo -e ".. Create fstab"
 genfstab -L -p /mnt >> /mnt/etc/fstab
 sed 's/\/mnt\/swap/\/swap/g' /mnt/etc/fstab
@@ -168,7 +172,6 @@ arch-chroot /mnt locale-gen
 
 # set keyboard
 echo -e ".. Set keyboard"
-arch-chroot /mnt pacman -S --noconfirm terminus-font
 echo "FONT=ter-132n" >> /etc/vconsole.conf
 
 # set hostname
@@ -191,151 +194,6 @@ echo -en $PASSWORD | cryptsetup luksAddKey /dev/disk/by-uuid/$CRYPTUUID /etc/cry
 echo -e ".. Chroot to /mnt"
 arch-chroot /mnt /bin/zsh
 
-############################################################
-
-echo -e "Tuning pacman"
-echo -e ".. > Adding multilib"
-sed -i 's|#[multilib]|[multilib]|' /etc/pacman.conf
-sed -i "/\[multilib\]/,/Include/"'s/^#//' /etc/pacman.conf
-sed -i 's|#ParallelDownloads|ParallelDownloads|' /etc/pacman.conf
-echo -e ".. update pacman and system "
-
-echo -e ".. update pacman and system "
-pacman -Syy
-pacman -S --noconfirm archlinux-keyring
-pacman-key --init
-pacman-key --populate archlinux
-pacman -Syu --noconfirm
-
-############################################################
-# create $USER
-echo -e "Set root password"
-passwd root << EOF
-$PASSWORD
-$PASSWORD
-EOF
-chsh -S $(which zsh)
-
-echo -e "Set up user $NEWUSER"
-echo -e ".. create $NEWUSER with default password"
-useradd -m -g users -G wheel,audio,disk,lp,network -s /bin/zsh $NEWUSER
-passwd $NEWUSER << EOF
-$PASSWORD
-$PASSWORD
-EOF
-echo -e ".. create noCOW directory for $NEWUSER"
-
-# Disable COW for thunderbird and baloo, thunderbird, bridge and yay
-mkdir -p /home/$NEWUSER/.thunderbird
-chattr +C /home/$NEWUSER/.thunderbird
-mkdir -p /home/$NEWUSER/.local/share/baloo/
-chattr +C /home/$NEWUSER/.local/share/baloo/
-mkdir -p /home/$NEWUSER/.config/protonmail/bridge/cache 
-chattr +C /home/$NEWUSER/.config/protonmail/bridge/cache
-mkdir -p /home/$NEWUSER/.cache/yay
-chattr +C /home/$NEWUSER/.cache/yay
-
-btrfs subvolume create /mnt/btrfs/root/@yay
-mount -o rw,noatime,ssd,discard,space_cache=v2,commit=120,nodatacow,subvol=@yay /dev/mapper/root /home/$NEWUSER/.cache/yay
-echo "# megavolts btrfs nocow yay subvolume" >> /etc/fstab
-echo "LABEL=arch     /home/$NEWUSER/.cache/yay    btrfs    rw,noatime,ssd,discard,space_cache=v2,commit=120,nodatacow,subvol=@yay    0 0" >> /etc/fstab
-
-echo -e ".. sync older directory to new directory for $NEWUSER"
-# Sync old NEWUSER directory to new NEWUSER directory
-if [ -d /home/$NEWUSER-old ]; then
-  rsync -a $NEWUSER-old/ $NEWUSER/ -h --info=progress2 --remove-source-files
-  find $NEWUSER-old -type d -empty -delete
-fi
-
-echo -e "Install aur package manager"
-# create a fake builduser
-buildpkg(){
-  CURRENT_DIR=$pwd
-  wget https://aur.archlinux.org/cgit/aur.git/snapshot/$1.tar.gz
-  tar -xvzf $1.tar.gz -C /home/$NEWUSER
-  chown ${NEWUSER}:users /home/$NEWUSER/$1 -R
-  cd /home/$NEWUSER/$1
-  sudo -u $NEWUSER bash -c "makepkg -s --noconfirm"
-  pacman -U --noconfirm $1*.zst
-  cd $CURRENT_dir
-  rm /home/$NEWUSER/$1/ -r
-}
-
-buildpkg package-query
-buildpkg yay
-
-
-echo -e ".. Start services"
-systemctl enable NetworkManager
-systemctl enable sshd
-systemctl enable btrfs-scrub@home.timer 
-systemctl enable btrfs-scrub@-.timer 
-
-echo -e ".. Set up crupttab to unlock data"
-DATAUUID=$(cryptsetup luksDump /dev/disk/by-partlabel/CRYPTDATA | grep UUID | cut -f2- -d: | sed -e 's/^[ \t]*//')
-echo "data   UUID=$DATAUUID  /etc/cryptfs.key" >> /etc/crypttab
-
-# add btrfs hook and remove fsck
-sed -i 's/fsck)/btrfs)/g' /etc/mkinitcpio.conf
-
-# add encrypt and keyboard hook before filesystems
-sed -i 's/udev autodetect/udev keyboard encrypt resume filesystems autodetect/g' /etc/mkinitcpio.conf
-sed -i 's/kms keyboard keymap/kms keymap/g' /etc/mkinitcpio.conf
-sed -i 's/block filesystems btrfs/block btrfs/g' /etc/mkinitcpio.conf
-
-# modify refind.conf
-ROFFSET=$(btrfs inspect-internal map-swapfile -r /mnt/btrfs/root/@swapfile)
-ROOTUUID=$(cryptsetup luksDump /dev/disk/by-partlabel/CRYPTROOT | grep UUID | cut -f2- -d: | sed -e 's/^[ \t]*//')
-
-pacman -S --noconfirm refind
-refind-install
-refind-install --usedefault ${WINDISK}p${WINBOOTPART}
-if [! $NEWINSTALL ]; then
-  if [-d boot/refind_linux.conf ]; then
-    cp /boot/refind_linux.conf /boot/refind_linux.conf.old
-  fi
-  wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/X1yoga6/sources/refind.conf -O /boot/refind_linux.conf
-  sed -i "s|ROFFSET|$ROFFSET|g" /boot/refind_linux.conf
-  sed -i "s|n1p5|n1p${ROOTPART}|g" /boot/refind_linux.conf
-  sed -i "s|ROOTUUID|${ROOTUUID}|g" /boot/refind_linux.conf
-fi
-
-# Rebuild kernel
-if [ -f /boot/vmlinuz-linux ]; then
-	mkinitcpio -p linux
-fi
-if [ -f /boot/vmlinuz-linux-zen ]; then
-	mkinitcpio -p linux-zen
-fi
-
-# copy btrfs volume support
-cp /usr/share/refind/drivers_x64/btrfs_x64.efi /boot/EFI/refind/drivers_x64
-
-# Copy partition on kernel update to enable backup to /.boot
-cat << EOF >>  /usr/share/libalpm/hooks/91-boot_backup_after.hook
-[Trigger]
-Type = Path
-Operation = Install
-Operation = Upgrade
-Target = usr/lib/modules/*/vmlinuz
-Target = usr/lib/initcpio/*
-Target = usr/src/*/dkms.conf
-
-[Action]
-Depends = rsync
-Description = Backing up /boot...
-When = PostTransaction
-Exec = /usr/bin/rsync -avh --delete /boot /.bootbkp
-Exec = /usr/bin/rsync -avh --delete /boot /.boot
-EOF
-
-mkdir /.bootbkp
-
-rsync /boot/ /.boot/ -avh --info=progress2 
-exit
-swapoff /mnt/mnt/btrfs/root/@swapfile
-umount /mnt/{boot,.boot,data,mnt/data,mnt/btrfs/root,mnt/btrfs/data,var/log,var/tmp,/tmp,/var/cache/pacman/pkg,var/abs,home/$NEWUSER/.cache/yay,/home}
-reboot
 
 # ## Tuning
 # echo -e ""
