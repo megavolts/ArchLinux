@@ -50,7 +50,6 @@ setfacl -Rdm "u:${NEWUSER}:rwx" /opt
 setfacl -Rm "u:${NEWUSER}:rwx" /mnt/data
 setfacl -Rdm "u:${NEWUSER}:rwx" /mnt/data
 
-
 # Create media directory
 mkdir -p /home/$USER/Pictures/{photography,meme,wallpaper,graphisme}
 mkdir -p /home/$USER/Videos/{tvseries,movies,videos}
@@ -128,6 +127,16 @@ sudo cat <<EOF | sudo tee -a /etc/resolv.conf.head > /dev/null
 10.147.17.153
 10.147.17.8
 EOF
+
+yay -S --noconfirm kwalletmanager
+
+
+echo -e ".. KDE dialog box"
+qt5c
+echo "GTK_USE_PORTAL=1" >> .config/environment.d/qt_style.conf
+echo "QT_STYLE_OVERRIDE=adwaita" >> .config/environment.d/qt_style.conf
+echo "QT_QPA_PLATFORMTHEME=qt5ct" >> .config/environment.d/qt_style.conf
+
 
 # set up zerotier-one
 yays -S zerotier-one
