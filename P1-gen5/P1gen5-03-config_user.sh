@@ -13,9 +13,8 @@ systemctl enable --user --now pipewire-pulse
 
 echo -e ".. create noCOW directory for $USER"
 # Create noCOW directory
-mkdir -p /home/$USER/.thunderbird
-mkdir -p /home/$USER/.local/share/baloo/
-mkdir -p /home/$USER/.config/protonmail/bridge/cache 
+rm -R /home/$USER/{.thunderbird,.local/share/baloo,.config/protonmail/bridge/cache}
+mkdir -p /home/$USER/{.thunderbird,.local/share/baloo,.config/protonmail/bridge/cache}
 
 # Disable COW for thunderbird, baloo, protonmail
 chattr +C /home/$USER/.thunderbird
@@ -69,6 +68,9 @@ sudo cat <<EOF | sudo tee -a /etc/fstab > /dev/null
 EOF
 sudo systemctl daemon-reload && sudo mount -a
 
+yay -S gpgfrontend kwalletcli pinentry
+gpg --refresh-keys
+echo -e "... Don't forget to import key via gpg --import KEY"
 
 echo -e "... configure protonmail bridge"
 systemctl enable --now --user secretserviced.service 
@@ -79,7 +81,6 @@ protonmail-bridge --cli
 
 # Set remote desktop
 yay -S krfb krdc freerdp
-
 
 yay -S flatpak flatpak-kcm flatseal
 # Set up back in time
@@ -132,19 +133,28 @@ yay -S --noconfirm kwalletmanager
 
 
 echo -e ".. KDE dialog box"
-qt5c
-echo "GTK_USE_PORTAL=1" >> .config/environment.d/qt_style.conf
-echo "QT_STYLE_OVERRIDE=adwaita" >> .config/environment.d/qt_style.conf
-echo "QT_QPA_PLATFORMTHEME=qt5ct" >> .config/environment.d/qt_style.conf
+# echo "GTK_USE_PORTAL=1" >> .config/environment.d/qt_style.conf
+# echo "QT_STYLE_OVERRIDE=adwaita" >> .config/environment.d/qt_style.conf
+# echo "QT_QPA_PLATFORMTHEME=qt5ct" >> .config/environment.d/qt_style.conf
 
 
 # set up zerotier-one
 yays -S zerotier-one
+zerotier-one joint ZT_NETOWORK
 # # TO CHECK IF NEEDED
 
 # echo "KWallet login"
 # echo "auth            optional        pam_kwallet5.so" >> /etc/pam.d/sddm
 # echo "session         optional        pam_kwallet5.so auto_start" >> /etc/pam.d/sddm
+
+echo -e << EOF
+Don't forget:
+- In firefox, to modify aboutc:config with browser.tabs.inTitlebar to 0 to enable maximize/minimize button
+
+EOF
+
+echo -e ".. Zoom screen sharing under wayland"
+sed -i 's|enableWaylandShare=false|enableWaylandShare=true|g' ~/.config/zoomus.conf
 
 
 [ ] REMOTE DESKTOP SET UP WITH KRFB

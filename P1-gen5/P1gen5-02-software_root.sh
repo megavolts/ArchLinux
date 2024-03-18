@@ -43,7 +43,7 @@ yays firefox thunderbird filezilla zoom teams slack-wayland telegram-desktop sig
 yays pass-git protonmail-bridge-bin protonvpn-gui qtpass secret-service
 
 # echo -e ".. media"
-yays dolphin dolphin-plugins qt5-imageformats ffmpegthumbs lzop kdegraphics-thumbnailers kimageformats raw-thumbnailer kio-gdrive libappimage
+yays dolphin dolphin-plugins qt5-imageformats ffmpegthumbs lzop kdegraphics-thumbnailers kimageformats raw-thumbnailer kio-gdrive libappimage rawtherapee
 yays ark unrar p7zip zip
 
 echo -e ".. sync software"
@@ -170,7 +170,8 @@ After=\\\\x2eboot.mount
 EOF
 
 # BTRFS maintenance
-yays rmling rmlint-shredder duperemove bees
+yays rmling rmlint-shredder duperemove bees duperemove-service 
+
 mkdir /opt/$USR
 cat <<EOF | sudo tee -a /opt/$USR/btrfs_maintenance.sh > /dev/null
 #! /bin/bash
@@ -217,9 +218,15 @@ yays -S zerotier-one
 systemctl enable --now zerotier-one.service
 zerotier-cli join 233ccaac278f1c3d
 
+# Set up tailscale
+yay -S tailscale
+systemctl enable --now tailscaled
+tailscale up --ssh
+echo -e ".. Follow the link to login"
+
 # Enable samba
 echo -e ".. Install samba"
-yay samba
+yays samba kdenetwork-filesharing
 mdir /etc/samba
 echo -e "... Edit samba configuration"
 wget wget -O /etc/samba/smb.conf https://raw.githubusercontent.com/zentyal/samba/master/examples/smb.conf.default
@@ -239,8 +246,21 @@ echo -e " ..  Install pacman and downgrade tools"
 yays paccache-hook pacman-contrib downgrade
 
 
+# KDE and GTK uniform
+echo -e ".. GTK integratoin into QT"
+# yays qt5ct-kde kde-gtk-config adwaita-qt5-git gtk3 qt5ct 
+yays breeze breeze-gtk xdg-desktop-portal xdg-desktop-portal 
 systemctl enable --now sddm
 
+yay -S plasma-browser-integration firefox-kde-opensuse
+echo -e << EOF
+.. For Firefox
+- wisget.use-xdg-dekstop-portal-mime-handler: 1
+- widget.user-xdg-dekstop-portal.file-picker: 1
+- media.hardwaremediakeys.enabled: false
+EOF
+
+echo -e ""
 
 
 ########################################################################

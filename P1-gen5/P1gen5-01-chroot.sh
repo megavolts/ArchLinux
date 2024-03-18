@@ -9,7 +9,7 @@ sed -i 's|#ParallelDownloads|ParallelDownloads|' /etc/pacman.conf
 
 echo -e ".. Update pacman and system "
 pacman -Syy
-pacman -S --noconfirm archlinux-keyring
+pacman -S --noconfirm archlinux-keyring rebuild-detector
 pacman-key --init
 pacman-key --populate archlinux
 pacman -Syu --noconfirm
@@ -136,9 +136,6 @@ fi
 if [ -f /boot/vmlinuz-linux-zen ]; then
 	mkinitcpio -p linux-zen
 fi
-
-
-
 
 exit
 swapoff /mnt/mnt/btrfs/root/@swapfile
