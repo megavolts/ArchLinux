@@ -13,6 +13,7 @@ yays xorg-server xorg-apps xorg-xinit xorg-xrandr xorg-xkill xorg-xauth
 
 echo -e "... install plasma windows manager"
 yays plasma-desktop sddm plasma-nm kscreen powerdevil plasma-wayland-session plasma-pa plasma-thunderbolt jack2 ttf-droid wireplumber phonon-qt5-gstreamer 
+systemctl enable sddm --now
 
 echo -e ".. install audio server"
 yays pipewire lib32-pipewire pipewire-docs pipewire-alsa lib32-pipewire-jack qpwgraph

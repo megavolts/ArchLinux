@@ -6,6 +6,7 @@
 #  2         1050624       537921535   256.0 GiB   8300  CRYPTROOT
 #  3       537921536      7814035455     3.4 TiB   8300  CRYPTDATA
 # Windows Disk: /dev/nvme0n1
+
 HOSTNAME=atka
 WINDISK=/dev/nvme0n1
 WINBOOTPART=1
@@ -29,7 +30,6 @@ echo -e "DISKS PREPARATION"
 if $NEWINSTALL
 then
   echo ".. New installation, create new partition table"
-else
   sgdisk -n $ROOTPART:1050624:537921535 -t $ROOTPART:8300 -c $ROOTPART:"CRYPTROOT" $DISK
 
   # echo -e ".. prepare boot partition"
@@ -115,7 +115,7 @@ mount -o defaults,compress=zstd:3,noatime,nodev,ssd,discard,space_cache=v2 /dev/
 
 echo -e ".. create and activate swapfile"
 # Create swapfile if not existing
-btrfs subvolume create /mnt/btrfs/root/@swap
+btrfs subvolume create /mnt/mnt/btrfs/root/@swap
 btrfs filesystem mkswapfile --size=64G /mnt/mnt/btrfs/root/@swap/swapfile
 swapon /mnt/mnt/btrfs/root/@swap/swapfile
 RESUME_OFFSET=$(btrfs inspect-internal map-swapfile -r /mnt/mnt/btrfs/root/@swap/swapfile)
@@ -129,7 +129,6 @@ mount -o defaults,compress=zstd:3,noatime,nodev,nodatacow,ssd,discard,subvol=@va
 mount -o defaults,compress=zstd:3,noatime,nodev,nodatacow,ssd,discard,subvol=@var_cache_pacman_pkg /dev/mapper/root /mnt/var/cache/pacman/pkg
 mount -o defaults,compress=zstd:3,noatime,nodev,ssd,discard,space_cache=v2,subvol=@home /dev/mapper/data /mnt/home
 mount -o defaults,compress=zstd:3,noatime,nodev,ssd,discard,space_cache=v2,subvol=@data /dev/mapper/data /mnt/mnt/data
-
 
 # BTRFS data subvolume
 echo -e ".. create media subvolume on data and mount"
@@ -161,8 +160,7 @@ pacman -S --noconfirm archlinux-keyring
 pacstrap /mnt base linux-zen linux-zen-headers base-devel openssh sudo ntp wget grml-zsh-config btrfs-progs networkmanager usbutils linux-firmware sof-firmware yajl mkinitcpio git go nano zsh terminus-font refind intel-ucode rsync
 
 echo -e ".. install basic console tools"
-pacstrap /mnt mlocate acl util-linux fwupd arp-scan htop lsof strace screen refind terminus-font
-
+pacstrap /mnt mlocate acl util-linux fwupd arp-scan htop lsof strace screen refind terminus-font sudo
 
 echo -e ".. Create fstab"
 genfstab -L -p /mnt >> /mnt/etc/fstab
