@@ -12,8 +12,7 @@ echo -e ".. Install xorg and input"
 yays xorg-server xorg-apps xorg-xinit xorg-xrandr xorg-xkill xorg-xauth
 
 echo -e "... install plasma windows manager"
-yays plasma-desktop sddm plasma-nm kscreen powerdevil plasma-wayland-session plasma-pa plasma-thunderbolt jack2 ttf-droid wireplumber phonon-qt5-gstreamer 
-systemctl enable sddm --now
+yays plasma-desktop sddm plasma-nm kscreen powerdevil plasma-wayland-session plasma-pa plasma-thunderbolt jack2 ttf-droid wireplumber phonon-qt6-gstreamer 
 
 echo -e ".. install audio server"
 yays pipewire lib32-pipewire pipewire-docs pipewire-alsa lib32-pipewire-jack qpwgraph
@@ -44,7 +43,7 @@ yays firefox thunderbird filezilla zoom teams slack-wayland telegram-desktop sig
 yays pass-git protonmail-bridge-bin protonvpn-gui qtpass secret-service
 
 # echo -e ".. media"
-yays dolphin dolphin-plugins qt5-imageformats ffmpegthumbs lzop kdegraphics-thumbnailers kimageformats raw-thumbnailer kio-gdrive libappimage rawtherapee
+yays dolphin dolphin-plugins qt6-imageformats ffmpegthumbs lzop kdegraphics-thumbnailers kimageformats raw-thumbnailer kio-gdrive libappimage rawtherapee
 yays ark unrar p7zip zip
 
 echo -e ".. sync software"
@@ -73,7 +72,7 @@ yays libreoffice-fresh mendeleydesktop texmaker texlive-most zotero
 yays aspell-fr aspell-en aspell-de hunspell-en_US hunspell-fr hunspell-de hyphen-en hyphen-en hyphen-de libmythes mythes-en mythes-fr libreoffice-extension-grammalecte-fr
 
 # echo -e ".. confing tools"
-yays kinfocenter kruler sonnet-git discover packagekit-qt5 
+yays kinfocenter kruler sonnet-git discover packagekit 
 
 # echo -e ".. printing tools"
 yays cups system-config-printer
@@ -90,6 +89,9 @@ yays snapper snapper-gui-git snap-pac
 
 echo -e ".. Configure snapper"
 echo -e "... Create root config"
+if [ -d "/home/.snapshots" ]; then
+  rmdir /.snapshots
+fi
 snapper -c root create-config /
 
 echo -e "... Create home config"
@@ -99,7 +101,6 @@ fi
 snapper -c home create-config /home
 
 # we want the snaps located /at /mnt/btrfs-root/_snaptshot rather than at the root
-
 echo -e ".. move snap subvolume to data root subvolume"
 btrfs subvolume delete /.snapshots
 btrfs subvolume delete /home/.snapshots
@@ -113,12 +114,12 @@ systemctl daemon-reload && mount -a
 
 echo -e ".. Edit home and root configuration"
 echo -e "... Allow user $USR to modify snapper config"
-setfacl -Rm "u:${USER}:rwx" /etc/snapper/configs
-setfacl -Rdm "u:${USER}:rwx" /etc/snapper/configs
+setfacl -Rm "u:${USR}:rwx" /etc/snapper/configs
+setfacl -Rdm "u:${USR}:rwx" /etc/snapper/configs
 
 echo -e "... Allow user $USR and usergroup wheel to modify snapper"
-sed -i "s|ALLOW_USERS=\"|ALLOW_USERS=\"${USER}|g" /etc/snapper/configs/home
-sed -i "s|ALLOW_USERS=\"|ALLOW_USERS=\"${USER}|g" /etc/snapper/configs/root
+sed -i "s|ALLOW_USERS=\"|ALLOW_USERS=\"${USR}|g" /etc/snapper/configs/home
+sed -i "s|ALLOW_USERS=\"|ALLOW_USERS=\"${USR}|g" /etc/snapper/configs/root
 sed -i "s|ALLOW_GROUPS=\"|ALLOW_GROUPS=\"wheel|g" /etc/snapper/configs/home # Allow $NEWUSER to modify the files
 sed -i "s|ALLOW_GROUPS=\"|ALLOW_GROUPS=\"wheel|g" /etc/snapper/configs/root
 
@@ -127,7 +128,6 @@ sed "s|SYNC_ACL=\"no|SYNC_ACL=\"yes|g" -i /etc/snapper/configs/home
 sed "s|SYNC_ACL=\"no|SYNC_ACL=\"yes|g" -i /etc/snapper/configs/root
 
 echo -e "... Change Timeline limit for snapshot retention"
-
 # update snap config for home directory
 sed  -i "s|TIMELINE_MIN_AGE=\"1800\"|TIMELINE_MIN_AGE=\"1800\"|g"         /etc/snapper/configs/home
 sed  -i "s|TIMELINE_LIMIT_HOURLY=\"10\"|TIMELINE_LIMIT_HOURLY=\"96\"|g"   /etc/snapper/configs/home  # keep hourly backup for 48 hours
@@ -196,23 +196,23 @@ cat <<EOF | sudo tee -a /opt/$USR/btrfs_maintenance-all.sh > /dev/null
 EOF
 chmod +x /opt/$USR/*
 
-echo -e ".. Configure bees"
-for BTRFS_DEV in root database
-do
-  BTRFS_DEV=root  
-  UUID_DEV=$(blkid -s UUID -o value /dev/mapper/$BTRFS_DEV)
-  mkdir -p /var/lib/bees
-  # create bees subvolume on root of root
-  btrfs subvolume create /var/lib/bees/@bees_$BTRFS_DEV
-  truncate -s 1g /var/lib/bees/@bees_$BTRFS_DEV/beeshah.dat
-  chmod 700 /var/lib/bees/@bees_$BTRFS_DEV/beeshash.dat
+# echo -e ".. Configure bees"
+# for BTRFS_DEV in root database
+# do
+#   BTRFS_DEV=root  
+#   UUID_DEV=$(blkid -s UUID -o value /dev/mapper/$BTRFS_DEV)
+#   mkdir -p /var/lib/bees
+#   # create bees subvolume on root of root
+#   btrfs subvolume create /var/lib/bees/@bees_$BTRFS_DEV
+#   truncate -s 1g /var/lib/bees/@bees_$BTRFS_DEV/beeshah.dat
+#   chmod 700 /var/lib/bees/@bees_$BTRFS_DEV/beeshash.dat
 
 
-  cp /etc/bees/beesd.conf.sample /etc/bees/$BTRFS_DEV.conf
-  sed -i "s/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/$UUID_DEV/g" /etc/bees/$BTRFS_DEV.conf
-  echo "DB_SIZE=1073741824" /etc/bees/$BTRFS_DEV.conf
-  systemctl enable --now beesd@UUID_DEV
-done
+#   cp /etc/bees/beesd.conf.sample /etc/bees/$BTRFS_DEV.conf
+#   sed -i "s/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/$UUID_DEV/g" /etc/bees/$BTRFS_DEV.conf
+#   echo "DB_SIZE=1073741824" /etc/bees/$BTRFS_DEV.conf
+#   systemctl enable --now beesd@UUID_DEV
+# done
 
 # Set up Zerotier
 yays -S zerotier-one
@@ -246,17 +246,16 @@ echo -en $PASSWORD | smbpasswd -a $USR
 echo -e " ..  Install pacman and downgrade tools"
 yays paccache-hook pacman-contrib downgrade
 
-
 # KDE and GTK uniform
-echo -e ".. GTK integratoin into QT"
-# yays qt5ct-kde kde-gtk-config adwaita-qt5-git gtk3 qt5ct 
+echo -e ".. GTK integration into QT"
+# yays qt6ct-kde kde-gtk-config adwaita-qt6-git gtk3 qt6ct 
 yays breeze breeze-gtk xdg-desktop-portal xdg-desktop-portal 
 systemctl enable --now sddm
 
 yay -S plasma-browser-integration firefox-kde-opensuse
 echo -e << EOF
 .. For Firefox
-- wisget.use-xdg-dekstop-portal-mime-handler: 1
+- widget.use-xdg-dekstop-portal-mime-handler: 1
 - widget.user-xdg-dekstop-portal.file-picker: 1
 - media.hardwaremediakeys.enabled: false
 EOF

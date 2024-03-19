@@ -12,6 +12,8 @@ systemctl enable --user --now pipewire
 systemctl enable --user --now pipewire-pulse
 
 echo -e ".. create noCOW directory for $USER"
+balooctl6 disable
+
 # Create noCOW directory
 rm -R /home/$USER/{.thunderbird,.local/share/baloo,.config/protonmail/bridge/cache}
 mkdir -p /home/$USER/{.thunderbird,.local/share/baloo,.config/protonmail/bridge/cache}
@@ -25,29 +27,29 @@ echo -e "... create noCOW subvolume for yay"
 sudo rm -R /home/$USER/.cache/yay
 sudo mkdir /home/$USER/.cache/yay
 sudo chattr +C /home/$USER/.cache/yay
-sudo btrfs subvolume create /mnt/btrfs/data/@$USER
-sudo btrfs subvolume create /mnt/btrfs/data/@$USER/@cache_yay
-sudo mount -o rw,nodev,noatime,compress=zstd:3,ssd,discard,clear_cache,nospace_cache,nodatacow,commit=120,,uid=1000,gid=984,umask=022,subvol=/@$USER/@cache_yay /dev/mapper/data /home/$USER/.cache/yay
+sudo btrfs subvolume create /mnt/btrfs/data/@${USER}
+sudo btrfs subvolume create /mnt/btrfs/data/@${USER}/@cache_yay
+sudo mount -o rw,nodev,noatime,compress=zstd:3,ssd,discard,clear_cache,nospace_cache,nodatacow,commit=120,,uid=1000,gid=984,umask=022,subvol=/@${USER}/@cache_yay /dev/mapper/data /home/$USER/.cache/yay
 sudo cat <<EOF | sudo tee -a /etc/fstab > /dev/null
 ## USER: megavolts
 # yay cache
-/dev/mapper/data  /home/$USER/.cache/yay  b rw,nodev,noatime,compress=zstd:3,ssd,discard,clear_cache,nospace_cache,nodatacow,commit=120,,uid=1000,gid=984,umask=022,subvol=/@$USER/@cache_yay 0 0
+/dev/mapper/data  /home/$USER/.cache/yay  b rw,nodev,noatime,compress=zstd:3,ssd,discard,clear_cache,nospace_cache,nodatacow,commit=120,,uid=1000,gid=984,umask=022,subvol=/@${USER}/@cache_yay 0 0
 EOF
 
 echo -e "... create noCOW subvolume for Download"
-sudo btrfs subvolume create /mnt/btrfs/data/@$USER/@download
-sudo mount -o rw,nodev,noatime,compress=zstd:3,ssd,discard,clear_cache,nospace_cache,nodatacow,commit=120,subvol=/@$USER/@download,uid=1000,gid=984,umask=022 /dev/mapper/data /home/$USER/Downloads
+sudo btrfs subvolume create /mnt/btrfs/data/@${USER}/@download
+sudo mount -o rw,nodev,noatime,compress=zstd:3,ssd,discard,clear_cache,nospace_cache,nodatacow,commit=120,subvol=/@${USER}/@download,uid=1000,gid=984,umask=022 /dev/mapper/data /home/$USER/Downloads
 sudo cat <<EOF | sudo tee -a /etc/fstab > /dev/null
 # Download
-/dev/mapper/data  /home/$USER/Downloads btrfs rw,nodev,noatime,compress=zstd:3,ssd,discard,clear_cache,nospace_cache,nodatacow,commit=120,subvol=/@$USER/@download,uid=1000,gid=984,umask=022 0 0
+/dev/mapper/data  /home/$USER/Downloads btrfs rw,nodev,noatime,compress=zstd:3,ssd,discard,clear_cache,nospace_cache,nodatacow,commit=120,subvol=/@${USER}/@download,uid=1000,gid=984,umask=022 0 0
 EOF
 
 # For user megavolts:
 # fix access for user megavolts to /opt and /mnt/data
-setfacl -Rm "u:${NEWUSER}:rwx" /opt
-setfacl -Rdm "u:${NEWUSER}:rwx" /opt
-setfacl -Rm "u:${NEWUSER}:rwx" /mnt/data
-setfacl -Rdm "u:${NEWUSER}:rwx" /mnt/data
+sudo setfacl -Rm "u:${USER}:rwx" /opt
+sudo setfacl -Rdm "u:${USER}:rwx" /opt
+sudo setfacl -Rm "u:${USER}:rwx" /mnt/data
+sudo setfacl -Rdm "u:${USER}:rwx" /mnt/data
 
 # Create media directory
 mkdir -p /home/$USER/Pictures/{photography,meme,wallpaper,graphisme}
