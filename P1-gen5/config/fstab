@@ -1,0 +1,75 @@
+# Static information about the filesystems.
+# See fstab(5) for details.
+
+# <file system> <dir> <type> <options> <dump> <pass>
+# /dev/mapper/root UUID=c4c2c79f-4774-4be0-9f50-ee5adcae5e96
+LABEL=arch / btrfs rw,nodev,noatime,compress=zstd:3,ssd,discard,space_cache=v2,subvolid=268,subvol=/@root 0 0
+
+# /dev/mapper/root UUID=c4c2c79f-4774-4be0-9f50-ee5adcae5e96
+LABEL=arch /mnt/btrfs/root btrfs rw,nodev,noatime,compress=zstd:3,ssd,discard,space_cache=v2,subvolid=5,subvol=/ 0 0
+
+# /dev/mapper/data UUID=f60453d1-bece-4aec-ae9c-999af1756359
+LABEL=data /mnt/btrfs/data btrfs rw,nodev,noatime,compress=zstd:3,ssd,discard,space_cache=v2,subvolid=5,subvol=/ 0 0
+
+# /dev/nvme0n1p1 UUID=6AB4-AD93
+LABEL=EFI /boot vfat rw,relatime,fmask=0022,dmask=0022,codepage=437,iocharset=ascii,shortname=mixed,utf8,errors=remount-ro 0 2
+
+# /dev/nvme1n1p1 UUID=FFC2-A532
+LABEL=EFI_LINUX /.boot vfat rw,relatime,fmask=0022,dmask=0022,codepage=437,iocharset=ascii,shortname=mixed,utf8,errors=remount-ro 0 2
+
+# /dev/mapper/root UUID=c4c2c79f-4774-4be0-9f50-ee5adcae5e96
+LABEL=arch /tmp btrfs rw,nodev,noatime,compress=zstd:3,ssd,discard,space_cache=v2,subvolid=272,subvol=/@tmp 0 0
+
+# /dev/mapper/root UUID=c4c2c79f-4774-4be0-9f50-ee5adcae5e96
+LABEL=arch /var/log btrfs rw,nodev,noatime,compress=zstd:3,ssd,discard,space_cache=v2,subvolid=271,subvol=/@var_log 0 0
+
+# /dev/mapper/root UUID=c4c2c79f-4774-4be0-9f50-ee5adcae5e96
+LABEL=arch /var/tmp btrfs rw,nodev,noatime,compress=zstd:3,ssd,discard,space_cache=v2,subvolid=274,subvol=/@var_tmp 0 0
+
+# /dev/mapper/root UUID=c4c2c79f-4774-4be0-9f50-ee5adcae5e96
+LABEL=arch /var/abs btrfs rw,nodev,noatime,compress=zstd:3,ssd,discard,space_cache=v2,subvolid=273,subvol=/@var_abs 0 0
+
+# /dev/mapper/root UUID=c4c2c79f-4774-4be0-9f50-ee5adcae5e96
+LABEL=arch /var/cache/pacman/pkg btrfs rw,nodev,noatime,compress=zstd:3,ssd,discard,space_cache=v2,subvolid=275,subvol=/@var_cache_pacman_pkg 0 0
+
+# /dev/mapper/data UUID=f60453d1-bece-4aec-ae9c-999af1756359
+LABEL=data /home btrfs rw,nodev,noatime,compress=zstd:3,ssd,discard,space_cache=v2,subvolid=256,subvol=/@home 0 0
+
+# /dev/mapper/data UUID=f60453d1-bece-4aec-ae9c-999af1756359
+LABEL=data /mnt/data btrfs rw,nodev,noatime,compress=zstd:3,ssd,discard,space_cache=v2,subvolid=257,subvol=/@data 0 0
+
+/mnt/btrfs/root/@swap/swapfile none swap defaults 0 0
+
+#tmpfs   /tmp    tmpfs  rw,nr_inodes=5k,noexec,nodev,nosuid,uid=user,gid=group,mode=1700 0 0
+
+# megavolts btrfs nocow yay subvolume
+/dev/mapper/data /mnt/data/media btrfs rw,nodev,noatime,compress=zstd:3,ssd,discard,space_cache=v2,subvol=@media 0 0
+/dev/mapper/data /mnt/data/UAF-data btrfs rw,nodev,noatime,compress=zstd:3,ssd,discard,space_cache=v2,subvol=@UAF-data 0 0
+/dev/mapper/data /mnt/data/media/photography btrfs rw,nodev,noatime,compress=zstd:3,ssd,discard,space_cache=v2,subvol=@photography 0 0
+# Media overlay
+## USER: megavolts
+
+# Media overlay
+/mnt/data/media/musics /home/megavolts/Musics fuse.bindfs perms=0755,mirror-only=megavolts 0 0
+/mnt/data/media/photography /home/megavolts/Pictures/photography fuse,bindfs perms=0755,mirror-only=megavolts 0 0
+/mnt/data/media/wallpaper /home/megavolts/Pictures/wallpapers fuse,bindfs perms=0755,mirror-only=megavolts 0 0
+/mnt/data/media/meme /home/megavolts/Pictures/meme fuse,bindfs perms=0755,mirror-only=megavolts 0 0
+/mnt/data/media/graphisme /home/megavolts/Pictures/graphisme fuse,bindfs perms=0755,mirror-only=megavolts 0 0
+/mnt/data/media/tvseries /home/megavolts/Videos/tvseries fuse,bindfs perms=0755,mirror-only=megavolts 0 0
+/mnt/data/media/movies /home/megavolts/Videos/movies fuse,bindfs perms=0755,mirror-only=megavolts 0 0
+/mnt/data/media/videos /home/megavolts/Videos/videos fuse,bindfs perms=0755,mirror-only=megavolts 0 0
+## USER: megavolts
+# cache and yay cache
+/dev/mapper/data /home/megavolts/.cache		btrfs	rw,nodev,noatime,compress=zstd:3,ssd,discard,clear_cache,nospace_cache,nodatacow,commit=120,subvol=@megavolts/@cache 0 0
+# yay cache
+/dev/mapper/data /home/megavolts/.cache/yay	btrfs	rw,nodev,noatime,compress=zstd:3,ssd,discard,clear_cache,nospace_cache,nodatacow,commit=120,subvol=@megavolts/@cache_yay 0 0
+# Download
+/dev/mapper/data /home/megavolts/Downloads	btrfs	rw,nodev,noatime,compress=zstd:3,ssd,discard,clear_cache,nospace_cache,nodatacow,commit=120,subvol=@megavolts/@download 0 0
+
+LABEL=arch /.snapshots btrfs rw,noatime,ssd,discard,compress=zstd:3,space_cache,subvol=@snapshots/@root_snaps 0 0
+LABEL=data /home/.snapshots btrfs rw,noatime,ssd,discard,compress=zstd:3,space_cache,subvol=@snapshots/@home_snaps 0 0
+
+# SMB
+//100.77.191.41/Data	/mnt/akutan/Data		cifs credentials=/home/megavolts/.config/megavolts/akutan.smb,noauto,uid=1000,gid=984	0 0
+#//100.77.191.41/Data    /mnt/akutan/Data                cifs credentials=/home/megavolts/.config/megavolts/akutan.smb,noauto,noperm 0 0
+
