@@ -40,10 +40,16 @@ yayr dolphin dolphin-plugins qt6-imageformats ffmpegthumbs lzop kdegraphics-thum
 yayr ark unrar p7zip zip
 
 echo -e ".. sync software"
-yayr c++utilities 
-yayr qtutilities-qt6
-yayr qtforkawesome-qt6 
-yayr syncthingtray-qt6 syncthing nextcloud-client
+echo -e ".. Add ownstuff repositories"
+cat << EOF >>  /etc/pacman.conf
+[ownstuff]
+Server = https://ftp.f3l.de/~martchus/$repo/os/$arch
+Server = https://martchus.no-ip.biz/repo/arch/$repo/os/$arch
+EOF
+pacman-key --recv-keys B9E36A7275FC61B464B67907E06FE8F53CDC6A4C # import key
+pacman-key --finger    B9E36A7275FC61B464B67907E06FE8F53CDC6A4C # verify fingerprint
+pacman-key --lsign-key B9E36A7275FC61B464B67907E06FE8F53CDC6A4C # sign imported key locally
+yayr syncthingtray-qt6
 
 echo -e ".. coding tools"
 yayr sublime-text-4 terminator zettlr pycharm-professional python-pip python-setuptools tk python-utils

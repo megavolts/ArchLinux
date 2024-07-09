@@ -95,20 +95,21 @@ systemctl --user enable --now ssh-agent
 echo -e "Install docker"
 yay -S docker docker-compose
 sudo systemctl enable --now docker
+sudo gpasswd -a $USER docker
 sudo cat <<EOF | sudo tee -a /etc/environment > /dev/null
 DOCKERDIR=/opt/docker
 APPDATA=/opt/docker/appdata
 EOF
 source /etc/environment
-mkdir {$DOCKERDIR,$APPDIR}
+mkdir -p {$DOCKERDIR,$APPDATA}
 echo -e ".. Set swag"
 cd $DOCKERDIR
-git clone clone git@github.com:megavolts/swag.git
+git clone git@github.com:megavolts/swag.git
 chmod +x swag/init.sh
 ./swag/init.sh
 
 echo -e ".. Set adguard & unbound"
-git clone clone git@github.com:megavolts/adguard.git
+git clone git@github.com:megavolts/adguard.git
 chmod +x adguard/init.sh
 ./adguard/init.sh
 

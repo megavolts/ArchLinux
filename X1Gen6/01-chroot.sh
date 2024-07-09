@@ -56,7 +56,8 @@ buildpkg(){
 
 buildpkg package-query
 buildpkg yay
-yays(){sudo -u megavolts yay -S --removemake --cleanafter --noconfirm $1}
+alias
+yayr="sudo -u megavolts yay -S --removemake --cleanafter --noconfirm"
 
 echo -e ".. sync older directory to new directory for $NEWUSER"
 # Sync old NEWUSER directory to new NEWUSER directory
@@ -82,6 +83,11 @@ pacman -S --noconfirm mesa vulkan-intel vulkan-mesa-layers
 # Enable GuC/HuC firmware loading
 echo "options i915 enable_guc=2" >> /etc/modprobe.d/i915.conf
 mkinitcpio -p linux-zen 
+
+eco -e "Tablet mode"
+yayr -S --noconfirm xf86-input-wacom easystroke kded-rotation-git maliit-keyboard
+
+
 
 # Configure kernel
 # add btrfs hook and remove fsck

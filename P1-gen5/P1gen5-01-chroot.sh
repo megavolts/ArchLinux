@@ -1,5 +1,14 @@
 
 ############################################################
+NEWUSER=megavolts
+
+WINDISK=/dev/nvme0n1
+WINBOOTPART=1
+
+DISK=/dev/nvme1n1
+BOOTPART=1
+ROOTPART=2
+DATAPART=3
 
 echo -e "Tuning pacman"
 echo -e ".. Enable multilib"
@@ -17,7 +26,29 @@ pacman -Syu --noconfirm
 echo -e ".. Optimize mirrorlist"
 pacman -S --noconfirm reflector
 sed -i "s|# --country France,Germany|--country USA,Switzerland|g" /etc/xdg/reflector/reflector.conf
-systemctl enable --now reflector.timer
+systemctl enable reflector.timer
+############################################################
+echo -e "Create user"
+echo 'Enter a default passphrase use to encrypt the disk and serve as password for root and megavolts:'
+stty -echo
+read PASSWORD
+stty echo
+# ROOT options
+echo -e "Set root password"
+passwd root << EOF
+$PASSWORD
+$PASSWORD
+EOF
+chsh -s $(which zsh)
+
+# USER options
+echo -e "Set up user $NEWUSER"
+echo -e ".. create $NEWUSER with default password"
+useradd -m -g users -G wheel,audio,disk,lp,network -s /bin/zsh $NEWUSER
+passwd $NEWUSER << EOF
+$PASSWORD
+$PASSWORD
+EOF
 
 echo -e "Install aur package manager"
 # create a fake builduser
@@ -35,8 +66,7 @@ buildpkg(){
 
 buildpkg package-query
 buildpkg yay
-yays(){sudo -u megavolts yay -S --removemake --cleanafter --noconfirm $1}
-
+yays(){sudo -u $NEWUSER yay -S --removemake --cleanafter --noconfirm $1}
 
 ############################################################
 # ROOT options
@@ -81,19 +111,21 @@ echo "data   UUID=$DATAUUID  /etc/cryptfs.key" >> /etc/crypttab
 ## P1 specific software
 echo -e "Graphic interface"
 echo -e ".. Install drivers specific to Intel Corporation Alder Lake-P Integrated Graphics Controller"
-pacman -S --noconfirm mesa vulkan-intel vulkan-mesa-layers
+pacman -S --noconfirm mesa vulkan-intel vulkan-mesa-layers intel-media-driver evdi
 # Enable GuC/HuC firmware loading
-echo "options i915 enable_guc=2" >> /etc/modprobe.d/i915.conf
+echo "options i915 enable_guc=3" >> /etc/modprobe.d/i915.conf
 mkinitcpio -p linux-zen 
 
 # Configure kernel
 # add btrfs hook and remove fsck
 sed -i 's/fsck)/btrfs)/g' /etc/mkinitcpio.conf
 
-# add encrypt and keyboard hook before filesystems
-sed -i 's/udev autodetect/udev keyboard encrypt resume filesystems autodetect/g' /etc/mkinitcpio.conf
+# add numlock, encrypt and keyboard hook before filesystems
+yays mkinitcpio-numlock
+sed -i 's/udev autodetect/udev keyboard numlock encrypt resume filesystems autodetect/g' /etc/mkinitcpio.conf
 sed -i 's/kms keyboard keymap/kms keymap/g' /etc/mkinitcpio.conf
 sed -i 's/block filesystems btrfs/block btrfs/g' /etc/mkinitcpio.conf
+
 
 # Configure boot
 ROFFSET=$(btrfs inspect-internal map-swapfile -r /mnt/btrfs/root/@swapfile)

@@ -3,10 +3,11 @@
 # install graphic consol# #/bin/bash!
 # ssh megavolts@IP
 # install graphic consol
-PASSWORD=$1
-USR=$2
-HOSTNAME=$3
-yays(){sudo -u $USR yay -S --removemake --cleanafter --noconfirm $1}
+NEWUSER=megavolts
+echo 'Enter a default passphrase use to encrypt the disk and serve as password for root and megavolts:'
+stty -echo
+read PASSWORD
+yays(){sudo -u $NEWUSER yay -S --removemake --cleanafter --noconfirm $@}
 
 echo -e ".. Install xorg and input"
 yays xorg-server xorg-apps xorg-xinit xorg-xrandr xorg-xkill xorg-xauth
@@ -14,15 +15,17 @@ yays xorg-server xorg-apps xorg-xinit xorg-xrandr xorg-xkill xorg-xauth
 echo -e "... install plasma windows manager"
 yays plasma-desktop sddm plasma-nm kscreen powerdevil plasma-wayland-session plasma-pa plasma-thunderbolt jack2 ttf-droid wireplumber phonon-qt6-gstreamer 
 
+echo -e ".. Installing graphic tools"
+yays yakuake kdialog kfind kdeconnect barrier wl-clipboard kwallet-pam sddm-kcm xdg-desktop-portal-kde colord-kde
+systemctl enable --now sddm
+
 echo -e ".. install audio server"
-yays pipewire lib32-pipewire pipewire-docs pipewire-alsa lib32-pipewire-jack qpwgraph
+yays pipewire wireplumber qpwgraph pavucontrol lib32-pipewire
+sudo -u $NEWUSER systemctl enable --now --user pipewire
 
 echo -e ".. Installing bluetooth"
 yays bluez bluez-utils bluedevil
 sudo systemctl enable --now bluetooth
-
-echo -e ".. Installing graphic tools"
-yays yakuake kdialog kfind kdeconnect barrier wl-clipboard kwallet-pam sddm-kcm xdg-desktop-portal-kde
 
 echo -e "Install software"
 echo -e ".. partition tools"
@@ -32,25 +35,25 @@ echo -e "... network tools"
 yays dnsmasq nm-connection-editor openconnect networkmanager-openconnect avahi
 systemctl enable --now avahi-daemon
 
+echo -e ".. file manager"
+yays dolphin dolphin-plugins qt6-imageformats ffmpegthumbs lzop kdegraphics-thumbnailers kimageformats raw-thumbnailer kio-gdrive libappimage rawtherapee
+yays ark unrar p7zip zip
+
 echo -e "... android tools"
-yays android-tools android-udev  
+yays android-tools android-udev  pixelflasher-bin
 
 echo -e "... installing fonts"
 yays  freefonts ttf-inconsolata ttf-hanazono ttf-hack ttf-anonymous-pro ttf-liberation gnu-free-fonts noto-fonts ttf-bitstream-vera ttf-croscore ttf-dejavu ttf-droid ttf-ibm-plex
 
 echo -e ".. internet software"
 yays firefox thunderbird filezilla zoom teams slack-wayland telegram-desktop signal-desktop profile-sync-daemon vdhcoapp-bin
-yays pass-git protonmail-bridge-bin protonvpn-gui qtpass secret-service
-
-# echo -e ".. media"
-yays dolphin dolphin-plugins qt6-imageformats ffmpegthumbs lzop kdegraphics-thumbnailers kimageformats raw-thumbnailer kio-gdrive libappimage rawtherapee
-yays ark unrar p7zip zip
+TODO yays pass-git protonmail-bridge protonvpn-gui qtpass secret-service
 
 echo -e ".. sync software"
 yays c++utilities 
-yays qtutilities 
-yays qtforkawesome 
-yays syncthingtray syncthing nextcloud-client
+yays qtutilities-qt6
+yays qtforkawesome-q6
+yays syncthingtray-qt6 nextcloud-client
 
 echo -e ".. coding tools"
 yays sublime-text-4 terminator zettlr pycharm-professional python-pip python-setuptools tk python-utils
@@ -71,14 +74,14 @@ echo -e ".. office"
 yays libreoffice-fresh mendeleydesktop texmaker texlive-most zotero
 yays aspell-fr aspell-en aspell-de hunspell-en_US hunspell-fr hunspell-de hyphen-en hyphen-en hyphen-de libmythes mythes-en mythes-fr libreoffice-extension-grammalecte-fr
 
-# echo -e ".. confing tools"
+echo -e ".. confing tools"
 yays kinfocenter kruler sonnet-git discover packagekit 
 
-# echo -e ".. printing tools"
+echo -e ".. printing tools"
 yays cups system-config-printer
 systemctl enable --now cups.service
 
-# echo -e ".. virtualization tools"
+echo -e ".. virtualization tools"
 yays virtualbox virtualbox-guest-iso virtualbox-host-dkms virtualbox-ext-oracle
 # # For cursor in wayland session
 # echo "KWIN_FORCE_SW_CURSOR=1" >> /etc/environement
@@ -89,7 +92,7 @@ yays snapper snapper-gui-git snap-pac
 
 echo -e ".. Configure snapper"
 echo -e "... Create root config"
-if [ -d "/home/.snapshots" ]; then
+if [ -d "/.snapshots" ]; then
   rmdir /.snapshots
 fi
 snapper -c root create-config /
@@ -105,21 +108,27 @@ echo -e ".. move snap subvolume to data root subvolume"
 btrfs subvolume delete /.snapshots
 btrfs subvolume delete /home/.snapshots
 mkdir /.snapshots
+if ! [ -d /mnt/btrfs/root/@snapshots/@root_snaps ] ; then
+  btrfs subvolume create /mnt/btrfs/root/@snapshots/@root_snaps
+fi
 mkdir /home/.snapshots
+if ! [ -d /mnt/btrfs/root/@snapshots/@home_snaps ] ; then
+  btrfs subvolume create /mnt/btrfs/root/@snapshots/@home_snaps
+fi
 echo -e ".. add entry to fstab and mount"
 echo "# Snapper subvolume"
 echo "LABEL=arch /.snapshots btrfs rw,noatime,ssd,discard,compress=zstd:3,space_cache,subvol=@snapshots/@root_snaps   0 0" >> /etc/fstab
-echo "LABEL=data /home/.snapshots  btrfs rw,noatime,ssd,discardcompress=zstd:3,space_cache,subvol=@snapshots/@home_snaps   0 0" >> /etc/fstab
+echo "LABEL=arch /home/.snapshots  btrfs rw,noatime,ssd,discard,compress=zstd:3,space_cache,subvol=@snapshots/@home_snaps   0 0" >> /etc/fstab
 systemctl daemon-reload && mount -a
 
 echo -e ".. Edit home and root configuration"
-echo -e "... Allow user $USR to modify snapper config"
-setfacl -Rm "u:${USR}:rwx" /etc/snapper/configs
-setfacl -Rdm "u:${USR}:rwx" /etc/snapper/configs
+echo -e "... Allow user $NEWUSER to modify snapper config"
+setfacl -Rm "u:${NEWUSER}:rwx" /etc/snapper/configs
+setfacl -Rdm "u:${NEWUSER}:rwx" /etc/snapper/configs
 
-echo -e "... Allow user $USR and usergroup wheel to modify snapper"
-sed -i "s|ALLOW_USERS=\"|ALLOW_USERS=\"${USR}|g" /etc/snapper/configs/home
-sed -i "s|ALLOW_USERS=\"|ALLOW_USERS=\"${USR}|g" /etc/snapper/configs/root
+echo -e "... Allow user $NEWUSER and usergroup wheel to modify snapper"
+sed -i "s|ALLOW_USERS=\"|ALLOW_USERS=\"${NEWUSER}|g" /etc/snapper/configs/home
+sed -i "s|ALLOW_USERS=\"|ALLOW_USERS=\"${NEWUSER}|g" /etc/snapper/configs/root
 sed -i "s|ALLOW_GROUPS=\"|ALLOW_GROUPS=\"wheel|g" /etc/snapper/configs/home # Allow $NEWUSER to modify the files
 sed -i "s|ALLOW_GROUPS=\"|ALLOW_GROUPS=\"wheel|g" /etc/snapper/configs/root
 
@@ -171,22 +180,22 @@ After=\\\\x2eboot.mount
 EOF
 
 # BTRFS maintenance
-yays rmling rmlint-shredder duperemove bees duperemove-service 
+#yays rmling rmlint-shredder duperemove bees duperemove-service 
 
-mkdir /opt/$USR
-cat <<EOF | sudo tee -a /opt/$USR/btrfs_maintenance.sh > /dev/null
+mkdir /opt/$NEWUSER
+cat <<EOF | sudo tee -a /opt/$NEWUSER/btrfs_maintenance.sh > /dev/null
 #! /bin/bash
 /usr/bin/btrfs balance start -dusage=10 -dlimit=2..20 -musage=10 -mlimit=2..20 \$1 &&
 /usr/bin/btrfs balance start -dusage=25 -dlimit=2..10 -musage=25 -mlimit=2..10 \$1
 EOF
 
-cat <<EOF | sudo tee -a /opt/$USR/btrfs_maintenance-scrub.sh > /dev/null
+cat <<EOF | sudo tee -a /opt/$NEWUSER/btrfs_maintenance-scrub.sh > /dev/null
 #! /bin/bash
 /usr/bin/btrfs scrub start \$1 &&
 /usr/bin/btrfs scrub status -d \$1
 EOF
 
-cat <<EOF | sudo tee -a /opt/$USR/btrfs_maintenance-all.sh > /dev/null
+cat <<EOF | sudo tee -a /opt/$NEWUSER/btrfs_maintenance-all.sh > /dev/null
 #! /bin/bash
 /usr/bin/btrfs balance start -dusage=10 -dlimit=2..20 -musage=10 -mlimit=2..20 \$1 &&
 /usr/bin/btrfs balance start -dusage=25 -dlimit=2..10 -musage=25 -mlimit=2..10 \$1 &&
@@ -194,7 +203,7 @@ cat <<EOF | sudo tee -a /opt/$USR/btrfs_maintenance-all.sh > /dev/null
 /usr/bin/btrfs scrub status -d \$1 &
 /usr/bin/btrfs filesystem defragment -r \$1
 EOF
-chmod +x /opt/$USR/*
+chmod +x /opt/$NEWUSER/*
 
 # echo -e ".. Configure bees"
 # for BTRFS_DEV in root database
@@ -215,12 +224,12 @@ chmod +x /opt/$USR/*
 # done
 
 # Set up Zerotier
-yays -S zerotier-one
+yays zerotier-one
 systemctl enable --now zerotier-one.service
 zerotier-cli join 233ccaac278f1c3d
 
 # Set up tailscale
-yay -S tailscale
+yays tailscale
 systemctl enable --now tailscaled
 tailscale up --ssh
 echo -e ".. Follow the link to login"
@@ -241,7 +250,10 @@ sed -i "s|   writable = yes|#   writable = yes|g" /etc/samba/smb.conf
 systemctl start --now smb
 
 echo -e "... create samba user"
-echo -en $PASSWORD | smbpasswd -a $USR
+smbpasswd -a $NEWUSER << EOF
+$PASSWORD
+$PASSWORD
+EOF
 
 echo -e " ..  Install pacman and downgrade tools"
 yays paccache-hook pacman-contrib downgrade
@@ -252,7 +264,7 @@ echo -e ".. GTK integration into QT"
 yays breeze breeze-gtk xdg-desktop-portal xdg-desktop-portal 
 systemctl enable --now sddm
 
-yay -S plasma-browser-integration firefox-kde-opensuse
+yays plasma-browser-integration firefox-kde-opensuse
 echo -e << EOF
 .. For Firefox
 - widget.use-xdg-dekstop-portal-mime-handler: 1
