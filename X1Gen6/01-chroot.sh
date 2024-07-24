@@ -79,7 +79,7 @@ updatedb
 ## X1 specific software
 echo -e "Graphic interface"
 echo -e ".. Install drivers specific to Intel Corporation Alder Lake-P Integrated Graphics Controller"
-pacman -S --noconfirm mesa vulkan-intel vulkan-mesa-layers
+pacman -S --noconfirm mesa vulkan-intel vulkan-mesa-layers intel-media-driver
 # Enable GuC/HuC firmware loading
 echo "options i915 enable_guc=2" >> /etc/modprobe.d/i915.conf
 mkinitcpio -p linux-zen 

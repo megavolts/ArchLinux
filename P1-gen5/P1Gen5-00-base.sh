@@ -11,22 +11,21 @@ HOSTNAME=atka
 TZ=America/Anchorage
 NEWUSER=megavolts
 
-WINDISK=/dev/nvme0n1
-WINBOOTPART=1
+WINBOOTPART=/dev/disk/by-partlabel/EFI
 
 DISK=/dev/nvme1n1
-BOOTPART=1
-ROOTPART=2
-DATAPART=3
+NUXBOOTPART=/dev/disk/by-partlabel/EFI2
+NUXROOTPART=/dev/disk/by-partlabel/CRYPTROOT
+NUXDATAPART=/dev/disk/by-partlabel/CRYPTDATA
 
 NEWINSTALL=False
 NTFSDATA=False
 
 NEWROOT=True
 WIPEROOT=False # False: preserve a copy of old root under @root_old
-WIPESNAP=True 
+WIPEROOTSNAP=True 
 WIPEDATA=False
-
+WIPEDATASNAP=True
 echo -e "DISKS PREPARATION"
 if $NEWINSTALL
 then
@@ -48,18 +47,18 @@ then
   mkfs.btrfs --force --label arch /dev/mapper/root
 else
   echo -e "... Decrypt root device"
-  echo -en $PASSWORD | cryptsetup luksOpen ${DISK}p${ROOTPART} root
+  echo -en $PASSWORD | cryptsetup luksOpen $NUXROOTPART root
 fi
 
 if $WIPEDATA
   echo -e "... Encrypt data partition"
-  echo -en $PASSWORD | cryptsetup luksFormat ${DISK}p${DATAPART} -q
+  echo -en $PASSWORD | cryptsetup luksFormat $NUXDATAPART -q
   echo -e "... Decrypt data partition"
-  echo -en $PASSWORD | cryptsetup luksOpen /dev/disk/by-partlabel/DATAPART data
+  echo -en $PASSWORD | cryptsetup luksOpen $NUXDATAPART data
   mkfs.btrfs --force --label arch /dev/mapper/data
 else
   echo -e "... Decrypt data partition"
-  echo -en $PASSWORD | cryptsetup luksOpen ${DISK}p${DATAPART} data
+  echo -en $PASSWORD | cryptsetup luksOpen $NUXDATAPART data
 fi
 
 echo -e ".. Mount root btrfs subvolume on /mnt"
@@ -72,7 +71,7 @@ else
   mv /mnt/@root /mnt/@root_old
 fi
 
-btrfs subvolume delete /mnt/{@beesroot,@beesdata,@tmp,@var_log,@var_tmp,@var_abs,@var_cache_pacman_pkg,@snapshot,@swap}
+btrfs subvolume delete /mnt/{@tmp,@var_log,@var_tmp,@var_abs,@var_cache_pacman_pkg,@swap}
 
 echo -e "... Create new root, var and tmp subvolume"
 btrfs subvolume create /mnt/@root
@@ -88,16 +87,16 @@ echo -e ".. Mount data btrfs subvolme on /mnt/data"
 mkdir -p /mnt/data 
 mount -o defaults,compress=zstd:3,noatime,nodev,ssd,discard /dev/mapper/data /mnt/data
 
-if $WIPESNAP; then
+if $WIPEROOTSNAP; then
   echo -e "... Delete old @root_snaps and recreating it"
-  if [ ! -d /mnt/@snapshots/@root_snaps ]; then
-    btrfs subvolume create /mnt/@snapshots/@root_snaps
-  else
+  if [-d /mnt/@snapshots/@root_snaps ];
     btrfs subvolume delete /mnt/@snapshots/@root_snaps/*/*
     rm -R /mnt/@snapshot/@root_snaps/*/*
     rm -R /mnt/@snapshot/@root_snaps/*
     btrfs subvolume delete /mnt/@snapshots/@root_snaps
+    btrfs subvolume delete /mnt/@snapshots
   fi
+  btrfs subvolume create /mnt/@snapshots
   btrfs subvolume create /mnt/@snapshots/@root_snaps
 fi
 
@@ -105,13 +104,21 @@ if $WIPEDATA
   echo -e "... create new home, data and snapshots suvolume"
   btrfs subvolume create /mnt/data/@home
   btrfs subvolume create /mnt/data/@data
-  if [ ! -d /mnt/data/@snapshots/ ]; then
-    btrfs subvolume create /mnt/data/@snapshots
-  fi
-  if [ ! -d /mnt/data/@snapshots/@home_snaps ]; then
-    btrfs subvolume create /mnt/data/@snapshots/@home_snaps
-  fi
 fi
+
+if $WIPEDATASNAP; then
+  echo -e "... Delete old @root_snaps and recreating it"
+  if [-d /mnt/data/@snapshots/@data_snaps ];
+    btrfs subvolume delete /mnt/data/@snapshots/@home_snaps/*/*
+    rm -R /mnt/data/@snapshots/@home_snaps/*/*
+    rm -R /mnt/data/@snapshots/@home_snaps/*
+    btrfs subvolume delete /mnt/data/@snapshots/@home_snaps
+    btrfs subvolume delete /mnt/data/@snapshots
+  fi
+  btrfs subvolume create /mnt/data/@snapshots
+  btrfs subvolume create /mnt/data/@snapshots/@root_snaps
+fi
+
 umount /mnt{/data,/}
 
 echo -e ".. mount subvolume for install"
@@ -125,7 +132,7 @@ mount -o defaults,compress=zstd:3,noatime,nodev,ssd,discard,space_cache=v2 /dev/
 
 echo -e ".. create and activate swapfile"
 # Create swapfile if not existing
-btrfs subvolume create /mnt/mnt/btrfs/root/@swapfile
+btrfs subvolume create /mnt/mnt/btrfs/root/@swap
 btrfs filesystem mkswapfile --size=72G /mnt/mnt/btrfs/root/@swap/swapfile
 swapon /mnt/mnt/btrfs/root/@swap/swapfile
 RESUME_OFFSET=$(btrfs inspect-internal map-swapfile -r /mnt/mnt/btrfs/root/@swap/swapfile)
@@ -159,9 +166,12 @@ mount -o defaults,compress=zstd:3,noatime,nodev,ssd,discard,space_cache=v2,subvo
 
 # boot partition EFI and EFI_LINUX
 echo -e ".. mount windows disk boot partition to /mnt/boot"
-mount ${WINDISK}p${WINBOOTPART} /mnt/boot
+mount $WINBOOTPART /mnt/boot
 echo -e ".. mount linux disk boot partition to /mnt/.boot"
-mount ${DISK}p${BOOTPART} /mnt/.boot
+mount $NUXBOOTPART /mnt/.boot
+
+# Clear old NUX boot:
+rm -R /mnt/boot/{initramfs*,intel-ucode*,vmlinuz-*,refind*,EFI/arch,EFI/refind,EFI/boot/icons,EFI/boot}
 
 echo -e "Arch Linux Installation"
 echo -e ".. Install base packages"
@@ -170,18 +180,17 @@ pacman -S --noconfirm archlinux-keyring
 pacstrap /mnt base linux-zen linux-zen-headers base-devel openssh sudo ntp wget grml-zsh-config btrfs-progs networkmanager usbutils linux-firmware sof-firmware yajl mkinitcpio git go nano zsh terminus-font refind rsync
 
 echo -e ".. install basic console tools"
-rm -R /mnt/boot/intel-ucode.img
 pacstrap /mnt mlocate acl util-linux fwupd arp-scan htop lsof strace screen refind terminus-font sudo intel-ucode 
 
 echo -e ".. Create fstab"
 genfstab -L -p /mnt >> /mnt/etc/fstab
 sed 's/\/mnt\/swap/\/swap/g' /mnt/etc/fstab
 
-echo -e "... Add tmpfs to fstab"
-echo "tmpfs   /tmp    tmpfs  rw,nr_inodes=5k,noexec,nodev,nosuid,uid=user,gid=group,mode=1700 0 0" >> /mnt/etc/fstab
+# echo -e "... Add tmpfs to fstab"
+# echo "tmpfs   /tmp    tmpfs  rw,nr_inodes=5k,noexec,nodev,nosuid,uid=user,gid=group,mode=1700 0 0" >> /mnt/etc/fstab
 
 echo -e " .. Allow wheel group to sudo"
-sed -i 's/# %wheel ALL=(ALL:ALL)/%wheel ALL=(ALL:ALL)/g' /mnt/etc/sudoers
+sed -i 's/# %wheel ALL=(ALL:ALL) ALL /%wheel ALL=(ALL:ALL) ALL/g' /mnt/etc/sudoers
 
 echo -e "Configure system"
 # set timezone
@@ -214,11 +223,12 @@ fi
 echo -e ".. Add cryptkey to data partition"
 dd if=/dev/urandom of=/mnt/etc/cryptfs.key bs=1024 count=1
 chmod 600 /mnt/etc/cryptfs.key 
-CRYPTUUID=$(cryptsetup luksDump /dev/disk/by-partlabel/CRYPTDATA | grep UUID | cut -f2- -d: | sed -e 's/^[ \t]*//')
-echo -en $PASSWORD | cryptsetup luksAddKey /dev/disk/by-uuid/$CRYPTUUID /mnt/etc/cryptfs.key 
+CRYPTUUID=$(cryptsetup luksDump $NUXDATAPART | grep UUID | cut -f2- -d: | sed -e 's/^[ \t]*//')
+echo -en $PASSWORD | cryptsetup luksAddKey $NUXDATAPART /mnt/etc/cryptfs.key 
 
 echo -e ".. Chroot to /mnt"
 arch-chroot /mnt /bin/zsh
+
 
 
 # ## Tuning
