@@ -1,17 +1,13 @@
 
 ############################################################
 NEWUSER=megavolts
+WINDATAPART=/dev/disk/by-partlabel/WinData
+WINBOOTPART=/dev/disk/by-partlabel/EFI
+NUXBOOTPART=/dev/disk/by-partlabel/EFI2
 
-WINDISK=/dev/nvme0n1
-WINBOOTPART=1
-
-DISK=/dev/nvme1n1
-BOOTPART=1
-ROOTPART=2
-DATAPART=3
 
 echo -e "Tuning pacman"
-echo -e ".. Enable multilib"
+echo -e ".. Enable multilib" 
 sed -i 's|#[multilib]|[multilib]|' /etc/pacman.conf
 sed -i "/\[multilib\]/,/Include/"'s/^#//' /etc/pacman.conf
 sed -i 's|#ParallelDownloads|ParallelDownloads|' /etc/pacman.conf
@@ -69,29 +65,13 @@ buildpkg yay
 yays(){sudo -u $NEWUSER yay -S --removemake --cleanafter --noconfirm $1}
 
 ############################################################
-# ROOT options
-echo -e "Set root password"
-passwd root << EOF
-$PASSWORD
-$PASSWORD
-EOF
-chsh -S $(which zsh)
-
-# USER options
-echo -e "Set up user $NEWUSER"
-echo -e ".. create $NEWUSER with default password"
-useradd -m -g users -G wheel,audio,disk,lp,network -s /bin/zsh $NEWUSER
-passwd $NEWUSER << EOF
-$PASSWORD
-$PASSWORD
-EOF
-
 echo -e ".. sync older directory to new directory for $NEWUSER"
-# Sync old NEWUSER directory to new NEWUSER directory
-if [ -d /home/$NEWUSER-old ]; then
-  rsync -a $NEWUSER-old/ $NEWUSER/ -h --info=progress2 --remove-source-files
-  find $NEWUSER-old -type d -empty -delete
-fi
+# # Sync old NEWUSER directory to new NEWUSER directory
+# NEED TO MAKE SURE NO TO COPY hiddne file
+# if [ -d /home/$NEWUSER-old ]; then
+#   rsync -a /home/$NEWUSER-old/ /home/$NEWUSER/ -h --info=progress2 --remove-source-files
+#   find /home/$NEWUSER-old -type d -empty -delete
+# fi
 
 # Enable base service
 echo -e ".. Start services"
@@ -99,33 +79,36 @@ systemctl enable NetworkManager
 systemctl enable sshd
 systemctl enable btrfs-scrub@home.timer 
 systemctl enable btrfs-scrub@-.timer 
-systemctl enable --now fstrim.timer
+systemctl enable fstrim.timer
 
 updatedb
 
-echo -e ".. Set up crupttab to unlock data"
+echo -e ".. Set up crypttab to unlock data"
 DATAUUID=$(cryptsetup luksDump /dev/disk/by-partlabel/CRYPTDATA | grep UUID | cut -f2- -d: | sed -e 's/^[ \t]*//')
 echo "data   UUID=$DATAUUID  /etc/cryptfs.key" >> /etc/crypttab
 
-
-## P1 specific software
+## Intel Graphics Software
 echo -e "Graphic interface"
+<<<<<<< HEAD
 echo -e ".. Install drivers specific to Intel Corporation Alder Lake-P Integrate Graphics Controller"
 pacman -S --noconfirm mesa vulkan-intel vulkan-mesa-layers intel-media-driver xf86-video-nouveau
+=======
+echo -e ".. Install drivers specific to Intel Corporation Alder Lake-P Integrated Graphics Controller"
+pacman -S --noconfirm mesa vulkan-intel vulkan-mesa-layers intel-media-driver
+>>>>>>> refs/remotes/origin/master
 # Enable GuC/HuC firmware loading
 echo "options i915 enable_guc=3" >> /etc/modprobe.d/i915.conf
-mkinitcpio -p linux-zen 
 
 # Configure kernel
 # add btrfs hook and remove fsck
 sed -i 's/fsck)/btrfs)/g' /etc/mkinitcpio.conf
 
-# add numlock, encrypt and keyboard hook before filesystems
-yays mkinitcpio-numlock
-sed -i 's/udev autodetect/udev keyboard numlock encrypt resume filesystems autodetect/g' /etc/mkinitcpio.conf
+# add encrypt and keyboard hook before filesystems
+sed -i 's/filesystems /encrypt resume filesystems /g' /etc/mkinitcpio.conf
 sed -i 's/kms keyboard keymap/kms keymap/g' /etc/mkinitcpio.conf
 sed -i 's/block filesystems btrfs/block btrfs/g' /etc/mkinitcpio.conf
 
+<<<<<<< HEAD
 #numlcok
 mkdir /etc/systemd/system/getty@.service.d
 cat << EOF >> /etc/systemd/system/getty@.service.d/activate-numlock.conf
@@ -135,8 +118,10 @@ EOF
 
 
 
+=======
+>>>>>>> refs/remotes/origin/master
 # Configure boot
-ROFFSET=$(btrfs inspect-internal map-swapfile -r /mnt/btrfs/root/@swapfile)
+ROFFSET=$(btrfs inspect-internal map-swapfile -r /mnt/btrfs/root/@swap/swapfile)
 ROOTUUID=$(cryptsetup luksDump /dev/disk/by-partlabel/CRYPTROOT | grep UUID | cut -f2- -d: | sed -e 's/^[ \t]*//')
 
 # Set up automatic copy of boot partition on kernel update to enable backup to /.boot
@@ -156,18 +141,26 @@ When = PostTransaction
 Exec = /usr/bin/rsync -avh --delete /boot /.bootbkp && /usr/bin/rsync -avh --delete /boot /.boot
 EOF
 
-refind-install --usedefault ${WINDISK}p${WINBOOTPART}
+refind-install --usedefault $WINBOOTPART
+refind-install --usedefault $NUXBOOTPART
+
 if [! $NEWINSTALL ]; then
   if [-d boot/refind_linux.conf ]; then
     cp /boot/refind_linux.conf /boot/refind_linux.conf.old
   fi
-  wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/X1yoga6/sources/refind.conf -O /boot/refind_linux.conf
+  wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/P1-gen5/refind_linux.conf -O /boot/refind_linux.conf
   sed -i "s|ROFFSET|$ROFFSET|g" /boot/refind_linux.conf
-  sed -i "s|n1p5|n1p${ROOTPART}|g" /boot/refind_linux.conf
   sed -i "s|ROOTUUID|${ROOTUUID}|g" /boot/refind_linux.conf
+  cp /boot/refind_linux.conf /.boot/refind_linux.conf
 fi
+
 # copy btrfs volume support
+mkdir -p /boot/EFI/refind/drivers_x64
 cp /usr/share/refind/drivers_x64/btrfs_x64.efi /boot/EFI/refind/drivers_x64
+cp /usr/share/refind/icons /boot/EFI/refind/ -R
+mkdir -p /.boot/EFI/refind/drivers_x64
+cp /usr/share/refind/drivers_x64/btrfs_x64.efi /.boot/EFI/refind/drivers_x64
+cp /usr/share/refind/icons /.boot/EFI/refind/ -R
 
 # Rebuild kernel
 if [ -f /boot/vmlinuz-linux ]; then
@@ -178,6 +171,6 @@ if [ -f /boot/vmlinuz-linux-zen ]; then
 fi
 
 exit
-swapoff /mnt/mnt/btrfs/root/@swapfile
-umount /mnt/{boot,.boot,data,mnt/data,mnt/btrfs/root,mnt/btrfs/data,var/log,var/tmp,/tmp,/var/cache/pacman/pkg,var/abs,home/$NEWUSER/.cache/yay,/home}
+swapoff /mnt/mnt/btrfs/root/@swap/swapfile
+umount /mnt/{boot,.boot,data,mnt/data,mnt/btrfs/root,mnt/btrfs/data,var/log,var/tmp,/tmp,/var/cache/pacman/pkg,var/abs,/home}
 reboot
