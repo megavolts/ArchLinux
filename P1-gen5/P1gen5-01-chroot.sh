@@ -110,8 +110,8 @@ echo "data   UUID=$DATAUUID  /etc/cryptfs.key" >> /etc/crypttab
 
 ## P1 specific software
 echo -e "Graphic interface"
-echo -e ".. Install drivers specific to Intel Corporation Alder Lake-P Integrated Graphics Controller"
-pacman -S --noconfirm mesa vulkan-intel vulkan-mesa-layers intel-media-driver evdi
+echo -e ".. Install drivers specific to Intel Corporation Alder Lake-P Integrate Graphics Controller"
+pacman -S --noconfirm mesa vulkan-intel vulkan-mesa-layers intel-media-driver xf86-video-nouveau
 # Enable GuC/HuC firmware loading
 echo "options i915 enable_guc=3" >> /etc/modprobe.d/i915.conf
 mkinitcpio -p linux-zen 
@@ -125,6 +125,14 @@ yays mkinitcpio-numlock
 sed -i 's/udev autodetect/udev keyboard numlock encrypt resume filesystems autodetect/g' /etc/mkinitcpio.conf
 sed -i 's/kms keyboard keymap/kms keymap/g' /etc/mkinitcpio.conf
 sed -i 's/block filesystems btrfs/block btrfs/g' /etc/mkinitcpio.conf
+
+#numlcok
+mkdir /etc/systemd/system/getty@.service.d
+cat << EOF >> /etc/systemd/system/getty@.service.d/activate-numlock.conf
+[Service]
+ExecStartPre=/bin/sh -c 'setleds -D +num < /dev/%I'
+EOF
+
 
 
 # Configure boot

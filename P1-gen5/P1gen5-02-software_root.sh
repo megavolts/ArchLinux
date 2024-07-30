@@ -9,18 +9,16 @@ stty -echo
 read PASSWORD
 yays(){sudo -u $NEWUSER yay -S --removemake --cleanafter --noconfirm $@}
 
-echo -e ".. Install xorg and input"
-yays xorg-server xorg-apps xorg-xinit xorg-xrandr xorg-xkill xorg-xauth
-
 echo -e "... install plasma windows manager"
-yays plasma-desktop sddm plasma-nm kscreen powerdevil plasma-wayland-session plasma-pa plasma-thunderbolt jack2 ttf-droid wireplumber phonon-qt6-gstreamer 
+yays plasma-desktop sddm plasma-nm kscreen powerdevil plasma-wayland-session plasma-pa plasma-thunderbolt pipewire-jack ttf-droid wireplumber qt6-multimedia-ffmpeg power-profiles-daemon
+systemctl enable --now power-profiles-daemon
 
 echo -e ".. Installing graphic tools"
 yays yakuake kdialog kfind kdeconnect barrier wl-clipboard kwallet-pam sddm-kcm xdg-desktop-portal-kde colord-kde
 systemctl enable --now sddm
 
 echo -e ".. install audio server"
-yays pipewire wireplumber qpwgraph pavucontrol lib32-pipewire
+yays pipewire wireplumber qpwgraph pavucontrol
 sudo -u $NEWUSER systemctl enable --now --user pipewire
 
 echo -e ".. Installing bluetooth"
@@ -42,17 +40,13 @@ yays ark unrar p7zip zip
 echo -e "... android tools"
 yays android-tools android-udev  pixelflasher-bin
 
-echo -e "... installing fonts"
-yays  freefonts ttf-inconsolata ttf-hanazono ttf-hack ttf-anonymous-pro ttf-liberation gnu-free-fonts noto-fonts ttf-bitstream-vera ttf-croscore ttf-dejavu ttf-droid ttf-ibm-plex
-
 echo -e ".. internet software"
 yays firefox thunderbird filezilla zoom teams slack-wayland telegram-desktop signal-desktop profile-sync-daemon vdhcoapp-bin
-TODO yays pass-git protonmail-bridge protonvpn-gui qtpass secret-service
 
 echo -e ".. sync software"
 yays c++utilities 
 yays qtutilities-qt6
-yays qtforkawesome-q6
+yays qtforkawesome-qt6
 yays syncthingtray-qt6 nextcloud-client
 
 echo -e ".. coding tools"
@@ -78,13 +72,48 @@ echo -e ".. confing tools"
 yays kinfocenter kruler sonnet-git discover packagekit 
 
 echo -e ".. printing tools"
-yays cups system-config-printer
+yays cups system-config-printer print-manager
 systemctl enable --now cups.service
 
 echo -e ".. virtualization tools"
 yays virtualbox virtualbox-guest-iso virtualbox-host-dkms virtualbox-ext-oracle
 # # For cursor in wayland session
 # echo "KWIN_FORCE_SW_CURSOR=1" >> /etc/environement
+
+# Set up Zerotier
+yays zerotier-one
+systemctl enable --now zerotier-one.service
+zerotier-cli join 233ccaac278f1c3d
+
+# Set up tailscale
+echo -e ".. Installing tailscale, follow the link to login"
+yays tailscale
+systemctl enable --now tailscaled
+tailscale up --ssh
+
+# Enable samba
+echo -e ".. Install samba"
+yays samba kdenetwork-filesharing
+mkdir -p /etc/samba
+echo -e "... Edit samba configuration"
+wget -O /etc/samba/smb.conf https://raw.githubusercontent.com/zentyal/samba/master/examples/smb.conf.default
+sed -i "s|   log file = /usr/local/samba/var/log.%m|#   log file = /usr/local/samba/var/log.%m|g" /etc/samba/smb.conf
+sed -i "/#   log file = \/usr\/local\/samba\/var\/log.\%m/a   logging = systemd" /etc/samba/smb.conf
+sed -i "s|Samba Server|Atka|g" /etc/samba/smb.conf
+sed -i "s|\[homes\]|#\[homes\]|g" /etc/samba/smb.conf
+sed -i "s|   comment = Home Directories|#   comment = Home Directories|g" /etc/samba/smb.conf
+sed -i "s|   browseable = no|#   browseable = no|g" /etc/samba/smb.conf
+sed -i "s|   writable = yes|#   writable = yes|g" /etc/samba/smb.conf
+systemctl enable --now smb
+
+echo -e "... create samba user"
+smbpasswd -a $NEWUSER << EOF
+$PASSWORD
+$PASSWORD
+EOF
+
+echo -e " ..  Install pacman and downgrade tools"
+yays paccache-hook pacman-contrib downgrade
 
 # Enable snapshots with snapper
 echo -e "Install snapper, a snapshots manager "
@@ -112,13 +141,13 @@ if ! [ -d /mnt/btrfs/root/@snapshots/@root_snaps ] ; then
   btrfs subvolume create /mnt/btrfs/root/@snapshots/@root_snaps
 fi
 mkdir /home/.snapshots
-if ! [ -d /mnt/btrfs/root/@snapshots/@home_snaps ] ; then
-  btrfs subvolume create /mnt/btrfs/root/@snapshots/@home_snaps
+if ! [ -d /mnt/btrfs/data/@snapshots/@home_snaps ] ; then
+  btrfs subvolume create /mnt/btrfs/data/@snapshots/@home_snaps
 fi
 echo -e ".. add entry to fstab and mount"
 echo "# Snapper subvolume"
 echo "LABEL=arch /.snapshots btrfs rw,noatime,ssd,discard,compress=zstd:3,space_cache,subvol=@snapshots/@root_snaps   0 0" >> /etc/fstab
-echo "LABEL=arch /home/.snapshots  btrfs rw,noatime,ssd,discard,compress=zstd:3,space_cache,subvol=@snapshots/@home_snaps   0 0" >> /etc/fstab
+echo "LABEL=data /home/.snapshots  btrfs rw,noatime,ssd,discard,compress=zstd:3,space_cache,subvol=@snapshots/@home_snaps   0 0" >> /etc/fstab
 systemctl daemon-reload && mount -a
 
 echo -e ".. Edit home and root configuration"
@@ -138,14 +167,14 @@ sed "s|SYNC_ACL=\"no|SYNC_ACL=\"yes|g" -i /etc/snapper/configs/root
 
 echo -e "... Change Timeline limit for snapshot retention"
 # update snap config for home directory
-sed  -i "s|TIMELINE_MIN_AGE=\"1800\"|TIMELINE_MIN_AGE=\"1800\"|g"         /etc/snapper/configs/home
+sed  -i "s|TIMELINE_MIN_AGE=\"3600\"|TIMELINE_MIN_AGE=\"1800\"|g"         /etc/snapper/configs/home
 sed  -i "s|TIMELINE_LIMIT_HOURLY=\"10\"|TIMELINE_LIMIT_HOURLY=\"96\"|g"   /etc/snapper/configs/home  # keep hourly backup for 48 hours
 sed  -i "s|TIMELINE_LIMIT_DAILY=\"10\"|TIMELINE_LIMIT_DAILY=\"14\"|g"     /etc/snapper/configs/home  # keep daily backup for 14 days
 sed  -i "s|TIMELINE_LIMIT_WEEKLY=\"0\"|TIMELINE_LIMIT_WEEKLY=\"3\"|g"     /etc/snapper/configs/home  # keep weekly backup for 4 weeks
 sed  -i "s|TIMELINE_LIMIT_MONTHLY=\"10\"|TIMELINE_LIMIT_MONTHLY=\"12\"|g" /etc/snapper/configs/home  # keep monthly backup for 12 months
 sed  -i "s|TIMELINE_LIMIT_YEARLY=\"10\"|TIMELINE_LIMIT_YEARLY=\"5\"|g"     /etc/snapper/configs/home  # keep yearly backup for 5 years
 # update snap config for root directory
-sed  -i "s|TIMELINE_MIN_AGE=\"1800\"|TIMELINE_MIN_AGE=\"0\"|g"         /etc/snapper/configs/root  # Allow all snapshots to be removed, independantly of age
+sed  -i "s|TIMELINE_MIN_AGE=\"3600\"|TIMELINE_MIN_AGE=\"0\"|g"         /etc/snapper/configs/root  # Allow all snapshots to be removed, independantly of age
 sed  -i "s|TIMELINE_LIMIT_HOURLY=\"10\"|TIMELINE_LIMIT_HOURLY=\"4\"|g"   /etc/snapper/configs/root  # keep hourly backup for 4 hours
 sed  -i "s|TIMELINE_LIMIT_DAILY=\"10\"|TIMELINE_LIMIT_DAILY=\"7\"|g"     /etc/snapper/configs/root  # keep daily backup for 7 days
 sed  -i "s|TIMELINE_LIMIT_WEEKLY=\"0\"|TIMELINE_LIMIT_WEEKLY=\"4\"|g"     /etc/snapper/configs/root  # keep weekly backup for 4 weeks
@@ -179,31 +208,31 @@ SYSTEMD_EDITOR=tee systemctl edit snapper-boot.service <<EOF
 After=\\\\x2eboot.mount
 EOF
 
-# BTRFS maintenance
-#yays rmling rmlint-shredder duperemove bees duperemove-service 
+# # BTRFS maintenance
+# #yays rmling rmlint-shredder duperemove bees duperemove-service 
 
-mkdir /opt/$NEWUSER
-cat <<EOF | sudo tee -a /opt/$NEWUSER/btrfs_maintenance.sh > /dev/null
-#! /bin/bash
-/usr/bin/btrfs balance start -dusage=10 -dlimit=2..20 -musage=10 -mlimit=2..20 \$1 &&
-/usr/bin/btrfs balance start -dusage=25 -dlimit=2..10 -musage=25 -mlimit=2..10 \$1
-EOF
+# mkdir /opt/$NEWUSER
+# cat <<EOF | sudo tee -a /opt/$NEWUSER/btrfs_maintenance.sh > /dev/null
+# #! /bin/bash
+# /usr/bin/btrfs balance start -dusage=10 -dlimit=2..20 -musage=10 -mlimit=2..20 \$1 &&
+# /usr/bin/btrfs balance start -dusage=25 -dlimit=2..10 -musage=25 -mlimit=2..10 \$1
+# EOF
 
-cat <<EOF | sudo tee -a /opt/$NEWUSER/btrfs_maintenance-scrub.sh > /dev/null
-#! /bin/bash
-/usr/bin/btrfs scrub start \$1 &&
-/usr/bin/btrfs scrub status -d \$1
-EOF
+# cat <<EOF | sudo tee -a /opt/$NEWUSER/btrfs_maintenance-scrub.sh > /dev/null
+# #! /bin/bash
+# /usr/bin/btrfs scrub start \$1 &&
+# /usr/bin/btrfs scrub status -d \$1
+# EOF
 
-cat <<EOF | sudo tee -a /opt/$NEWUSER/btrfs_maintenance-all.sh > /dev/null
-#! /bin/bash
-/usr/bin/btrfs balance start -dusage=10 -dlimit=2..20 -musage=10 -mlimit=2..20 \$1 &&
-/usr/bin/btrfs balance start -dusage=25 -dlimit=2..10 -musage=25 -mlimit=2..10 \$1 &&
-/usr/bin/btrfs scrub start \$1 &&
-/usr/bin/btrfs scrub status -d \$1 &
-/usr/bin/btrfs filesystem defragment -r \$1
-EOF
-chmod +x /opt/$NEWUSER/*
+# cat <<EOF | sudo tee -a /opt/$NEWUSER/btrfs_maintenance-all.sh > /dev/null
+# #! /bin/bash
+# /usr/bin/btrfs balance start -dusage=10 -dlimit=2..20 -musage=10 -mlimit=2..20 \$1 &&
+# /usr/bin/btrfs balance start -dusage=25 -dlimit=2..10 -musage=25 -mlimit=2..10 \$1 &&
+# /usr/bin/btrfs scrub start \$1 &&
+# /usr/bin/btrfs scrub status -d \$1 &
+# /usr/bin/btrfs filesystem defragment -r \$1
+# EOF
+# chmod +x /opt/$NEWUSER/*
 
 # echo -e ".. Configure bees"
 # for BTRFS_DEV in root database
@@ -223,57 +252,13 @@ chmod +x /opt/$NEWUSER/*
 #   systemctl enable --now beesd@UUID_DEV
 # done
 
-# Set up Zerotier
-yays zerotier-one
-systemctl enable --now zerotier-one.service
-zerotier-cli join 233ccaac278f1c3d
-
-# Set up tailscale
-yays tailscale
-systemctl enable --now tailscaled
-tailscale up --ssh
-echo -e ".. Follow the link to login"
-
-# Enable samba
-echo -e ".. Install samba"
-yays samba kdenetwork-filesharing
-mdir /etc/samba
-echo -e "... Edit samba configuration"
-wget wget -O /etc/samba/smb.conf https://raw.githubusercontent.com/zentyal/samba/master/examples/smb.conf.default
-sed -i "s|   log file = /usr/local/samba/var/log.%m|#   log file = /usr/local/samba/var/log.%m|g" /etc/samba/smb.conf
-sed -i "/#   log file = \/usr\/local\/samba\/var\/log.\%m/a   logging = systemd" /etc/samba/smb.conf
-sed -i "s|Samba Server|Atka|g" /etc/samba/smb.conf
-sed -i "s|\[homes\]|#\[homes\]|g" /etc/samba/smb.conf
-sed -i "s|   comment = Home Directories|#   comment = Home Directories|g" /etc/samba/smb.conf
-sed -i "s|   browseable = no|#   browseable = no|g" /etc/samba/smb.conf
-sed -i "s|   writable = yes|#   writable = yes|g" /etc/samba/smb.conf
-systemctl start --now smb
-
-echo -e "... create samba user"
-smbpasswd -a $NEWUSER << EOF
-$PASSWORD
-$PASSWORD
-EOF
-
-echo -e " ..  Install pacman and downgrade tools"
-yays paccache-hook pacman-contrib downgrade
-
 # KDE and GTK uniform
 echo -e ".. GTK integration into QT"
 # yays qt6ct-kde kde-gtk-config adwaita-qt6-git gtk3 qt6ct 
-yays breeze breeze-gtk xdg-desktop-portal xdg-desktop-portal 
+yays breeze breeze-gtk xdg-desktop-portal xdg-desktop-portal-kde kde-gtk-config
 systemctl enable --now sddm
 
 yays plasma-browser-integration firefox-kde-opensuse
-echo -e << EOF
-.. For Firefox
-- widget.use-xdg-dekstop-portal-mime-handler: 1
-- widget.user-xdg-dekstop-portal.file-picker: 1
-- media.hardwaremediakeys.enabled: false
-EOF
-
-echo -e ""
-
 
 ########################################################################
 # # For cursor in wayland session
