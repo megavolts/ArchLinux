@@ -127,12 +127,6 @@ echo -e ".. KDE dialog box"
 # echo "QT_STYLE_OVERRIDE=adwaita" >> .config/environment.d/qt_style.conf
 # echo "QT_QPA_PLATFORMTHEME=qt5ct" >> .config/environment.d/qt_style.conf
 
-
-# set up zerotier-one
-yays -S zerotier-one
-zerotier-one joint ZT_NETOWORK
-# # TO CHECK IF NEEDED
-
 # echo "KWallet login"
 # echo "auth            optional        pam_kwallet5.so" >> /etc/pam.d/sddm
 # echo "session         optional        pam_kwallet5.so auto_start" >> /etc/pam.d/sddm
