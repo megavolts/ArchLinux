@@ -33,7 +33,7 @@ sudo cat <<EOF | sudo tee -a /etc/fstab > /dev/null
 EOF
 
 echo -e "... create noCOW subvolume for Download"
-sudo btrfs subvolume create /mnt/btrfs/root/@${USER}/@Downloads
+sudo btrfs subvolume create /mnt/btrfs/root/@${USER}/@downloads
 sudo cat <<EOF | sudo tee -a /etc/fstab > /dev/null
 # Download
 /dev/mapper/root  /home/${USER}/Downloads btrfs rw,nodev,noatime,compress=zstd:3,ssd,discard,clear_cache,nospace_cache,nodatacow,commit=120,uid=1000,gid=984,umask=022, subvol=/@${USER}/@downloads 0 0
