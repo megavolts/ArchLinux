@@ -23,13 +23,12 @@
 # To configure windows without internet access with local signin, launch command `OOBE\BYPASSNRO` within the command prompt - accessible via shift+F10 -
 #
 # Partititon table
-# /dev/nvme0n1p1 1024MiB  EF00  EFI system partition
-# /dev/nvme0n1p2   16MiB  0C01  Microsfot Reserved Partition
-# /dev/nvme0n1p3  256GiB  0700  Microsfot Windows Partition
-# /dev/nvme0n1p4  512MiB  2700  Recovery Tools Partition
-# /dev/nvme0n1p5  512GiB  8300  cryptarch
-# /dev/nvme0n1p5  X.XTiB  8300  cryptdata
-
+# Number  Start (sector)    End (sector)  Size       Code  Name
+#  1            2048         2099199   1024.0 MiB  EF00  EFI system partition
+#  2         2099200         2131967   16.0 MiB    0C01  Microsoft reserved ...
+#  3         2131968       539002879   256.0 GiB   0700  Basic data partition
+#  4       539002880       540051455   512.0 MiB   0700  Basic data partition
+#  5       540051456      7814035455   3.4 TiB   8300  cryptroot
 # btrfs with flat layout: /, /var/
 
 DISK=/dev/nvme0n1
@@ -51,14 +50,14 @@ echo -e "DISKS PREPARATION"
 if $NEWINSTALL
 then
   echo ".. New installation, create new partition table"
-  sgdisk -n $ROOTPART:315654144:3907029134 -t $ROOTPART:8300 -c $ROOTPART:"CRYPTARCH" $DISK
-
-  # echo -e ".. prepare boot partition"
-  # mkfs.fat -F32 ${DISK}${BOOTPART}
+  sgdisk -n $ROOTPART:315654144:3907029134 -t $ROOTPART:8300 -c $ROOTPART:"CRYPTROOT" $DISK
+  echo -en $PASSWORD | cryptsetup luksFormat --align-payload=4096 /dev/disk/by-partlabel/CRYPTROOT -q
+  echo -en $PASSWORD | cryptsetup luksOpen /dev/disk/by-partlabel/CRYPTROOT root
+  mkfs.btrfs /dev/mapper/root
   WIPEDISK=true
 else
   echo -e "... Decrypt root device"
-  echo -en $PASSWORD | cryptsetup luksOpen /dev/disk/by-partlabel/CRYPTARCH arch
+  echo -en $PASSWORD | cryptsetup luksOpen /dev/disk/by-partlabel/CRYPTROOT root
 fi
 
 if $WIPEDISK
@@ -67,26 +66,23 @@ if $WIPEDISK
   cryptsetup open --type plain ${DISK}p$BOOTPART container --key-file /dev/urandom 
   dd if=/dev/zero of=/dev/mapper/arch status=progress bs=1M
   echo -e ".. encrypting root partition"
-  echo -en $PASSWORD | cryptsetup luksFormat --align-payload=4096 /dev/disk/by-partlabel/cryptarch -q
-  echo -en $PASSWORD | cryptsetup luksOpen /dev/disk/by-partlabel/cryptarch arch
-  mkfs.btrfs --force --label arch /dev/mapper/arch
+  echo -en $PASSWORD | cryptsetup luksFormat --align-payload=4096 /dev/disk/by-partlabel/CRYPTROOT -q
+  echo -en $PASSWORD | cryptsetup luksOpen /dev/disk/by-partlabel/CRYPTROOT root
+  mkfs.btrfs --force --label root /dev/mapper/root
 fi
 
 echo -e ".. create subvolumes"
 mount -o defaults,compress=zstd:3,noatime,nodev,ssd,discard /dev/mapper/root /mnt/
 
-# if $INSTALL or $WIPEDISK
-# then
-#   echo -e "... create new root, var and tmp subvolume"
-#   btrfs subvolume create /mnt/@root
-#   btrfs subvolume create /mnt/@home
-#   btrfs subvolume create /mnt/@data
-# else
-
-if $WIPEROOT; then
+if $INSTALL or $WIPEDISE; then
+  echo -e "... create new root, var and tmp subvolume"
+  btrfs subvolume create /mnt/@data
+  btrfs subvolume create /mnt/@home
+elif $WIPEROOT; then
   # preserve home and data subvolume, delete other
   btrfs subvolume delete /mnt/{@beesroot,@beesdata,@tmp,@var_log,@var_tmp,@var_abs,@var_cache_pacman_pkg,@snapshot,@swap}
   # move old root subvolume
+  mv /mnt/@root /mnt/@root_old
 fi
   
 echo -e "... Create new root, var and tmp subvolume"
@@ -134,45 +130,54 @@ if $WIPEHOME; then
   fi
 fi
 
+# NOVE TO BTRFS SNAPSHOT
+if $INSTALL; then
+  btrfs subvolume create /mnt/@snapshots
+  btrfs subvolume create /mnt/@snapshots/@home_snaps
+  btrfs subvolume create /mnt/@snapshots/@root_snaps
+fi
 
 # Mount root btrfs root volume
-mkdir -p /mnt/mnt/btrfs/arch
-mount -o defaults,compress=zstd:3,noatime,nodev,ssd,discard,space_cache=v2 /dev/mapper/arch /mnt/mnt/btrfs/arch
+mkdir -p /mnt/mnt/btrfs/root
+mount -o defaults,compress=zstd:3,noatime,nodev,ssd,discard,space_cache=v2 /dev/mapper/root /mnt/mnt/btrfs/root
 
 
 # Create mountpoints and mount root subvolumes
 echo -e ".. create root subvolume mountpoints"
 mkdir -p /mnt/{boot,.boot,tmp,var/log,var/tmp,var/abs,var/cache/pacman/pkg,home,mnt/data}
 echo -e ".. mount subvolume for install"
-mount -o defaults,compress=zstd:3,noatime,nodev,ssd,discard,space_cache=v2,subvol=@root /dev/mapper/arch /mnt
-mount -o defaults,compress=zstd:3,noatime,nodev,nodatacow,ssd,discard,subvol=@tmp /dev/mapper/arch /mnt/tmp
-mount -o defaults,compress=zstd:3,noatime,nodev,nodatacow,ssd,discard,subvol=@var_log /dev/mapper/arch /mnt/var/log
-mount -o defaults,compress=zstd:3,noatime,nodev,nodatacow,ssd,discard,subvol=@var_tmp /dev/mapper/arch /mnt/var/tmp
-mount -o defaults,compress=zstd:3,noatime,nodev,nodatacow,ssd,discard,subvol=@var_abs /dev/mapper/arch /mnt/var/abs
-mount -o defaults,compress=zstd:3,noatime,nodev,nodatacow,ssd,discard,subvol=@var_cache_pacman_pkg /dev/mapper/arch /mnt/var/cache/pacman/pkg
-mount -o defaults,compress=zstd:3,noatime,nodev,ssd,discard,space_cache=v2,subvol=@home /dev/mapper/arch /mnt/home
-mount -o defaults,compress=zstd:3,noatime,nodev,ssd,discard,space_cache=v2,subvol=@data /dev/mapper/arch /mnt/mnt/data
+mount -o defaults,compress=zstd:3,noatime,nodev,ssd,discard,space_cache=v2,subvol=@root /dev/mapper/root /mnt
+mount -o defaults,compress=zstd:3,noatime,nodev,nodatacow,ssd,discard,subvol=@tmp /dev/mapper/root /mnt/tmp
+mount -o defaults,compress=zstd:3,noatime,nodev,nodatacow,ssd,discard,subvol=@var_log /dev/mapper/root /mnt/var/log
+mount -o defaults,compress=zstd:3,noatime,nodev,nodatacow,ssd,discard,subvol=@var_tmp /dev/mapper/root /mnt/var/tmp
+mount -o defaults,compress=zstd:3,noatime,nodev,nodatacow,ssd,discard,subvol=@var_abs /dev/mapper/root /mnt/var/abs
+mount -o defaults,compress=zstd:3,noatime,nodev,nodatacow,ssd,discard,subvol=@var_cache_pacman_pkg /dev/mapper/root /mnt/var/cache/pacman/pkg
+mount -o defaults,compress=zstd:3,noatime,nodev,ssd,discard,space_cache=v2,subvol=@home /dev/mapper/root /mnt/home
+mount -o defaults,compress=zstd:3,noatime,nodev,ssd,discard,space_cache=v2,subvol=@data /dev/mapper/root /mnt/mnt/data
+
 
 echo -e ".. create and activate swapfile"
 # Create swapfile if not existing
-btrfs subvolume create /mnt/mnt/btrfs/arch/@swap
-btrfs filesystem mkswapfile --size=64G /mnt/mnt/btrfs/arch/@swap/swapfile
-swapon /mnt/mnt/btrfs/arch/@swap/swapfile
-RESUME_OFFSET=$(btrfs inspect-internal map-swapfile -r /mnt/mnt/btrfs/arch/@swap/swapfile)
+if [ ! -e /mnt/mnt/btrfs/root/@swap ]; then
+  btrfs subvolume create /mnt/mnt/btrfs/root/@swap
+  btrfs filesystem mkswapfile --size=32G /mnt/mnt/btrfs/root/@swap/swapfile
+  swapon /mnt/mnt/btrfs/root/@swap/swapfile
+  RESUME_OFFSET=$(btrfs inspect-internal map-swapfile -r /mnt/mnt/btrfs/root/@swap/swapfile)
+fi
 
 # BTRFS data subvolume
 echo -e ".. create media subvolume on data and mount"
-if [ ! -e /mnt/btrfs/data/@media ]; then
-  btrfs subvolume create /mnt/mnt/btrfs/arch/@media
+if [ ! -e /mnt/mnt/btrfs/root/@media ]; then
+  btrfs subvolume create /mnt/mnt/btrfs/root/@media
 fi
-if [ -e /mnt/btrfs/data/@UAF-data ]; then
-  btrfs subvolume create /mnt/mnt/btrfs/arch/@UAF-data
+if [ -e /mnt/mnt/btrfs/root/@UAF-data ]; then
+  btrfs subvolume create /mnt/mnt/btrfs/root/@UAF-data
 fi
 mkdir -p /mnt/mnt/data/{media,UAF-data}
 mkdir -p /mnt/mnt/data/media/{photography,wallpaper,meme,graphisme,tvseries,movies,videos,musics}
-mount -o defaults,nodev,noatime,compress=zstd:3,ssd,discard,space_cache=v2,subvol=@media /dev/mapper/arch /mnt/mnt/data/media
-mount -o defaults,nodev,noatime,compress=zstd:3,ssd,discard,space_cache=v2,subvol=@UAF-data /dev/mapper/arch /mnt/mnt/data/UAF-data
-mount /dev/nvme0n1p6 /mnt/mnt/data/media/photography
+mount -o defaults,nodev,noatime,compress=zstd:3,ssd,discard,space_cache=v2,subvol=@media /dev/mapper/root /mnt/mnt/data/media
+mount -o defaults,nodev,noatime,compress=zstd:3,ssd,discard,space_cache=v2,subvol=@UAF-data /dev/mapper/root /mnt/mnt/data/UAF-data
+#mount /dev/nvme0n1p6 /mnt/mnt/data/media/photography
 
 # boot partition EFI and EFI_LINUX
 echo -e ".. mount linux disk boot partition to /mnt/boot"
@@ -190,7 +195,6 @@ pacstrap /mnt mlocate acl util-linux fwupd arp-scan htop lsof strace screen refi
 echo -e ".. Create fstab"
 genfstab -L -p /mnt >> /mnt/etc/fstab
 sed 's/\/mnt\/swap/\/swap/g' /mnt/etc/fstab
-
 
 echo -e "... Add tmpfs to fstab"
 echo "tmpfs   /tmp    tmpfs  rw,nr_inodes=5k,noexec,nodev,nosuid,uid=user,gid=group,mode=1700 0 0" >> /mnt/etc/fstab
