@@ -98,49 +98,21 @@ btrfs subvolume create /mnt/@var_cache_pacman_pkg
 if $WIPEROOT; then
   echo -e "... Backup old root to @root.old"
   mv /mnt/@root /mnt/@root.old
-
   echo -e "... Create new root @root"
   btrfs subvolume create /mnt/@root
-
-  echo -e "... Create root snapshots"
-  if [ ! -d /mnt/@snapshots/ ]; then
-    btrfs subvolume create /mnt/@snapshots
-  fi
-  if [ ! -d /mnt/data/@snapshots/@root_snaps ]; then
-    btrfs subvolume create /mnt/@snapshots/@root_snaps
-  fi
 fi
 
 if $WIPEHOME; then
   echo -e "... Backup old home to @home.old"
   mv /mnt/@home /mnt/@home.old
 
-  echo -e "... Create new home and home snapshots subvolume"
+  echo -e "... Create new home subvolume"
   btrfs subvolume create /mnt/@home
-  if [ ! -d /mnt/@snapshots/ ]; then
-    btrfs subvolume create /mnt/@snapshots
-  fi
-  if [ ! -d /mnt/data/@snapshots/@home_snaps ]; then
-    btrfs subvolume delete /mnt/@snapshots/@home_snaps/*/snapshot
-    rm -R /mnt/@snapshots/@home_snaps/*
-    btrfs subvolume delete /mnt/@snapshots/@home_snaps
-    btrfs subvolume create /mnt/@snapshots/@home_snaps
-  else
-    btrfs subvolume create /mnt/@snapshots/@home_snaps
-  fi
-fi
-
-# NOVE TO BTRFS SNAPSHOT
-if $INSTALL; then
-  btrfs subvolume create /mnt/@snapshots
-  btrfs subvolume create /mnt/@snapshots/@home_snaps
-  btrfs subvolume create /mnt/@snapshots/@root_snaps
 fi
 
 # Mount root btrfs root volume
 mkdir -p /mnt/mnt/btrfs/root
 mount -o defaults,compress=zstd:3,noatime,nodev,ssd,discard,space_cache=v2 /dev/mapper/root /mnt/mnt/btrfs/root
-
 
 # Create mountpoints and mount root subvolumes
 echo -e ".. create root subvolume mountpoints"
