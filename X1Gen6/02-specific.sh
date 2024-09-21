@@ -81,10 +81,6 @@ yayr virtualbox virtualbox-guest-iso virtualbox-host-dkms virtualbox-ext-oracle
 # # For cursor in wayland session
 # echo "KWIN_FORCE_SW_CURSOR=1" >> /etc/environement
 
-# Enable snapshots with snapper
-echo -e "Install snapper, a snapshots manager "
-yayr snapper snapper-gui-git snap-pac
-
 
 # Enable base services
 echo -e ".. Start services"
@@ -94,6 +90,7 @@ systemctl enable --now bluetooth
 systemctl enable --now avahi-daemon
 
 
+# Enable snapshots with snapper
 echo -e "Install snapper, a snapshots manager "
 yayr snapper snapper-gui-git snap-pac
 
@@ -116,6 +113,26 @@ btrfs subvolume delete /.snapshots
 btrfs subvolume delete /home/.snapshots
 mkdir /.snapshots
 mkdir /home/.snapshots
+echo -e "... Create snapshots subvolume"
+if [ ! -d /mnt/@snapshots/ ]; then
+  btrfs subvolume create /mnt/@snapshots
+fi
+echo -e "... Create root snapshot subvolume"
+if [ ! -d /mnt/data/@snapshots/@root_snaps ]; then
+  btrfs subvolume delete /mnt/@snapshots/@root_snaps/*/snapshot
+  rm -R /mnt/@snapshots/@root_snaps/*
+  btrfs subvolume delete /mnt/@snapshots/@root_snaps
+fi
+btrfs subvolume create /mnt/@snapshots/@root_snaps
+
+echo -e "... Create home snapshot subvolume"
+if [ ! -d /mnt/data/@snapshots/@home_snaps ]; then
+  btrfs subvolume delete /mnt/@snapshots/@home_snaps/*/snapshot
+  rm -R /mnt/@snapshots/@home_snaps/*
+  btrfs subvolume delete /mnt/@snapshots/@home_snaps
+fi
+btrfs subvolume create /mnt/@snapshots/@home_snaps
+
 echo -e ".. add entry to fstab and mount"
 echo "# Snapper subvolume"
 echo "LABEL=arch /.snapshots      btrfs rw,noatime,ssd,discard,compress=zstd:3,space_cache,subvol=@snapshots/@root_snaps   0 0" >> /etc/fstab
