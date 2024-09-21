@@ -224,11 +224,6 @@ cat <<EOF | sudo tee -a /opt/$USR/btrfs_maintenance-all.sh > /dev/null
 EOF
 chmod +x /opt/$USR/*
 
-# Set up Zerotier
-yayr zerotier-one
-systemctl enable --now zerotier-one.service
-zerotier-cli join 233ccaac278f1c3d
-
 # Set up tailscale
 yayr tailscale
 systemctl enable --now tailscaled
