@@ -1,20 +1,35 @@
 
 # /bin/bash
 # 10/30/2023
-# Dual boot with windows
-# With 1 DISK, 4TB
-# /dev/nvme0n1p1  512.0MiB  EF00  EFI system partition
-# /dev/nvme1n1p1    8300 Linux Filesystem on LVM
-# /dev/nvme1n1p2 1.5TiB
-#   1            2048         1050623   512.0 MiB   EF00  EFI system partition
-#   2         1050624         1083391   16.0 MiB    0C01  Microsoft reserved ...
-#   3         1083392       537954303   256.0 GiB   0700  Basic data partition
-#   4       537954304       571508735   16.0 GiB    2700  Recovery
-# IF NTFSDATA
-#   5       571508736      5666551807   2.4 TiB     8300  cryptarch
-#   6      5666551808      7814035455   1024.0 GiB  0700  ntfsdata
-# ELSE 
-#   6      571508736       7814035455   3.4 TiB     8300  cryptarch
+# Lenovo X1 Yoga Gen 6
+# - with 4TB SSD disk
+# - Dual boot with windows
+#
+# While installing windows, the partition scheme is created using the `diskpart` utility tool:
+# (1) Launch command prompt with shift-F10
+# (2) Run `diskpart`
+# (3) Display and select disk using `list disk`, followed by `select disk X` where X refers to the corret
+# (4) Prepare the disk using `clean`, followed by `convert gpt`
+# (5a) Create EFI system partition with `create partition efi size=1024`
+# (5b) Format EFI partition `format fs=fat32 quick label="EFI"`
+# (6) Create Microsoft Reserved Partition using `create parition msr size=16`
+# (7a) Create Microsfot Windows Parition `create partition primary size=262144`
+# (7b) Format Microsoft Windows Partition to ntfs `format fs=ntfs quick label="Windows"
+# (7c) Assign drive letter `Assign letter=W`
+# (8a) Create Recovery Partition `create partition primary size=512`
+# (8b) Format Recovery Partition to ntfs `format fs=ntfs quick label="Recovery"`
+# (8c) Assign drive letter `Assign letter=R`
+# (9) List volume: `list volume`
+# To configure windows without internet access with local signin, launch command `OOBE\BYPASSNRO` within the command prompt - accessible via shift+F10 -
+#
+# Partititon table
+# /dev/nvme0n1p1 1024MiB  EF00  EFI system partition
+# /dev/nvme0n1p2   16MiB  0C01  Microsfot Reserved Partition
+# /dev/nvme0n1p3  256GiB  0700  Microsfot Windows Partition
+# /dev/nvme0n1p4  512MiB  2700  Recovery Tools Partition
+# /dev/nvme0n1p5  512GiB  8300  cryptarch
+# /dev/nvme0n1p5  X.XTiB  8300  cryptdata
+
 # btrfs with flat layout: /, /var/
 
 DISK=/dev/nvme0n1
