@@ -25,11 +25,10 @@ sudo mkdir /home/$USER/.cache/yay
 sudo chattr +C /home/$USER/.cache/yay
 sudo btrfs subvolume create /mnt/btrfs/root/@${USER}
 sudo btrfs subvolume create /mnt/btrfs/root/@${USER}/@cache_yay
-sudo mount -o rw,nodev,noatime,compress=zstd:3,ssd,discard,clear_cache,nospace_cache,nodatacow,commit=120,uid=1000,gid=984,umask=022,subvol=@${USER}/@cache_yay /dev/mapper/root /home/${USER}/.cache/yay
+sudo mount -o rw,nodev,noatime,compress=zstd:3,ssd,discard,clear_cache,nospace_cache,nodatacow,commit=120,subvol=@${USER}/@cache_yay /dev/mapper/root /home/${USER}/.cache/yay
 sudo cat <<EOF | sudo tee -a /etc/fstab > /dev/null
 ## USER: megavolts
 # yay cache
-/dev/mapper/root  /home/${USER}/.cache/yay  btrfs rw,nodev,noatime,compress=zstd:3,ssd,discard,clear_cache,nospace_cache,nodatacow,commit=120,uid=1000,gid=984,umask=022,subvol=@${USER}/@cache_yay 0 0
 EOF
 
 echo -e "... create noCOW subvolume for Download"
