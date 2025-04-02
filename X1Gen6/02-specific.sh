@@ -7,23 +7,23 @@ echo -e ".. Install xorg and input"
 yayr xorg-server xorg-apps xorg-xinit xorg-xrandr xorg-xkill xorg-xauth
 
 echo -e "... install plasma windows manager"
-yayr plasma-desktop sddm plasma-nm kscreen powerdevil plasma-wayland-session plasma-pa plasma-thunderbolt jack2 ttf-droid wireplumber phonon-qt6-gstreamer 
+yayr plasma-desktop sddm plasma-nm kscreen powerdevil plasma-wayland-session plasma-pa plasma-thunderbolt ttf-droid wireplubmer phonon-qt6-gstreamer 
 
 echo -e ".. install audio server"
-yayr pipewire lib32-pipewire pipewire-docs pipewire-alsa lib32-pipewire-jack qpwgraph
+yayr pipewire pipewire-alsa qpwgraph
 
 echo -e ".. Installing bluetooth"
 yayr bluez bluez-utils bluedevil
 
 echo -e ".. Installing graphic tools"
-yayr yakuake kdialog kfind kdeconnect barrier wl-clipboard kwallet-pam sddm-kcm xdg-desktop-portal-kde
+yayr yakuake kdialog kfind kdeconnect wl-clipboard kwallet-pam sddm-kcm xdg-desktop-portal-kde input-leaf
 
 echo -e "Install software"
 echo -e ".. partition tools"
 yayr gparted ntfs-3g exfat-utils mtools sshfs bindfs
 
 echo -e "... network tools"
-yayr dnsmasq nm-connection-editor openconnect networkmanager-openconnect avahi
+yayr dnsmasq nm-connection-editor openconnect networkmanager-openconnect avahi iw hostapd
 
 echo -e "... android tools"
 yayr android-tools android-udev  
@@ -32,8 +32,7 @@ echo -e "... installing fonts"
 yayr  freefonts ttf-inconsolata ttf-hanazono ttf-hack ttf-anonymous-pro ttf-liberation gnu-free-fonts noto-fonts ttf-bitstream-vera ttf-croscore ttf-dejavu ttf-droid ttf-ibm-plex
 
 echo -e ".. internet software"
-yayr firefox thunderbird filezilla zoom teams slack-wayland telegram-desktop signal-desktop profile-sync-daemon vdhcoapp-bin
-yayr pass-git protonmail-bridge-bin protonvpn-gui qtpass secret-service
+yayr firefox thunderbird filezilla zoom slack-wayland telegram-desktop signal-desktop profile-sync-daemon vdhcoapp-bin
 
 # echo -e ".. media"
 yayr dolphin dolphin-plugins qt6-imageformats ffmpegthumbs lzop kdegraphics-thumbnailers kimageformats raw-thumbnailer kio-gdrive libappimage rawtherapee
@@ -43,16 +42,17 @@ echo -e ".. sync software"
 echo -e ".. Add ownstuff repositories"
 cat << EOF >>  /etc/pacman.conf
 [ownstuff]
-Server = https://ftp.f3l.de/~martchus/$repo/os/$arch
-Server = https://martchus.no-ip.biz/repo/arch/$repo/os/$arch
+Server = https://ftp.f3l.de/~martchus/\$repo/os/\$arch
+Server = https://martchus.no-ip.biz/repo/arch/\$repo/os/\$arch
 EOF
 pacman-key --recv-keys B9E36A7275FC61B464B67907E06FE8F53CDC6A4C # import key
 pacman-key --finger    B9E36A7275FC61B464B67907E06FE8F53CDC6A4C # verify fingerprint
 pacman-key --lsign-key B9E36A7275FC61B464B67907E06FE8F53CDC6A4C # sign imported key locally
+pacman -Syy
 yayr syncthingtray-qt6
 
 echo -e ".. coding tools"
-yayr sublime-text-4 terminator zettlr pycharm-professional python-pip python-setuptools tk python-utils
+yayr sublime-text-4 zettlr pycharm-professional python-pip python-setuptools tk python-utils
 
 echo -e ".. python pagckages"
 yayr python-utils python-numpy python-matplotlib python-scipy python-pandas python-openpyxl python-basemap python-pillow cython jupyterlab jupyter-notebook ipython 
@@ -90,7 +90,48 @@ systemctl enable --now bluetooth
 systemctl enable --now avahi-daemon
 
 
+
+# Set up tailscale
+yayr tailscale
+systemctl enable --now tailscaled
+tailscale up --ssh
+echo -e ".. Follow the link to login"
+
+# Enable samba
+echo -e ".. Install samba"
+yayr samba kdenetwork-filesharing
+mdir /etc/samba
+echo -e "... Edit samba configuration"
+wget wget -O /etc/samba/smb.conf https://raw.githubusercontent.com/zentyal/samba/master/examples/smb.conf.default
+sed -i "s|   log file = /usr/local/samba/var/log.%m|#   log file = /usr/local/samba/var/log.%m|g" /etc/samba/smb.conf
+sed -i "/#   log file = \/usr\/local\/samba\/var\/log.\%m/a   logging = systemd" /etc/samba/smb.conf
+sed -i "s|Samba Server|Atka|g" /etc/samba/smb.conf
+sed -i "s|\[homes\]|#\[homes\]|g" /etc/samba/smb.conf
+sed -i "s|   comment = Home Directories|#   comment = Home Directories|g" /etc/samba/smb.conf
+sed -i "s|   browseable = no|#   browseable = no|g" /etc/samba/smb.conf
+sed -i "s|   writable = yes|#   writable = yes|g" /etc/samba/smb.conf
+systemctl start --now smb
+
+echo -e "... create samba user"
+echo -en $PASSWORD | smbpasswd -a $USR
+
+echo -e " ..  Install pacman and downgrade tools"
+yayr paccache-hook pacman-contrib downgrade packagekit-qt6
+
+echo -e ".. GTK integration into QT"
+yayr breeze breeze-gtk xdg-desktop-portal xdg-desktop-portal plasma-browser-integration firefox-kde-opensuse
+
+echo -e << EOF
+.. For Firefox
+- widget.use-xdg-dekstop-portal-mime-handler: 1
+- widget.user-xdg-dekstop-portal.file-picker: 1
+- media.hardwaremediakeys.enabled: false
+EOF
+
+
 # Enable snapshots with snapper
+
+
 echo -e "Install snapper, a snapshots manager "
 yayr snapper snapper-gui-git snap-pac
 
@@ -101,8 +142,10 @@ if [ -d "/home/.snapshots" ]; then
 fi
 snapper -c root create-config /
 
+
 echo -e "... Create home config"
 if [ -d "/home/.snapshots" ]; then
+  echo " .... removing /home/.snapshots"
   rmdir /home/.snapshots
 fi
 snapper -c home create-config /home
@@ -114,16 +157,16 @@ btrfs subvolume delete /home/.snapshots
 mkdir /.snapshots
 mkdir /home/.snapshots
 echo -e "... Create snapshots subvolume"
-if [ ! -d /mnt/@snapshots/ ]; then
-  btrfs subvolume create /mnt/@snapshots
+if [ ! -d /mnt/btrfs/root/@snapshots/ ]; then
+  btrfs subvolume create /mnt/btrfs/root/@snapshots
 fi
 echo -e "... Create root snapshot subvolume"
-if [ ! -d /mnt/data/@snapshots/@root_snaps ]; then
-  btrfs subvolume delete /mnt/@snapshots/@root_snaps/*/snapshot
-  rm -R /mnt/@snapshots/@root_snaps/*
-  btrfs subvolume delete /mnt/@snapshots/@root_snaps
+if [ ! -d /mnt/btrfs/root/@snapshots/@root_snaps ]; then
+  btrfs subvolume delete /mnt/btrfs/root/@snapshots/@root_snaps/*/snapshot
+  rm -R /mnt/btrfs/root/@snapshots/@root_snaps/*
+  btrfs subvolume delete /mnt/btrfs/root/@snapshots/@root_snaps
 fi
-btrfs subvolume create /mnt/@snapshots/@root_snaps
+btrfs subvolume create /mnt/btrfs/root/@snapshots/@root_snaps
 
 echo -e "... Create home snapshot subvolume"
 if [ ! -d /mnt/data/@snapshots/@home_snaps ]; then
@@ -179,7 +222,7 @@ systemctl start --now snapper-timeline.timer snapper-cleanup.timer  # start and 
 echo -e " ... Execute snapshots cleanup everyhour"
 SYSTEMD_EDITOR=tee systemctl edit snapper-cleanup.timer <<EOF
 [Timer]
-OnBoot=10min
+OnCalendar=60min
 OnUnitActiveSec=1h
 EOF
 
@@ -197,66 +240,29 @@ SYSTEMD_EDITOR=tee systemctl edit snapper-boot.service <<EOF
 After=\\\\x2eboot.mount
 EOF
 
-# ------------------------------------------------------- #
-# BTRFS maintenance
-yayr rmling rmlint-shredder duperemove bees duperemove-service 
+# # ------------------------------------------------------- #
+# # BTRFS maintenance
+# yayr rmling rmlint-shredder duperemove bees duperemove-service 
 
-mkdir /opt/$USR
-cat <<EOF | sudo tee -a /opt/$USR/btrfs_maintenance.sh > /dev/null
-#! /bin/bash
-/usr/bin/btrfs balance start -dusage=10 -dlimit=2..20 -musage=10 -mlimit=2..20 \$1 &&
-/usr/bin/btrfs balance start -dusage=25 -dlimit=2..10 -musage=25 -mlimit=2..10 \$1
-EOF
+# mkdir /opt/$USR
+# cat <<EOF | sudo tee -a /opt/$USR/btrfs_maintenance.sh > /dev/null
+# #! /bin/bash
+# /usr/bin/btrfs balance start -dusage=10 -dlimit=2..20 -musage=10 -mlimit=2..20 \$1 &&
+# /usr/bin/btrfs balance start -dusage=25 -dlimit=2..10 -musage=25 -mlimit=2..10 \$1
+# EOF
 
-cat <<EOF | sudo tee -a /opt/$USR/btrfs_maintenance-scrub.sh > /dev/null
-#! /bin/bash
-/usr/bin/btrfs scrub start \$1 &&
-/usr/bin/btrfs scrub status -d \$1
-EOF
+# cat <<EOF | sudo tee -a /opt/$USR/btrfs_maintenance-scrub.sh > /dev/null
+# #! /bin/bash
+# /usr/bin/btrfs scrub start \$1 &&
+# /usr/bin/btrfs scrub status -d \$1
+# EOF
 
-cat <<EOF | sudo tee -a /opt/$USR/btrfs_maintenance-all.sh > /dev/null
-#! /bin/bash
-/usr/bin/btrfs balance start -dusage=10 -dlimit=2..20 -musage=10 -mlimit=2..20 \$1 &&
-/usr/bin/btrfs balance start -dusage=25 -dlimit=2..10 -musage=25 -mlimit=2..10 \$1 &&
-/usr/bin/btrfs scrub start \$1 &&
-/usr/bin/btrfs scrub status -d \$1 &
-/usr/bin/btrfs filesystem defragment -r \$1
-EOF
-chmod +x /opt/$USR/*
-
-# Set up tailscale
-yayr tailscale
-systemctl enable --now tailscaled
-tailscale up --ssh
-echo -e ".. Follow the link to login"
-
-# Enable samba
-echo -e ".. Install samba"
-yayr samba kdenetwork-filesharing
-mdir /etc/samba
-echo -e "... Edit samba configuration"
-wget wget -O /etc/samba/smb.conf https://raw.githubusercontent.com/zentyal/samba/master/examples/smb.conf.default
-sed -i "s|   log file = /usr/local/samba/var/log.%m|#   log file = /usr/local/samba/var/log.%m|g" /etc/samba/smb.conf
-sed -i "/#   log file = \/usr\/local\/samba\/var\/log.\%m/a   logging = systemd" /etc/samba/smb.conf
-sed -i "s|Samba Server|Atka|g" /etc/samba/smb.conf
-sed -i "s|\[homes\]|#\[homes\]|g" /etc/samba/smb.conf
-sed -i "s|   comment = Home Directories|#   comment = Home Directories|g" /etc/samba/smb.conf
-sed -i "s|   browseable = no|#   browseable = no|g" /etc/samba/smb.conf
-sed -i "s|   writable = yes|#   writable = yes|g" /etc/samba/smb.conf
-systemctl start --now smb
-
-echo -e "... create samba user"
-echo -en $PASSWORD | smbpasswd -a $USR
-
-echo -e " ..  Install pacman and downgrade tools"
-yayr paccache-hook pacman-contrib downgrade packagekit-qt6
-
-echo -e ".. GTK integration into QT"
-yayr breeze breeze-gtk xdg-desktop-portal xdg-desktop-portal plasma-browser-integration firefox-kde-opensuse
-
-echo -e << EOF
-.. For Firefox
-- widget.use-xdg-dekstop-portal-mime-handler: 1
-- widget.user-xdg-dekstop-portal.file-picker: 1
-- media.hardwaremediakeys.enabled: false
-EOF
+# cat <<EOF | sudo tee -a /opt/$USR/btrfs_maintenance-all.sh > /dev/null
+# #! /bin/bash
+# /usr/bin/btrfs balance start -dusage=10 -dlimit=2..20 -musage=10 -mlimit=2..20 \$1 &&
+# /usr/bin/btrfs balance start -dusage=25 -dlimit=2..10 -musage=25 -mlimit=2..10 \$1 &&
+# /usr/bin/btrfs scrub start \$1 &&
+# /usr/bin/btrfs scrub status -d \$1 &
+# /usr/bin/btrfs filesystem defragment -r \$1
+# EOF
+# chmod +x /opt/$USR/*

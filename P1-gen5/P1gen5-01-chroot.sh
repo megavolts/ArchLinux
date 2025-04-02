@@ -1,9 +1,9 @@
 
 ############################################################
 NEWUSER=megavolts
-WINDATAPART=/dev/disk/by-partlabel/WinData
-WINBOOTPART=/dev/disk/by-partlabel/EFI
-NUXBOOTPART=/dev/disk/by-partlabel/EFI2
+WINDATAPART=/dev/disk/by-label/WinData
+WINBOOTPART=/dev/disk/by-label/EFI
+NUXBOOTPART=/dev/disk/by-label/EFIARCH
 
 
 echo -e "Tuning pacman"
@@ -23,6 +23,7 @@ echo -e ".. Optimize mirrorlist"
 pacman -S --noconfirm reflector
 sed -i "s|# --country France,Germany|--country USA,Switzerland|g" /etc/xdg/reflector/reflector.conf
 systemctl enable reflector.timer
+
 ############################################################
 echo -e "Create user"
 echo 'Enter a default passphrase use to encrypt the disk and serve as password for root and megavolts:'
@@ -66,6 +67,7 @@ yays(){sudo -u $NEWUSER yay -S --removemake --cleanafter --noconfirm $1}
 
 ############################################################
 echo -e ".. sync older directory to new directory for $NEWUSER"
+# {}
 # # Sync old NEWUSER directory to new NEWUSER directory
 # NEED TO MAKE SURE NO TO COPY hiddne file
 # if [ -d /home/$NEWUSER-old ]; then
@@ -81,21 +83,14 @@ systemctl enable btrfs-scrub@home.timer
 systemctl enable btrfs-scrub@-.timer 
 systemctl enable fstrim.timer
 
-updatedb
-
 echo -e ".. Set up crypttab to unlock data"
 DATAUUID=$(cryptsetup luksDump /dev/disk/by-partlabel/CRYPTDATA | grep UUID | cut -f2- -d: | sed -e 's/^[ \t]*//')
 echo "data   UUID=$DATAUUID  /etc/cryptfs.key" >> /etc/crypttab
 
 ## Intel Graphics Software
 echo -e "Graphic interface"
-<<<<<<< HEAD
-echo -e ".. Install drivers specific to Intel Corporation Alder Lake-P Integrate Graphics Controller"
-pacman -S --noconfirm mesa vulkan-intel vulkan-mesa-layers intel-media-driver xf86-video-nouveau
-=======
 echo -e ".. Install drivers specific to Intel Corporation Alder Lake-P Integrated Graphics Controller"
 pacman -S --noconfirm mesa vulkan-intel vulkan-mesa-layers intel-media-driver
->>>>>>> refs/remotes/origin/master
 # Enable GuC/HuC firmware loading
 echo "options i915 enable_guc=3" >> /etc/modprobe.d/i915.conf
 
@@ -105,23 +100,9 @@ sed -i 's/fsck)/btrfs)/g' /etc/mkinitcpio.conf
 
 # add encrypt and keyboard hook before filesystems
 sed -i 's/filesystems /encrypt resume filesystems /g' /etc/mkinitcpio.conf
-sed -i 's/kms keyboard keymap/kms keymap/g' /etc/mkinitcpio.conf
-sed -i 's/block filesystems btrfs/block btrfs/g' /etc/mkinitcpio.conf
 
-<<<<<<< HEAD
-#numlcok
-mkdir /etc/systemd/system/getty@.service.d
-cat << EOF >> /etc/systemd/system/getty@.service.d/activate-numlock.conf
-[Service]
-ExecStartPre=/bin/sh -c 'setleds -D +num < /dev/%I'
-EOF
-
-
-
-=======
->>>>>>> refs/remotes/origin/master
 # Configure boot
-ROFFSET=$(btrfs inspect-internal map-swapfile -r /mnt/btrfs/root/@swap/swapfile)
+ROFFSET=$(btrfs inspect-internal map-swapfile -r /storage/btrfs/root/@swap/swapfile)
 ROOTUUID=$(cryptsetup luksDump /dev/disk/by-partlabel/CRYPTROOT | grep UUID | cut -f2- -d: | sed -e 's/^[ \t]*//')
 
 # Set up automatic copy of boot partition on kernel update to enable backup to /.boot
@@ -138,7 +119,7 @@ Target = usr/src/*/dkms.conf
 Depends = rsync
 Description = Backing up /boot...
 When = PostTransaction
-Exec = /usr/bin/rsync -avh --delete /boot /.bootbkp && /usr/bin/rsync -avh --delete /boot /.boot
+Exec = /usr/bin/rsync -avh --delete /boot/ /.bootbkp && /usr/bin/rsync -avh --delete /boot/ /.bootwin
 EOF
 
 refind-install --usedefault $WINBOOTPART
@@ -148,19 +129,19 @@ if [! $NEWINSTALL ]; then
   if [-d boot/refind_linux.conf ]; then
     cp /boot/refind_linux.conf /boot/refind_linux.conf.old
   fi
-  wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/P1-gen5/refind_linux.conf -O /boot/refind_linux.conf
+  wget https://raw.githubusercontent.com/megavolts/ArchLinux/refs/heads/master/X1Gen6/sources/refind.conf -O /boot/refind_linux.conf
   sed -i "s|ROFFSET|$ROFFSET|g" /boot/refind_linux.conf
   sed -i "s|ROOTUUID|${ROOTUUID}|g" /boot/refind_linux.conf
-  cp /boot/refind_linux.conf /.boot/refind_linux.conf
+  cp /boot/refind_linux.conf /.bootwin/refind_linux.conf
 fi
 
 # copy btrfs volume support
-mkdir -p /boot/EFI/refind/drivers_x64
-cp /usr/share/refind/drivers_x64/btrfs_x64.efi /boot/EFI/refind/drivers_x64
+mkdir -p /boot/EFI/tools/drivers_x64
+cp /usr/share/refind/drivers_x64/btrfs_x64.efi /boot/EFI/tools/drivers_x64
 cp /usr/share/refind/icons /boot/EFI/refind/ -R
-mkdir -p /.boot/EFI/refind/drivers_x64
-cp /usr/share/refind/drivers_x64/btrfs_x64.efi /.boot/EFI/refind/drivers_x64
-cp /usr/share/refind/icons /.boot/EFI/refind/ -R
+mkdir -p /.bootwin/EFI/tools/drivers_x64
+cp /usr/share/refind/drivers_x64/btrfs_x64.efi /.bootwin/EFI/tools/drivers_x64
+cp /usr/share/refind/icons /.bootwin/EFI/refind/ -R
 
 # Rebuild kernel
 if [ -f /boot/vmlinuz-linux ]; then
@@ -171,6 +152,6 @@ if [ -f /boot/vmlinuz-linux-zen ]; then
 fi
 
 exit
-swapoff /mnt/mnt/btrfs/root/@swap/swapfile
-umount /mnt/{boot,.boot,data,mnt/data,mnt/btrfs/root,mnt/btrfs/data,var/log,var/tmp,/tmp,/var/cache/pacman/pkg,var/abs,/home}
+swapoff /mnt/storage/btrfs/root/@swap/swapfile
+umount /mnt/{boot,.bootwin,storage,storage/data,storage/btrfs/root,storage/btrfs/data,var/log,var/tmp,/tmp,/var/cache/pacman/pkg,var/abs,/home}
 reboot

@@ -25,21 +25,25 @@
 # Partititon table
 # Number  Start (sector)    End (sector)  Size       Code  Name
 #  1            2048         2099199   1024.0 MiB  EF00  EFI system partition
-#  2         2099200         2131967   16.0 MiB    0C01  Microsoft reserved ...
-#  3         2131968       539002879   256.0 GiB   0700  Basic data partition
-#  4       539002880       540051455   512.0 MiB   0700  Basic data partition
-#  5       540051456      7814035455   3.4 TiB   8300  cryptroot
+#  2         2099200         2131967   16.0 MiB    0C01  MSR
+#  3         2131968       539002879   256.0 GiB   0700  WINDOWS
+#  4       539002880       540051455   512.0 MiB   0700  RECOVERY
+#  5       540051456      5129682943   2.1  TiB    8300  CRYPTROOT
+#  5      5129682944      7814035455   1.25 TiB    0700  PHOTOGRAPHY
 # btrfs with flat layout: /, /var/
+INSTALL=true
+NEWINSTALL=false
+WIPEDISK=false
+NTFSDATA=true
 
+HOSTNAME=adak
 DISK=/dev/nvme0n1
 NEWUSER=megavolts
 BOOTPART=1
 CRYPTPART=5
-NEWINSTALL=false
-INSTALL=True
-NTFSDATA=True
-WIPEDISK=false
+NTFSPART=6
 TZDATA=America/Anchorage
+
 echo 'Enter a default passphrase use to encrypt the disk and serve as password for root and megavolts:'
 stty -echo
 read PASSWORD
@@ -50,7 +54,7 @@ echo -e "DISKS PREPARATION"
 if $NEWINSTALL
 then
   echo ".. New installation, create new partition table"
-  sgdisk -n $ROOTPART:315654144:3907029134 -t $ROOTPART:8300 -c $ROOTPART:"CRYPTROOT" $DISK
+  sgdisk -n $ROOTPART:315654144:5129682943 -t $ROOTPART:8300 -c $ROOTPART:"CRYPTROOT" $DISK
   echo -en $PASSWORD | cryptsetup luksFormat --align-payload=4096 /dev/disk/by-partlabel/CRYPTROOT -q
   echo -en $PASSWORD | cryptsetup luksOpen /dev/disk/by-partlabel/CRYPTROOT root
   mkfs.btrfs /dev/mapper/root
@@ -74,7 +78,7 @@ fi
 echo -e ".. create subvolumes"
 mount -o defaults,compress=zstd:3,noatime,nodev,ssd,discard /dev/mapper/root /mnt/
 
-if $INSTALL or $WIPEDISE; then
+if $INSTALL or $WIPEDISK; then
   echo -e "... create new root, var and tmp subvolume"
   btrfs subvolume create /mnt/@data
   btrfs subvolume create /mnt/@home
@@ -109,14 +113,11 @@ if $WIPEHOME; then
   echo -e "... Create new home subvolume"
   btrfs subvolume create /mnt/@home
 fi
-
-# Mount root btrfs root volume
-mkdir -p /mnt/mnt/btrfs/root
-mount -o defaults,compress=zstd:3,noatime,nodev,ssd,discard,space_cache=v2 /dev/mapper/root /mnt/mnt/btrfs/root
+umount /mnt
 
 # Create mountpoints and mount root subvolumes
 echo -e ".. create root subvolume mountpoints"
-mkdir -p /mnt/{boot,.boot,tmp,var/log,var/tmp,var/abs,var/cache/pacman/pkg,home,mnt/data}
+mkdir -p /mnt/{boot,tmp,var/log,var/tmp,var/abs,var/cache/pacman/pkg,home,mnt/data,mnt/btrfs/root}
 echo -e ".. mount subvolume for install"
 mount -o defaults,compress=zstd:3,noatime,nodev,ssd,discard,space_cache=v2,subvol=@root /dev/mapper/root /mnt
 mount -o defaults,compress=zstd:3,noatime,nodev,nodatacow,ssd,discard,subvol=@tmp /dev/mapper/root /mnt/tmp
@@ -126,6 +127,7 @@ mount -o defaults,compress=zstd:3,noatime,nodev,nodatacow,ssd,discard,subvol=@va
 mount -o defaults,compress=zstd:3,noatime,nodev,nodatacow,ssd,discard,subvol=@var_cache_pacman_pkg /dev/mapper/root /mnt/var/cache/pacman/pkg
 mount -o defaults,compress=zstd:3,noatime,nodev,ssd,discard,space_cache=v2,subvol=@home /dev/mapper/root /mnt/home
 mount -o defaults,compress=zstd:3,noatime,nodev,ssd,discard,space_cache=v2,subvol=@data /dev/mapper/root /mnt/mnt/data
+mount -o defaults,compress=zstd:3,noatime,nodev,ssd,discard,space_cache=v2 /dev/mapper/root /mnt/mnt/btrfs/root
 
 
 echo -e ".. create and activate swapfile"
@@ -133,23 +135,9 @@ echo -e ".. create and activate swapfile"
 if [ ! -e /mnt/mnt/btrfs/root/@swap ]; then
   btrfs subvolume create /mnt/mnt/btrfs/root/@swap
   btrfs filesystem mkswapfile --size=32G /mnt/mnt/btrfs/root/@swap/swapfile
+  mkswap /mnt/mnt/btrfs/root/@swap/swapfile
   swapon /mnt/mnt/btrfs/root/@swap/swapfile
-  RESUME_OFFSET=$(btrfs inspect-internal map-swapfile -r /mnt/mnt/btrfs/root/@swap/swapfile)
 fi
-
-# BTRFS data subvolume
-echo -e ".. create media subvolume on data and mount"
-if [ ! -e /mnt/mnt/btrfs/root/@media ]; then
-  btrfs subvolume create /mnt/mnt/btrfs/root/@media
-fi
-if [ -e /mnt/mnt/btrfs/root/@UAF-data ]; then
-  btrfs subvolume create /mnt/mnt/btrfs/root/@UAF-data
-fi
-mkdir -p /mnt/mnt/data/{media,UAF-data}
-mkdir -p /mnt/mnt/data/media/{photography,wallpaper,meme,graphisme,tvseries,movies,videos,musics}
-mount -o defaults,nodev,noatime,compress=zstd:3,ssd,discard,space_cache=v2,subvol=@media /dev/mapper/root /mnt/mnt/data/media
-mount -o defaults,nodev,noatime,compress=zstd:3,ssd,discard,space_cache=v2,subvol=@UAF-data /dev/mapper/root /mnt/mnt/data/UAF-data
-#mount /dev/nvme0n1p6 /mnt/mnt/data/media/photography
 
 # boot partition EFI and EFI_LINUX
 echo -e ".. mount linux disk boot partition to /mnt/boot"
@@ -159,6 +147,9 @@ echo -e "Arch Linux Installation"
 echo -e ".. Install base packages"
 pacman -Sy
 pacman -S --noconfirm archlinux-keyring
+if [ -e /mnt/boot/intel-ucode.img ]; then
+  rm /mnt/boot/intel-ucode.img
+fi
 pacstrap /mnt base linux-zen linux-zen-headers base-devel openssh sudo ntp wget grml-zsh-config btrfs-progs networkmanager usbutils linux-firmware sof-firmware yajl mkinitcpio git go nano zsh terminus-font refind intel-ucode rsync
 
 echo -e ".. install basic console tools"
@@ -194,7 +185,7 @@ echo "FONT=ter-132n" >> /mnt/etc/vconsole.conf
 # set hostname
 echo -e ".. Set hostname & network manager"
 echo $HOSTNAME > /mnt/etc/hostname
-echo "127.0.1.1 localhost $HOSTNAME.localdomain    $HOSTNAME" >> /mnt/etc/hosts
+echo "127.0.1.1 localhost $HOSTNAME.localdomain $HOSTNAME.local $HOSTNAME.redtrim   $HOSTNAME" >> /mnt/etc/hosts
 echo "::1 localhost $HOSTNAME" >> /mnt/etc/hosts
 
 arch-chroot /mnt /bin/zsh

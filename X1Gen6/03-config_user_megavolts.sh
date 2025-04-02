@@ -1,4 +1,4 @@
-oo# #/bin/bash!
+# #/bin/bash!
 # ssh megavolts@IP
 # install graphic consol
 # As user
@@ -26,16 +26,15 @@ sudo chattr +C /home/$USER/.cache/yay
 sudo btrfs subvolume create /mnt/btrfs/root/@${USER}
 sudo btrfs subvolume create /mnt/btrfs/root/@${USER}/@cache_yay
 sudo mount -o rw,nodev,noatime,compress=zstd:3,ssd,discard,clear_cache,nospace_cache,nodatacow,commit=120,subvol=@${USER}/@cache_yay /dev/mapper/root /home/${USER}/.cache/yay
-sudo cat <<EOF | sudo tee -a /etc/fstab > /dev/null
-## USER: megavolts
-# yay cache
-EOF
 
 echo -e "... create noCOW subvolume for Download"
 sudo btrfs subvolume create /mnt/btrfs/root/@${USER}/@downloads
 sudo cat <<EOF | sudo tee -a /etc/fstab > /dev/null
+## USER: megavolts
+# yay cache
+/dev/mapper/root /home/${USER}/.cache/yay btrfs rw,nodev,noatime,compress=zstd:3,ssd,discard,clear_cahce,nospace_cache,nodatacow,subvol=/@${USER}/@cache_yay 0 0
 # Download
-/dev/mapper/root  /home/${USER}/Downloads btrfs rw,nodev,noatime,compress=zstd:3,ssd,discard,clear_cache,nospace_cache,nodatacow,commit=120,uid=1000,gid=984,umask=022, subvol=/@${USER}/@downloads 0 0
+/dev/mapper/root  /home/${USER}/Downloads btrfs rw,nodev,noatime,compress=zstd:3,ssd,discard,clear_cache,nospace_cache,nodatacow,subvol=/@${USER}/@downloads 0 0
 EOF
 
 # For user megavolts:
@@ -45,13 +44,40 @@ sudo setfacl -Rdm "u:${USER}:rwx" /opt
 sudo setfacl -Rm "u:${USER}:rwx" /mnt/data
 sudo setfacl -Rdm "u:${USER}:rwx" /mnt/data
 
+sudo cat <<EOF | sudo tee -a /etc/fstab > /dev/null
+## USER: megavolts
+# yay cache
+/dev/nvme0n1p6    /mnt/data/media/photography ntfs rw 0 0
+EOF
+
+if $WIPENTFS
+	sudo mkfs.ntfs /dev/nvme0n1p6 -f
+fi
+
+echo -e ".. create media subvolume on data and mount"
+if [ ! -e /mnt/btrfs/root/@media ]; then
+  sudo btrfs subvolume create /mnt/btrfs/root/@media
+fi
+if [ ! -e /mnt/btrfs/root/@UAF-data ]; then
+  sudo btrfs subvolume create /mnt/btrfs/root/@UAF-data
+fi
+
 # Create media directory
+mkdir -p /mnt/data/{media,UAF-data}
+mkdir -p /mnt/data/media/{photography,wallpaper,meme,graphisme,tvseries,movies,videos,musics}
 mkdir -p /home/$USER/Pictures/{photography,meme,wallpaper,graphisme}
 mkdir -p /home/$USER/Videos/{tvseries,movies,videos}
 mkdir -p /home/$USER/Musics
 
 echo -e "... configure megavolts user directory"
 sudo cat <<EOF | sudo tee -a /etc/fstab > /dev/null
+
+# media
+/dev/mapper/root  /mnt/data/media btrfs rw,nodev,noatime,compress=zstd:3,ssd,discard,clear_cache,subvol=/@media 0 0
+
+# UAF-data
+/dev/mapper/root  /mnt/data/UAF-data btrfs rw,nodev,noatime,compress=zstd:3,ssd,discard,clear_cache,subvol=/@UAF-data 0 0
+
 # Media overlay
 /mnt/data/media/musics      /home/$USER/Musics                fuse.bindfs     perms=0755,mirror-only=$USER 0 0
 /mnt/data/media/photography /home/$USER/Pictures/photography  fuse,bindfs     perms=0755,mirror-only=$USER 0 0
@@ -66,7 +92,12 @@ sudo systemctl daemon-reload && sudo mount -a
 
 yay -S --noconfirm gpgfrontend kwalletcli pinentry
 gpg --refresh-keys
-echo -e "... Don't forget to import key via gpg --import KEY"
+echo -e "... Don't forget to import key via  gpg --allow-secret-key-import --import KEY"
+
+# BTRFS data subvolume
+#mount /dev/nvme0n1p6 /mnt/mnt/data/media/photography
+#yayr pass-git protonmail-bridge-bin protonvpn-gui qtpass secret-service
+
 
 # No need as of 2024-09-23
 #echo -e "... configure protonmail bridge"
@@ -76,16 +107,16 @@ echo -e "... Don't forget to import key via gpg --import KEY"
 # pass init "ProtonMail Bridge"
 # protonmail-bridge --cli
 
-# Set remote desktop
-yay -S krfb krdc freerdp
+# # Set remote desktop
+# yay -S krfb krdc freerdp
 
-yay -S flatpak flatpak-kcm flatseal
+# yay -S flatpak flatpak-kcm flatseal
 # Set up back in time
-yay -S backintime
+yay -S backintime cronie
 
 # Enable ssh agent for session
-yay -S ksshaskpass
-echo -e ".. Have SSH agents storing keys"
+yay -S ksshaskpas
+secho -e ".. Have SSH agents storing keys"
 # echo "AddKeysToAgent yes" >> .ssh/config
 # echo 'SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/ssh-agent.socket"' > ~/.config/environment.d/ssh_auth_socket.conf
 systemctl --user enable --now ssh-agent
@@ -130,12 +161,6 @@ echo -e ".. KDE dialog box"
 # echo "KWallet login"
 # echo "auth            optional        pam_kwallet5.so" >> /etc/pam.d/sddm
 # echo "session         optional        pam_kwallet5.so auto_start" >> /etc/pam.d/sddm
-
-echo -e << EOF
-Don't forget:
-- In firefox, to modify aboutc:config with browser.tabs.inTitlebar to 0 to enable maximize/minimize button
-
-EOF
 
 echo -e ".. Zoom screen sharing under wayland"
 sed -i 's|enableWaylandShare=false|enableWaylandShare=true|g' ~/.config/zoomus.conf
