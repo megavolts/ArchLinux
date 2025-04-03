@@ -1,4 +1,5 @@
-echo 'Enter a default passphrase use to encrypt the disk and serve as password for root and megavolts:'
+NEWUSER=megavolts
+echo 'Enter a default passphrase use to encrypt the disk and serve as password for root and $NEWUSER:'
 stty -echo
 read PASSWORD
 stty echo
@@ -10,7 +11,7 @@ passwd root << EOF
 $PASSWORD
 $PASSWORD
 EOF
-chsh -S $(which zsh)
+chsh -s $(which zsh)
 
 # USER options
 echo -e "Set up user $NEWUSER"
@@ -86,7 +87,6 @@ echo -e "Tablet mode"
 yayr -S --noconfirm xf86-input-wacom easystroke kded-rotation-git maliit-keyboard
 
 
-
 # Configure kernel
 # add btrfs hook and remove fsck
 sed -i 's/fsck)/btrfs)/g' /etc/mkinitcpio.conf
@@ -96,17 +96,17 @@ sed -i 's/udev autodetect/udev keyboard encrypt resume filesystems autodetect/g'
 sed -i 's/kms keyboard keymap/kms keymap/g' /etc/mkinitcpio.conf
 sed -i 's/block filesystems btrfs/block btrfs/g' /etc/mkinitcpio.conf
 
-mkinitcpio -p linux-zen 
-
 refind-install
 
 # Configure boot
-ROFFSET=$(btrfs inspect-internal map-swapfile -r /mnt/btrfs/root/@swap/swapfile)
-ROOTUUID=$(cryptsetup luksDump /dev/disk/by-partlabel/CRYPTROOT | grep UUID | cut -f2- -d: | sed -e 's/^[ \t]*//')
 
 if [! $NEWINSTALL ]; then
-  if [-d boot/refind_linux.conf ]; then
-    cp /boot/refind_linux.conf /boot/refind_linux.conf.old
+  ROFFSET=$(btrfs inspect-internal map-swapfile -r /mnt/btrfs/root/@swap/swapfile)
+  ROOTUUID=$(cryptsetup luksDump /dev/disk/by-partlabel/CRYPTROOT | grep UUID | cut -f2- -d: | sed -e 's/^[ \t]*//')
+
+  if [ ! -d /boot/refind_linux.conf ]; then
+    echo test
+    mv /boot/refind_linux.conf /boot/refind_linux.conf.old
   fi
   wget https://raw.githubusercontent.com/megavolts/ArchLinux/master/X1Gen6/sources/refind.conf -O /boot/refind_linux.conf
   sed -i "s|ROFFSET|$ROFFSET|g" /boot/refind_linux.conf
@@ -155,6 +155,6 @@ if [ -f /boot/vmlinuz-linux-zen ]; then
 fi
 
 exit
-swapoff /mnt/mnt/btrfs/arch/@swapfile
+swapoff /mnt/mnt/btrfs/root/@swap/swapfile
 umount /mnt/{boot,data,mnt/data/{UAF-data,media/photography,media},mnt/data,mnt/btrfs/root,var/log,var/tmp,/tmp,/var/cache/pacman/pkg,var/abs,home,}
 reboot
