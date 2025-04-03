@@ -101,11 +101,7 @@ echo -e "... Don't forget to import key via  gpg --allow-secret-key-import --imp
 
 echo -e "... configure protonmail bridge"
 yay -S --noconfirm protonmail-bridge protonvpn-gui kwalletmanager
-#systemctl enable --now --user secretserviced.service 
-# sed -i '1s/^/"user_ssl_smtp": "false"/' .config/protonmail/bridge/prefs.json
-# gpg --batch --passphrase '' --quick-gen-key 'ProtonMail Bridge' default default never
-# pass init "ProtonMail Bridge"
-protonmail-bridge --cli
+protonmail-bridge &
 
 # Set up oh-my-zsh
 yay -S --noconfirm oh-my-zsh-git
