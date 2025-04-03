@@ -162,12 +162,6 @@ echo -e ".. KDE dialog box"
 # echo "auth            optional        pam_kwallet5.so" >> /etc/pam.d/sddm
 # echo "session         optional        pam_kwallet5.so auto_start" >> /etc/pam.d/sddm
 
-echo -e << EOF
-Don't forget:
-- In firefox, to modify aboutc:config with browser.tabs.inTitlebar to 0 to enable maximize/minimize button
-
-EOF
-
 echo -e ".. Zoom screen sharing under wayland"
 sed -i 's|enableWaylandShare=false|enableWaylandShare=true|g' ~/.config/zoomus.conf
 

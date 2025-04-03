@@ -3,73 +3,112 @@
 # install graphic consol# #/bin/bash!
 # ssh megavolts@IP
 # install graphic consol
+
+
 NEWUSER=megavolts
 echo 'Enter a default passphrase use to encrypt the disk and serve as password for root and megavolts:'
 stty -echo
 read PASSWORD
 yays(){sudo -u $NEWUSER yay -S --removemake --cleanafter --noconfirm $@}
 
+
+# Set up tailscale
+echo -e ".. Installing tailscale, follow the link to login"
+yays tailscale
+systemctl enable --now tailscaled
+tailscale up --ssh
+
+# Disable build of debug packages
+echo -e "... disable build of debug packge when using makepkg"
+sed -i "s| debug lto| \!debug lto|g" /etc/makepkg.conf
+
+# echo -e "... set up unified kernel image"
+# yays systemd-ukify
+# echo -e ".... conigure mkinitcpio.d/"
+
+# # Rebuild kernel for unified kernel efi
+# mkdir /boot/EFI/Linux
+# if [ -f /boot/vmlinuz-linux ]; then
+#   echo -e "DO ..."
+# fi
+
+# if [ -f /boot/vmlinuz-linux-zen ]; then
+#   sed -i "s|default_image=|#default_image=|g" /etc/mkinitcpio.d/linux-zen.preset
+#   sed -i "s|#default_uki=|default_uki=|g" /etc/mkinitcpio.d/linux-zen.preset
+#   sed -i "s|#default_options=|default_options=|g" /etc/mkinitcpio.d/linux-zen.preset
+
+#   sed -i "s|fallback_image=|#fallback_image=|g" /etc/mkinitcpio.d/linux-zen.preset
+#   sed -i "s|#fallback_uki=|fallback_uki=|g" /etc/mkinitcpio.d/linux-zen.preset
+#   sed -i "s|#fallback_options=|fallback_options=|g" /etc/mkinitcpio.d/linux-zen.preset
+
+#   sed -i "s|=\"/efi|=\"/boot|g" /etc/mkinitcpio.d/linux-zen.preset
+
+#   # Modify kernel line option
+#   wget https://raw.githubusercontent.com/megavolts/ArchLinux/refs/heads/master/X1Gen6/sources/cmdline.conf -O /etc/kernel/cmdline
+
+#   # Change 
+#   mkinitcpio -p linux-zen 
+#   rm /boot/*zen*.img
+#   rm /boot/vmlinuz-linux-zen
+#   rm /boot/intel-ucode.img
+# fi
+
+# Packages list redone as 2025-04-02
 echo -e "... install plasma windows manager"
-yays plasma-desktop sddm plasma-nm kscreen powerdevil plasma-wayland-session plasma-pa plasma-thunderbolt pipewire-jack ttf-droid wireplumber qt6-multimedia-ffmpeg power-profiles-daemon
-systemctl enable --now power-profiles-daemon
+yays plasma-dekstop sddm sddm-kcm pipewire-jack qt6-multimedia-ffmpeg plasma-thunderbolt kwallet-pam kinfocenter kruler
+systemctl enable sddm
+
+# Power
+yays powerdevil power-profiles-daemon
+systemctl enable power-profiles-daemon
+
+# Sound
+echo -e ".. install audio server"
+yays pipewire wireplumber pavucontrol plasma-pa 
 
 echo -e ".. Installing graphic tools"
-yays yakuake kdialog kfind kdeconnect barrier wl-clipboard kwallet-pam sddm-kcm xdg-desktop-portal-kde colord-kde
-systemctl enable --now sddm
-
-echo -e ".. install audio server"
-yays pipewire wireplumber qpwgraph pavucontrol
-sudo -u $NEWUSER systemctl enable --now --user pipewire
+yays yakuake kdialog kfind kdeconnect deskflow kscreen wl-clipboard xdg-desktop-portal-kde colord-kde
 
 echo -e ".. Installing bluetooth"
 yays bluez bluez-utils bluedevil
-sudo systemctl enable --now bluetooth
+systemctl enable bluetooth
 
 echo -e "Install software"
 echo -e ".. partition tools"
-yays gparted ntfs-3g exfat-utils mtools sshfs bindfs
+yays gparted ntfs-3g exfat-utils mtools sshfs  dosfstools
 
 echo -e "... network tools"
-yays dnsmasq nm-connection-editor openconnect networkmanager-openconnect avahi
+yays dnsmasq nm-connection-editor openconnect networkmanager-openconnect avahi plasma-nm tailscale
 systemctl enable --now avahi-daemon
+systemctl enable --now tailscaled
 
 echo -e ".. file manager"
-yays dolphin dolphin-plugins qt6-imageformats ffmpegthumbs lzop kdegraphics-thumbnailers kimageformats raw-thumbnailer kio-gdrive libappimage rawtherapee
-yays ark unrar p7zip zip
+yays dolphin dolphin-plugins ark p7zip zip
 
 echo -e "... android tools"
-yays android-tools android-udev  pixelflasher-bin
+yays android-tools android-udev 
 
 echo -e ".. internet software"
-yays firefox thunderbird filezilla zoom teams slack-wayland telegram-desktop signal-desktop profile-sync-daemon vdhcoapp-bin
+yays firefox thunderbird filezilla zoom slack-wayland 
 
 echo -e ".. sync software"
-yays c++utilities 
-yays qtutilities-qt6
-yays qtforkawesome-qt6
-yays syncthingtray-qt6 nextcloud-client
-
-echo -e ".. coding tools"
-yays sublime-text-4 terminator zettlr pycharm-professional python-pip python-setuptools tk python-utils
-
-echo -e ".. python pagckages"
-yays python-utils python-numpy python-matplotlib python-scipy python-pandas python-openpyxl python-basemap python-pillow cython jupyterlab jupyter-notebook ipython 
+yays c++utilities qtutilities-qt6 qtforkawesome-qt6 syncthingtray-qt6 nextcloud-client 
 
 echo -e "... viewer"
-yays okular spectacle discount kdegraphics-mobipocket 
+yays okular spectacle
 
 echo -e "... images"
-yays imagemagick guetzli geeqie inkscape gimp darktable libraw hugin digikam kipi-plugins
+yays imagemagick guetzli geeqie inkscape gimp darktable inkscape libraw hugin
+
+echo -e ".. coding tools"
+yays sublime-text-4 terminator pycharm-professional code
 
 echo -e "... musics and videos"
-yays vlc ffmpeg jellyfin-bin jellyfin-media-player picard picard-plugins-git
+yays vlc ffmpeg
 
 echo -e ".. office"
-yays libreoffice-fresh mendeleydesktop texmaker texlive-most zotero
+yays libreoffice-fresh libreoffice-extension-texmaths mendeleydesktop zotero
 yays aspell-fr aspell-en aspell-de hunspell-en_US hunspell-fr hunspell-de hyphen-en hyphen-en hyphen-de libmythes mythes-en mythes-fr libreoffice-extension-grammalecte-fr
-
-echo -e ".. confing tools"
-yays kinfocenter kruler sonnet-git discover packagekit 
 
 echo -e ".. printing tools"
 yays cups system-config-printer print-manager
@@ -77,19 +116,6 @@ systemctl enable --now cups.service
 
 echo -e ".. virtualization tools"
 yays virtualbox virtualbox-guest-iso virtualbox-host-dkms virtualbox-ext-oracle
-# # For cursor in wayland session
-# echo "KWIN_FORCE_SW_CURSOR=1" >> /etc/environement
-
-# Set up Zerotier
-yays zerotier-one
-systemctl enable --now zerotier-one.service
-zerotier-cli join 233ccaac278f1c3d
-
-# Set up tailscale
-echo -e ".. Installing tailscale, follow the link to login"
-yays tailscale
-systemctl enable --now tailscaled
-tailscale up --ssh
 
 # Enable samba
 echo -e ".. Install samba"
@@ -107,7 +133,7 @@ sed -i "s|   writable = yes|#   writable = yes|g" /etc/samba/smb.conf
 systemctl enable --now smb
 
 echo -e "... create samba user"
-smbpasswd -a $NEWUSER << EOF
+sudo smbpasswd -a $NEWUSER << EOF
 $PASSWORD
 $PASSWORD
 EOF
@@ -137,17 +163,23 @@ echo -e ".. move snap subvolume to data root subvolume"
 btrfs subvolume delete /.snapshots
 btrfs subvolume delete /home/.snapshots
 mkdir /.snapshots
-if ! [ -d /mnt/btrfs/root/@snapshots/@root_snaps ] ; then
-  btrfs subvolume create /mnt/btrfs/root/@snapshots/@root_snaps
+if ! [ -d /storage/btrfs/root/@snapshots/@root_snaps ] ; then
+  if ! [ -d /storage/btrfs/root/@snapshots ] ; then
+    btrfs subvolume create /storage/btrfs/root/@snapshots
+  fi
+  btrfs subvolume create /storage/btrfs/root/@snapshots/@root_snaps
 fi
 mkdir /home/.snapshots
-if ! [ -d /mnt/btrfs/data/@snapshots/@home_snaps ] ; then
-  btrfs subvolume create /mnt/btrfs/data/@snapshots/@home_snaps
+if ! [ -d /storage/btrfs/data/@snapshots/@home_snaps ] ; then
+  if ! [ -d /storage/btrfs/data/@snapshots/ ] ; then
+    btrfs subvolume create /storage/btrfs/data/@snapshots
+  fi
+  btrfs subvolume create /storage/btrfs/data/@snapshots/@home_snaps
 fi
 echo -e ".. add entry to fstab and mount"
 echo "# Snapper subvolume"
-echo "LABEL=arch /.snapshots btrfs rw,noatime,ssd,discard,compress=zstd:3,space_cache,subvol=@snapshots/@root_snaps   0 0" >> /etc/fstab
-echo "LABEL=data /home/.snapshots  btrfs rw,noatime,ssd,discard,compress=zstd:3,space_cache,subvol=@snapshots/@home_snaps   0 0" >> /etc/fstab
+echo "LABEL=arch /.snapshots btrfs rw,noatime,compress=zstd,subvol=@snapshots/@root_snaps   0 0" >> /etc/fstab
+echo "LABEL=data /home/.snapshots  btrfs rw,noatime,compress=zstd,subvol=@snapshots/@home_snaps   0 0" >> /etc/fstab
 systemctl daemon-reload && mount -a
 
 echo -e ".. Edit home and root configuration"
@@ -175,9 +207,9 @@ sed  -i "s|TIMELINE_LIMIT_MONTHLY=\"10\"|TIMELINE_LIMIT_MONTHLY=\"12\"|g" /etc/s
 sed  -i "s|TIMELINE_LIMIT_YEARLY=\"10\"|TIMELINE_LIMIT_YEARLY=\"5\"|g"     /etc/snapper/configs/home  # keep yearly backup for 5 years
 # update snap config for root directory
 sed  -i "s|TIMELINE_MIN_AGE=\"3600\"|TIMELINE_MIN_AGE=\"0\"|g"         /etc/snapper/configs/root  # Allow all snapshots to be removed, independantly of age
-sed  -i "s|TIMELINE_LIMIT_HOURLY=\"10\"|TIMELINE_LIMIT_HOURLY=\"4\"|g"   /etc/snapper/configs/root  # keep hourly backup for 4 hours
-sed  -i "s|TIMELINE_LIMIT_DAILY=\"10\"|TIMELINE_LIMIT_DAILY=\"7\"|g"     /etc/snapper/configs/root  # keep daily backup for 7 days
-sed  -i "s|TIMELINE_LIMIT_WEEKLY=\"0\"|TIMELINE_LIMIT_WEEKLY=\"4\"|g"     /etc/snapper/configs/root  # keep weekly backup for 4 weeks
+sed  -i "s|TIMELINE_LIMIT_HOURLY=\"1\"|TIMELINE_LIMIT_HOURLY=\"12\"|g"   /etc/snapper/configs/root  # keep hourly backup for 4 hours
+sed  -i "s|TIMELINE_LIMIT_DAILY=\"4\"|TIMELINE_LIMIT_DAILY=\"7\"|g"     /etc/snapper/configs/root  # keep daily backup for 7 days
+sed  -i "s|TIMELINE_LIMIT_WEEKLY=\"0\"|TIMELINE_LIMIT_WEEKLY=\"0\"|g"     /etc/snapper/configs/root  # keep weekly backup for 4 weeks
 sed  -i "s|TIMELINE_LIMIT_MONTHLY=\"10\"|TIMELINE_LIMIT_MONTHLY=\"12\"|g" /etc/snapper/configs/root  # keep monthly backup for 12 months
 sed  -i "s|TIMELINE_LIMIT_YEARLY=\"10\"|TIMELINE_LIMIT_YEARLY=\"5\"|g"     /etc/snapper/configs/root  # keep yearly backup for 5 years
 
@@ -208,57 +240,30 @@ SYSTEMD_EDITOR=tee systemctl edit snapper-boot.service <<EOF
 After=\\\\x2eboot.mount
 EOF
 
-# # BTRFS maintenance
-# #yays rmling rmlint-shredder duperemove bees duperemove-service 
 
-# mkdir /opt/$NEWUSER
-# cat <<EOF | sudo tee -a /opt/$NEWUSER/btrfs_maintenance.sh > /dev/null
-# #! /bin/bash
-# /usr/bin/btrfs balance start -dusage=10 -dlimit=2..20 -musage=10 -mlimit=2..20 \$1 &&
-# /usr/bin/btrfs balance start -dusage=25 -dlimit=2..10 -musage=25 -mlimit=2..10 \$1
-# EOF
+# Utils
+# profile-sync-daemon
 
-# cat <<EOF | sudo tee -a /opt/$NEWUSER/btrfs_maintenance-scrub.sh > /dev/null
-# #! /bin/bash
-# /usr/bin/btrfs scrub start \$1 &&
-# /usr/bin/btrfs scrub status -d \$1
-# EOF
+# Image format
+# qt6-imageformats ffmpegthumbs lzop kdegraphics-thumbnailers kimageformats raw-thumbnailer kio-gdrive libappimage rawtherapee
 
-# cat <<EOF | sudo tee -a /opt/$NEWUSER/btrfs_maintenance-all.sh > /dev/null
-# #! /bin/bash
-# /usr/bin/btrfs balance start -dusage=10 -dlimit=2..20 -musage=10 -mlimit=2..20 \$1 &&
-# /usr/bin/btrfs balance start -dusage=25 -dlimit=2..10 -musage=25 -mlimit=2..10 \$1 &&
-# /usr/bin/btrfs scrub start \$1 &&
-# /usr/bin/btrfs scrub status -d \$1 &
-# /usr/bin/btrfs filesystem defragment -r \$1
-# EOF
-# chmod +x /opt/$NEWUSER/*
+# FONT
+# ttf-droid
 
-# echo -e ".. Configure bees"
-# for BTRFS_DEV in root database
-# do
-#   BTRFS_DEV=root  
-#   UUID_DEV=$(blkid -s UUID -o value /dev/mapper/$BTRFS_DEV)
-#   mkdir -p /var/lib/bees
-#   # create bees subvolume on root of root
-#   btrfs subvolume create /var/lib/bees/@bees_$BTRFS_DEV
-#   truncate -s 1g /var/lib/bees/@bees_$BTRFS_DEV/beeshah.dat
-#   chmod 700 /var/lib/bees/@bees_$BTRFS_DEV/beeshash.dat
+# 
+# bindfs
+
+# echo -e ".. python pagckages"
+# yays python-utils python-pipx python-setuptools python-utils python-numpy python-matplotlib python-scipy python-pandas python-openpyxl python-basemap python-pillow cython jupyterlab jupyter-notebook ipython 
 
 
-#   cp /etc/bees/beesd.conf.sample /etc/bees/$BTRFS_DEV.conf
-#   sed -i "s/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/$UUID_DEV/g" /etc/bees/$BTRFS_DEV.conf
-#   echo "DB_SIZE=1073741824" /etc/bees/$BTRFS_DEV.conf
-#   systemctl enable --now beesd@UUID_DEV
-# done
 
 # KDE and GTK uniform
-echo -e ".. GTK integration into QT"
+# echo -e ".. GTK integration into QT"
 # yays qt6ct-kde kde-gtk-config adwaita-qt6-git gtk3 qt6ct 
-yays breeze breeze-gtk xdg-desktop-portal xdg-desktop-portal-kde kde-gtk-config
-systemctl enable --now sddm
+# yays breeze breeze-gtk xdg-desktop-portal xdg-desktop-portal-kde kde-gtk-config
 
-yays plasma-browser-integration firefox-kde-opensuse
+# yays plasma-browser-integration firefox-kde-opensuse
 
 ########################################################################
 # # For cursor in wayland session
