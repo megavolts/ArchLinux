@@ -75,21 +75,21 @@ systemctl enable bluetooth
 
 echo -e "Install software"
 echo -e ".. partition tools"
-yays gparted ntfs-3g exfat-utils mtools sshfs  dosfstools
+yays gparted ntfs-3g exfat-utils mtools sshfs dosfstools bindfs
 
 echo -e "... network tools"
-yays dnsmasq nm-connection-editor openconnect networkmanager-openconnect avahi plasma-nm tailscale
+yays dnsmasq nm-connection-editor openconnect networkmanager-openconnect avahi plasma-nm tailscale hostapd
 systemctl enable --now avahi-daemon
 systemctl enable --now tailscaled
 
-echo -e ".. file manager"
+echo -e ".. file manager"f
 yays dolphin dolphin-plugins ark p7zip zip
 
 echo -e "... android tools"
 yays android-tools android-udev 
 
 echo -e ".. internet software"
-yays firefox thunderbird filezilla zoom slack-wayland 
+yays firefox thunderbird filezilla zoom slack-wayland transmission-qt
 
 echo -e ".. sync software"
 yays c++utilities qtutilities-qt6 qtforkawesome-qt6 syncthingtray-qt6 nextcloud-client 
@@ -104,10 +104,10 @@ echo -e ".. coding tools"
 yays sublime-text-4 terminator pycharm-professional code
 
 echo -e "... musics and videos"
-yays vlc ffmpeg
+yays vlc ffmpeg rdp6 libvncserver
 
 echo -e ".. office"
-yays libreoffice-fresh libreoffice-extension-texmaths mendeleydesktop zotero
+yays libreoffice-fresh libreoffice-extension-texmaths mendeleydesktop zotero-bin
 yays aspell-fr aspell-en aspell-de hunspell-en_US hunspell-fr hunspell-de hyphen-en hyphen-en hyphen-de libmythes mythes-en mythes-fr libreoffice-extension-grammalecte-fr
 
 echo -e ".. printing tools"
@@ -116,6 +116,9 @@ systemctl enable --now cups.service
 
 echo -e ".. virtualization tools"
 yays virtualbox virtualbox-guest-iso virtualbox-host-dkms virtualbox-ext-oracle
+
+echo -e ".. Utilties toolbox"
+yays solaar krdc
 
 # Enable samba
 echo -e ".. Install samba"
@@ -241,20 +244,15 @@ After=\\\\x2eboot.mount
 EOF
 
 
-# Utils
-# profile-sync-daemon
-
 # Image format
 # qt6-imageformats ffmpegthumbs lzop kdegraphics-thumbnailers kimageformats raw-thumbnailer kio-gdrive libappimage rawtherapee
 
 # FONT
 # ttf-droid
 
-# 
-# bindfs
-
 # echo -e ".. python pagckages"
-# yays python-utils python-pipx python-setuptools python-utils python-numpy python-matplotlib python-scipy python-pandas python-openpyxl python-basemap python-pillow cython jupyterlab jupyter-notebook ipython 
+# yays python-utils python-pipx python-setuptools python-utils python-numpy python-matplotlib python-scipy python-pandas python-openpyxl python-basemap python-pillow cython jupyterlab jupyter-notebook ipython  python-pyclipper
+
 
 
 

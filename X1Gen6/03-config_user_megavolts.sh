@@ -7,7 +7,7 @@
 # enable audio for the user
 echo -e ".. enable sound for $USR"
 systemctl enable --user --now pipewire
-systemctl enable --user --now pipewire-pulse
+#systemctl enable --user --now pipewire-pulse
 
 echo -e ".. create noCOW directory for $USER"
 # Create noCOW directory
@@ -96,7 +96,7 @@ echo -e "... Don't forget to import key via  gpg --allow-secret-key-import --imp
 
 # BTRFS data subvolume
 #mount /dev/nvme0n1p6 /mnt/mnt/data/media/photography
-#yayr pass-git protonmail-bridge-bin protonvpn-gui qtpass secret-service
+yay pass-git protonmail-bridge-bin protonvpn-gui qtpass secret-service
 
 
 # No need as of 2024-09-23
@@ -108,7 +108,7 @@ echo -e "... Don't forget to import key via  gpg --allow-secret-key-import --imp
 # protonmail-bridge --cli
 
 # # Set remote desktop
-# yay -S krfb krdc freerdp
+yay -S krfb krdc
 
 # yay -S flatpak flatpak-kcm flatseal
 # Set up back in time
