@@ -55,7 +55,7 @@ sed -i "s| debug lto| \!debug lto|g" /etc/makepkg.conf
 
 # Packages list redone as 2025-04-02
 echo -e "... install plasma windows manager"
-yays plasma-dekstop sddm sddm-kcm pipewire-jack qt6-multimedia-ffmpeg plasma-thunderbolt kwallet-pam kinfocenter kruler
+yays plasma-dekstop sddm sddm-kcm pipewire-jack qt6-multimedia-ffmpeg plasma-thunderbolt kwalletcli pinentry kwalletmanager kwallet-pam kinfocenter kruler
 systemctl enable sddm
 
 # Power

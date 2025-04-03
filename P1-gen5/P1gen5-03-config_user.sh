@@ -25,6 +25,14 @@ chattr +C /home/$USER/.local/share/baloo/
 chattr +C /home/$USER/.mozilla
 chattr +C /home/$USER/.config/protonmail/
 
+# For USER megavolts
+# Import private gpg
+echo -e "Importing private gpg key. Please select the correct file"
+KEYFILE=$(kdialog --getopenfilename)
+gpg --allow-secret-key-import --import $KEYFILE
+gpg --refresh-keys
+
+# Create noCOW yay build subvolume under .cache/yay
 echo -e "... create noCOW subvolume for yay"
 sudo rm -R /home/$USER/.cache/yay
 mkdir /home/$USER/.cache/yay
@@ -34,29 +42,29 @@ sudo btrfs subvolume create /storage/btrfs/data/@${USER}/@cache_yay
 sudo cat <<EOF | sudo tee -a /etc/fstab > /dev/null
 
 ## USER: megavolts
-# yay cache
+### yay cache
 LABEL=data  /home/$USER/.cache/yay  btrfs rw,nodev,noatime,compress=zstd,clear_cache,nospace_cache,nodatacow,commit=120,subvol=/@${USER}/@cache_yay 0 0
 EOF
 
+# Create noCOW download subvolume under Downloads
 echo -e "... create noCOW subvolume for Download"
 if ! [ -d /mnt/btrfs/data/@${USER}/@download ] ; then
-	sudo btrfs subvolume create /storage/btrfs/data/@${USER}/@download
+	sudo btrfs subvolume create /storage/btrfs/data/@${USER}/@downloads
 else
-	echo "@download subvolume already exists"
+	echo "@downloads subvolume already exists"
 fi
 sudo cat <<EOF | sudo tee -a /etc/fstab > /dev/null
 ### Downloads
 LABEL=data     /home/megavolts/Downloads  btrfs rw,nodev,noatime,compress=zstd,clear_cache,nospace_cache,nodatacow,subvol=@megavolts/@downloads 0 0
 EOF
 
-# For user megavolts:
-# fix access for user megavolts to /opt and /mnt/data
+echo -e "Give access to megavolts to /opt and /storage/data"
 sudo setfacl -Rm "u:${USER}:rwx" /opt
 sudo setfacl -Rdm "u:${USER}:rwx" /opt
 sudo setfacl -Rm "u:${USER}:rwx" /storage/data
 sudo setfacl -Rdm "u:${USER}:rwx" /storage/data
 
-# Create media directory
+echo -e "Create multimedia directory for megavolts"
 mkdir -p /home/$USER/Pictures/{photography,meme,wallpaper,graphisme}
 mkdir -p /home/$USER/Videos/{tvseries,movies,videos}
 mkdir -p /home/$USER/Musics
@@ -95,43 +103,40 @@ sudo cat <<EOF | sudo tee -a /etc/fstab > /dev/null
 EOF
 sudo systemctl daemon-reload && sudo mount -a
 
-yay -S --noconfirm gpgfrontend kwalletcli pinentry
-gpg --refresh-keys
-echo -e "... Don't forget to import key via  gpg --allow-secret-key-import --import KEY"
 
+# Protonmail
 echo -e "... configure protonmail bridge"
-yay -S --noconfirm protonmail-bridge protonvpn-gui kwalletmanager
+yay -S --noconfirm protonmail-bridge protonvpn-gui 
 protonmail-bridge &
 
 # Set up oh-my-zsh
 yay -S --noconfirm oh-my-zsh-git
 
 # Set up git global
+echo -e "... configure global variable for git"
 git config --global user.email "marc.oggier@megavolts.ch"
 git config --global user.name "Marc Oggier"
 
 # Enable sshagent for session
+echo -e ".. Enable SSH agents for session"
 yay -S ksshaskpas
-echo -e ".. Have SSH agents storing keys"
 # echo "AddKeysToAgent yes" >> .ssh/config
 # echo 'SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/ssh-agent.socket"' > ~/.config/environment.d/ssh_auth_socket.conf
 systemctl --user enable --now ssh-agent
 
-
 # Set up back in time
+echo -e "... set up secondary backup system"
 yay -S --noconfirm backintime
 
+echo -e "... tuning firefox"
 echo -e "Arkenfox setup"
 
-
-# # sudo cat <<EOF | sudo tee -a /home/$USR/.config/environment.d/ssh_agent.conf > /dev/null
-# # if ! pgrep -u "$USER" ssh-agent > /dev/null; then
-# #     ssh-agent -t 2h > "$XDG_RUNTIME_DIR/ssh-agent.env"
-# # fi
-# # if [[ ! -f "$SSH_AUTH_SOCK" ]]; then
-# #     source "$XDG_RUNTIME_DIR/ssh-agent.env" >/dev/null
-# # fi
-# # EOF
+echo -e "... force KDE dialog box everywhere"
+mkdir ~/.config/systemd/user/xdg-desktop-portal.service.d
+cat <<EOF | tee -a ~/.config/systemd/user/xdg-desktop-portal.service.d/override.conf > /dev/null
+[Service]
+Environment="XDG_CURRENT_DESKTOP=KDE"
+EOF
 
 # Docker and install
 echo -e "Install docker"
@@ -144,7 +149,6 @@ DOCKERDIR=/opt/docker
 APPDATA=/opt/docker/appdata
 EOF
 source /etc/environment
-
 
 mkdir -p {$DOCKERDIR,$APPDIR}
 echo -e ".. Set swag"
@@ -164,37 +168,12 @@ sudo cat <<EOF | sudo tee -a /etc/resolv.conf.head > /dev/null
 10.147.17.8
 EOF
 
-# yay -S --noconfirm kwalletmanager
-
-
-echo -e ".. KDE dialog box"
-mkdir ~/.config/systemd/user/xdg-desktop-portal.service.d
-cat <<EFO | tee -a ~/.config/systemd/user/xdg-desktop-portal.service.d/override.conf > /dev/null
-[Service]
-Environment="XDG_CURRENT_DESKTOP=KDE"
-EOF
-
 # echo "GTK_USE_PORTAL=1" >> .config/environment.d/qt_style.conf
 # echo "QT_STYLE_OVERRIDE=adwaita" >> .config/environment.d/qt_style.conf
 # echo "QT_QPA_PLATFORMTHEME=qt5ct" >> .config/environment.d/qt_style.conf
 
-
-# # TO CHECK IF NEEDED
-
-# echo "KWallet login"
-# echo "auth            optional        pam_kwallet5.so" >> /etc/pam.d/sddm
-# echo "session         optional        pam_kwallet5.so auto_start" >> /etc/pam.d/sddm
-
-
-# echo -e ".. Zoom screen sharing under wayland"
-# sed -i 's|enableWaylandShare=false|enableWaylandShare=true|g' ~/.config/zoomus.conf
-
-
-# [ ] REMOTE DESKTOP SET UP WITH KRFB
-
-
-
-# # Set remote desktop
-# yay -S krfb krdc freerdp
-
-# yay -S flatpak flatpak-kcm flatseal
+echo -e "... enable screen sharing for zoom with wayland"
+if [ -f ~/.config/zoomus.conf ];
+then
+  sed -i 's|enableWaylandShare=false|enableWaylandShare=true|g' ~/.config/zoomus.conf
+fi
