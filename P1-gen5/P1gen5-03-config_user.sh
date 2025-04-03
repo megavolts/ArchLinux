@@ -100,12 +100,8 @@ gpg --refresh-keys
 echo -e "... Don't forget to import key via  gpg --allow-secret-key-import --import KEY"
 
 echo -e "... configure protonmail bridge"
-yay -S --noconfirm protonmail-bridge protonvpn-gui secret-service pass-git qtpass
-systemctl enable --now --user secretserviced.service 
-# sed -i '1s/^/"user_ssl_smtp": "false"/' .config/protonmail/bridge/prefs.json
-# gpg --batch --passphrase '' --quick-gen-key 'ProtonMail Bridge' default default never
-# pass init "ProtonMail Bridge"
-protonmail-bridge --cli
+yay -S --noconfirm protonmail-bridge protonvpn-gui kwalletmanager
+protonmail-bridge &
 
 # Set up oh-my-zsh
 yay -S --noconfirm oh-my-zsh-git
@@ -125,12 +121,6 @@ systemctl --user enable --now ssh-agent
 # Set up back in time
 yay -S --noconfirm backintime
 
-# echo -e << EOF
-# .. For Firefox
-# - widget.use-xdg-dekstop-portal-mime-handler: 1
-# - widget.user-xdg-dekstop-portal.file-picker: 1
-# - media.hardwaremediakeys.enabled: false
-# EOF
 
 # Enable ssh agent for session
 # yay -S ksshaskpass
