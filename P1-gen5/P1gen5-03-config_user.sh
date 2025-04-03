@@ -100,8 +100,8 @@ gpg --refresh-keys
 echo -e "... Don't forget to import key via  gpg --allow-secret-key-import --import KEY"
 
 echo -e "... configure protonmail bridge"
-yay -S --noconfirm protonmail-bridge protonvpn-gui secret-service pass-git qtpass
-systemctl enable --now --user secretserviced.service 
+yay -S --noconfirm protonmail-bridge protonvpn-gui kwalletmanager
+#systemctl enable --now --user secretserviced.service 
 # sed -i '1s/^/"user_ssl_smtp": "false"/' .config/protonmail/bridge/prefs.json
 # gpg --batch --passphrase '' --quick-gen-key 'ProtonMail Bridge' default default never
 # pass init "ProtonMail Bridge"
@@ -125,19 +125,8 @@ systemctl --user enable --now ssh-agent
 # Set up back in time
 yay -S --noconfirm backintime
 
-# echo -e << EOF
-# .. For Firefox
-# - widget.use-xdg-dekstop-portal-mime-handler: 1
-# - widget.user-xdg-dekstop-portal.file-picker: 1
-# - media.hardwaremediakeys.enabled: false
-# EOF
+echo -e "Arkenfox setup"
 
-# Enable ssh agent for session
-# yay -S ksshaskpass
-# echo -e ".. Have SSH agents storing keys"
-# # echo "AddKeysToAgent yes" >> .ssh/config
-# # echo 'SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/ssh-agent.socket"' > ~/.config/environment.d/ssh_auth_socket.conf
-# systemctl --user enable --now ssh-agent
 
 # # sudo cat <<EOF | sudo tee -a /home/$USR/.config/environment.d/ssh_agent.conf > /dev/null
 # # if ! pgrep -u "$USER" ssh-agent > /dev/null; then
@@ -183,6 +172,12 @@ EOF
 
 
 echo -e ".. KDE dialog box"
+mkdir ~/.config/systemd/user/xdg-desktop-portal.service.d
+cat <<EFO | tee -a ~/.config/systemd/user/xdg-desktop-portal.service.d/override.conf > /dev/null
+[Service]
+Environment="XDG_CURRENT_DESKTOP=KDE"
+EOF
+
 # echo "GTK_USE_PORTAL=1" >> .config/environment.d/qt_style.conf
 # echo "QT_STYLE_OVERRIDE=adwaita" >> .config/environment.d/qt_style.conf
 # echo "QT_QPA_PLATFORMTHEME=qt5ct" >> .config/environment.d/qt_style.conf
