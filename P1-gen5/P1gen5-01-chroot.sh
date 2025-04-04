@@ -94,6 +94,9 @@ pacman -S --noconfirm mesa vulkan-intel vulkan-mesa-layers intel-media-driver
 # Enable GuC/HuC firmware loading
 echo "options i915 enable_guc=3" >> /etc/modprobe.d/i915.conf
 
+
+pacman -S --noconfirm nvidia-open nvidia-prime
+
 # Configure kernel
 # add btrfs hook and remove fsck
 sed -i 's/fsck)/btrfs)/g' /etc/mkinitcpio.conf

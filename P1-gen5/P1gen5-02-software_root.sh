@@ -78,7 +78,7 @@ echo -e ".. partition tools"
 yays gparted ntfs-3g exfat-utils mtools sshfs dosfstools bindfs
 
 echo -e "... network tools"
-yays dnsmasq nm-connection-editor openconnect networkmanager-openconnect avahi plasma-nm tailscale hostapd
+yays dnsmasq nm-connection-editor openconnect networkmanager-openconnect networkmanager-openvpn avahi plasma-nm tailscale hostapd
 systemctl enable --now avahi-daemon
 systemctl enable --now tailscaled
 
