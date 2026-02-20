@@ -96,8 +96,7 @@ echo -e "... Don't forget to import key via  gpg --allow-secret-key-import --imp
 
 # BTRFS data subvolume
 #mount /dev/nvme0n1p6 /mnt/mnt/data/media/photography
-yay pass-git protonmail-bridge-bin protonvpn-gui qtpass secret-service
-
+yay protonmail-bridge-bin protonvpn-gui  secret-service
 
 # No need as of 2024-09-23
 #echo -e "... configure protonmail bridge"
@@ -116,11 +115,10 @@ yay -S backintime cronie
 
 # Enable ssh agent for session
 yay -S ksshaskpas
-secho -e ".. Have SSH agents storing keys"
+echo -e ".. Have SSH agents storing keys"
 # echo "AddKeysToAgent yes" >> .ssh/config
 # echo 'SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/ssh-agent.socket"' > ~/.config/environment.d/ssh_auth_socket.conf
 systemctl --user enable --now ssh-agent
-
 
 # Docker and install
 echo -e "Install docker"
@@ -149,9 +147,6 @@ sudo cat <<EOF | sudo tee -a /etc/resolv.conf.head > /dev/null
 10.147.17.153
 10.147.17.8
 EOF
-
-yay -S --noconfirm kwalletmanager
-
 
 echo -e ".. KDE dialog box"
 # echo "GTK_USE_PORTAL=1" >> .config/environment.d/qt_style.conf

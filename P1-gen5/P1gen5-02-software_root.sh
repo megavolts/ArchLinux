@@ -118,7 +118,7 @@ echo -e ".. virtualization tools"
 yays virtualbox virtualbox-guest-iso virtualbox-host-dkms virtualbox-ext-oracle
 
 echo -e ".. Utilties toolbox"
-yays solaar krdc
+yays solaar krdc krfb
 
 # Enable samba
 echo -e ".. Install samba"
