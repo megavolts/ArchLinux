@@ -6,24 +6,49 @@ echo 'Enter '$USER ' passwords'
 stty -echo
 read PASSWORD
 
-# For all user
-# enable audio for the user
-echo -e ".. enable sound for $USER"
-systemctl enable --user --now pipewire
-#systemctl enable --user --now pipewire-pulse
-
-echo -e ".. create noCOW directory for $USER"
-balooctl6 disable
-
 # Create noCOW directory
 rm -R /home/$USER/{.thunderbird,.mozilla,.local/share/baloo,.config/protonmail/bridge/cache}
 mkdir -p /home/$USER/{.thunderbird,.mozilla,.local/share/baloo,.config/protonmail/bridge/cache}
-
 # Disable COW for thunderbird, baloo, protonmail
 chattr +C /home/$USER/.thunderbird
 chattr +C /home/$USER/.local/share/baloo/
 chattr +C /home/$USER/.mozilla
 chattr +C /home/$USER/.config/protonmail/
+
+# Create noCOW yay build subvolume under .cache/yay
+echo -e "... create noCOW subvolume for yay"
+doas rm -R /home/$USER/.cache/yay
+mkdir /home/$USER/.cache/yay
+chattr +C /home/$USER/.cache/yay
+if  ! [ -d /storage/btrfs/data/@${USER} ]; then
+  doas btrfs subvolume create /storage/btrfs/data/@${USER}
+fi
+if [ -d /stroage/btrfs/data/@{USER}/@cache_yay ]; then
+  doas btrfs subvolume delete /storage/btrfs/data/@$USER/@cache_yay
+fi
+doas btrfs subvolume create /storage/btrfs/data/@${USER}/@cache_yay
+
+if ! [ -d /mnt/btrfs/data/@${USER}/@download ] ; then
+  doas btrfs subvolume create /storage/btrfs/data/@${USER}/@downloads
+fi
+cat <<EOF | doas tee -a /etc/fstab > /dev/null
+## USER: megavolts
+### yay cache
+LABEL=data  /home/$USER/.cache/yay  btrfs rw,nodev,noatime,compress=zstd,clear_cache,nospace_cache,nodatacow,commit=120,subvol=/@${USER}/@cache_yay 0 0
+LABEL=data  /home/$USER/Downloads   btrfs rw,nodev,noatime,compress=zstd,clear_cache,nospace_cache,nodatacow,subvol=@${USER}/@downloads 0 0
+EOF
+mkdir -p /home/$USER/Downloads 
+doas systemctl daemon-reload
+doas mount -a
+
+# Tailscale
+yay -S trayscale
+
+# For all user
+# enable audio for the user
+echo -e ".. enable sound for $USER"
+systemctl enable --user --now pipewire
+#systemctl enable --user --now pipewire-pulse
 
 # For USER megavolts
 # Import private gpg
@@ -32,37 +57,12 @@ KEYFILE=$(kdialog --getopenfilename)
 gpg --allow-secret-key-import --import $KEYFILE
 gpg --refresh-keys
 
-# Create noCOW yay build subvolume under .cache/yay
-echo -e "... create noCOW subvolume for yay"
-sudo rm -R /home/$USER/.cache/yay
-mkdir /home/$USER/.cache/yay
-chattr +C /home/$USER/.cache/yay
-sudo btrfs subvolume create /storage/btrfs/data/@${USER}
-sudo btrfs subvolume create /storage/btrfs/data/@${USER}/@cache_yay
-sudo cat <<EOF | sudo tee -a /etc/fstab > /dev/null
-
-## USER: megavolts
-### yay cache
-LABEL=data  /home/$USER/.cache/yay  btrfs rw,nodev,noatime,compress=zstd,clear_cache,nospace_cache,nodatacow,commit=120,subvol=/@${USER}/@cache_yay 0 0
-EOF
-
-# Create noCOW download subvolume under Downloads
-echo -e "... create noCOW subvolume for Download"
-if ! [ -d /mnt/btrfs/data/@${USER}/@download ] ; then
-	sudo btrfs subvolume create /storage/btrfs/data/@${USER}/@downloads
-else
-	echo "@downloads subvolume already exists"
-fi
-sudo cat <<EOF | sudo tee -a /etc/fstab > /dev/null
-### Downloads
-LABEL=data     /home/megavolts/Downloads  btrfs rw,nodev,noatime,compress=zstd,clear_cache,nospace_cache,nodatacow,subvol=@megavolts/@downloads 0 0
-EOF
 
 echo -e "Give access to megavolts to /opt and /storage/data"
-sudo setfacl -Rm "u:${USER}:rwx" /opt
-sudo setfacl -Rdm "u:${USER}:rwx" /opt
-sudo setfacl -Rm "u:${USER}:rwx" /storage/data
-sudo setfacl -Rdm "u:${USER}:rwx" /storage/data
+doas setfacl -Rm "u:${USER}:rwx" /opt
+doas setfacl -Rdm "u:${USER}:rwx" /opt
+doas setfacl -Rm "u:${USER}:rwx" /storage/data
+doas setfacl -Rdm "u:${USER}:rwx" /storage/data
 
 echo -e "Create multimedia directory for megavolts"
 mkdir -p /home/$USER/Pictures/{photography,meme,wallpaper,graphisme}
@@ -72,17 +72,17 @@ mkdir -p /home/$USER/Musics
 # BTRFS data subvolume
 echo -e ".. create media subvolume on data and mount"
 if [ !  -e /storage/btrfs/data/@media ]; then
-  btrfs subvolume create /storage/btrfs/data/@media 
+  doas btrfs subvolume create /storage/btrfs/data/@media 
 fi
 if [ !  -e /storage/btrfs/data/@photography ]; then
-  btrfs subvolume create /storage/btrfs/data/@photography
+  doas btrfs subvolume create /storage/btrfs/data/@photography
 fi
 if [ !  -e /storage/btrfs/data/@UAF-data ]; then
-  btrfs subvolume create /storage/btrfs/data/@UAF-data
+  doas btrfs subvolume create /storage/btrfs/data/@UAF-data
 fi
 mkdir -p /storage/data/{media,UAF-data}
 mkdir -p /storage/data/media/{photography,wallpaper,meme,graphisme,tvseries,movies,videos,musics}
-sudo cat <<EOF | sudo tee -a /etc/fstab > /dev/null
+cat <<EOF | doas tee -a /etc/fstab > /dev/null
 ## Generic media
 LABEL=data 	/storage/data/media				btrfs	rw,defaults,nodev,noatime,compress=zstd,subvol=@media	0 	0
 LABEL=data 	/storage/data/UAF-data			btrfs	rw,defaults,nodev,noatime,compress=zstd,subvol=@UAF-data	0 	0
@@ -90,7 +90,7 @@ LABEL=data 	/storage/data/media/photography	btrfs	rw,defaults,nodev,noatime,comp
 EOF
 
 echo -e "... configure megavolts user directory"
-sudo cat <<EOF | sudo tee -a /etc/fstab > /dev/null
+cat <<EOF | doas tee -a /etc/fstab > /dev/null
 ## Media overlay
 /storage/data/media/musics      /home/$USER/Musics                fuse.bindfs     perms=0644,mirror-only=$USER 0 0
 /storage/data/media/photography /home/$USER/Pictures/photography  fuse.bindfs     perms=0644,mirror-only=$USER 0 0
@@ -101,7 +101,7 @@ sudo cat <<EOF | sudo tee -a /etc/fstab > /dev/null
 /storage/data/media/movies      /home/$USER/Videos/movies         fuse.bindfs     perms=0644,mirror-only=$USER 0 0
 /storage/data/media/videos      /home/$USER/Videos/videos         fuse.bindfs     perms=0644,mirror-only=$USER 0 0
 EOF
-sudo systemctl daemon-reload && sudo mount -a
+doas systemctl daemon-reload && mount -a
 
 
 # Protonmail
@@ -119,14 +119,14 @@ git config --global user.name "Marc Oggier"
 
 # Enable sshagent for session
 echo -e ".. Enable SSH agents for session"
-yay -S ksshaskpas
+yay -S ksshaskpass
 # echo "AddKeysToAgent yes" >> .ssh/config
 # echo 'SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/ssh-agent.socket"' > ~/.config/environment.d/ssh_auth_socket.conf
 systemctl --user enable --now ssh-agent
 
 # Set up back in time
-echo -e "... set up secondary backup system"
-yay -S --noconfirm backintime
+# echo -e "... set up secondary backup system"
+# yay -S --noconfirm backintime
 
 echo -e "... tuning firefox"
 echo -e "Arkenfox setup"
