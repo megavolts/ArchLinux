@@ -12,7 +12,7 @@ echo -e ".. Enable multilib"
 sed -i 's|#[multilib]|[multilib]|' /etc/pacman.conf
 sed -i "/\[multilib\]/,/Include/"'s/^#//' /etc/pacman.conf
 sed -i 's|#ParallelDownloads|ParallelDownloads|' /etc/pacman.conf
-sed -i 's|#color|color|' /etc/pacman.conf
+sed -i 's|#Color|Color|' /etc/pacman.conf
 
 echo -e ".. Update pacman and system "
 pacman -Syy
@@ -27,7 +27,6 @@ sed -i "s|# --country France,Germany|--country USA,Switzerland|g" /etc/xdg/refle
 systemctl enable reflector.timer
 
 ############################################################
-
 
 echo -e "Install aur package manager"
 # create a fake builduser
@@ -86,11 +85,11 @@ Target = usr/src/*/dkms.conf
 Depends = rsync
 Description = Backing up /boot...
 When = PostTransaction
-Exec = /usr/bin/rsync -avh --delete /boot/ /.bootbkp && /usr/bin/rsync -avh --delete /boot/ /.bootwin
+Exec = /usr/bin/rsync -avh --delete /efi /.efibkp && /usr/bin/rsync -avh --delete /efi /.efiwin
 EOF
 
-
 exit
+
 swapoff /mnt/storage/btrfs/root/@swap/swapfile
 umount /mnt/{boot,.bootwin,storage,storage/data,storage/btrfs/root,storage/btrfs/data,var/log,var/tmp,/tmp,/var/cache/pacman/pkg,var/abs,/home}
 reboot
