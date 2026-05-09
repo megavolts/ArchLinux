@@ -2,11 +2,13 @@
 # Dual boot with windows
 # With 2 DISK
 # Linux/Data Disk: /dev/nvme1n1
-#  1            2048         1050623   512.0 MiB   EF00  EFI2
-#  2         1050624       537921535   256.0 GiB   8300  CRYPTROOT
+#  1            2048         8390655     4.0 giB   EF00  ARCHEFI
+#  2         8390656       537921535   252.5 GiB   8300  CRYPTROOT
 #  3       537921536      7814035455     3.4 TiB   8300  CRYPTDATA
 # Windows Disk: /dev/nvme0n1
 
+
+# TODO: Read from config file
 HOSTNAME=vouivre
 WINDISK=/dev/nvme0n1
 WINBOOTPART=1
@@ -46,14 +48,15 @@ then
   echo -en $PASSWORD | cryptsetup luksFormat ${DISK}p${ROOTPART} -q
   echo -e "... Decrypt root device"
   echo -en $PASSWORD | cryptsetup luksOpen /dev/disk/by-partlabel/CRYPTROOT root
-  mkfs.btrfs --force --label arch /dev/mapper/root
+  mkfs.btrfs --force --label root /dev/mapper/root
 else
   echo -e "... Decrypt root device"
   echo -en $PASSWORD | cryptsetup luksOpen ${DISK}p${ROOTPART} root
 
-  mount /dev/mapper/root /mnt
-  if [ -d /mnt/@ ]
-    mv /mnt/@ /mnt/@.old
+  mkdir -p /storage/btrfs/root
+  mount /dev/mapper/root /storage/btrfs/root
+  if [ -d /storage/btrfs/root@ ]
+    mv /storage/btrfs/root@ /storage/btrfs/root@.$(date +%Y%m%d)
   fi
   umount /dev/mapper/root
 fi
@@ -74,23 +77,23 @@ echo -e "... Wiping EFI partition"
 mkfs.fat -F32 ${DISK}p${BOOTPART} -n EFIARCH
 
 echo -e ".. Mount root btrfs subvolume on /mnt"
-mount -o defaults,compress=zstd,noatime,nodev /dev/mapper/root /mnt/
+mount -o defaults,compress=zstd,noatime,nodev /dev/mapper/root /storage/btrfs/root
 
 if $WIPEROOT; then
-  btrfs subvolume delete /mnt/{@var_log,@var_cache,@root}
+  btrfs subvolume delete  /storage/btrfs/root/{@var_log,@var_cache,@root}
   if [ -d /mnt/root/@snapshots/ ]; then
   echo -e "... Delete individual root snapshots on  @root_snaps"
-  btrfs subvolume delete /mnt/@snapshots/@root_snaps/*/snapshot 
-  btrfs subvolume delete /mnt/@snapshots/@root_snaps/
-  btrfs subvolume delete /mnt/@snapshots/
+  btrfs subvolume delete /storage/btrfs/root/@snapshots/@root_snaps/*/snapshot 
+  btrfs subvolume delete /storage/btrfs/root/@snapshots/@root_snaps/
+  btrfs subvolume delete /storage/btrfs/root/@snapshots/
   fi  
 fi
 
 echo -e "... Create new root, var and tmp subvolume"
-btrfs subvolume create /mnt/@ # Root directory
-btrfs subvolume create /mnt/@var_log # Log files; avoid rollback for easier debugging
-btrfs subvolume create /mnt/@var_cache # Cache files; no need to rollback
-btrfs subvolume create /mnt/@root  # Root user's home directory
+btrfs subvolume create /storage/btrfs/root/@ # Root directory
+btrfs subvolume create /storage/btrfs/root/@var_log # Log files; avoid rollback for easier debugging
+btrfs subvolume create /storage/btrfs/root/@var_cache # Cache files; no need to rollback
+btrfs subvolume create /storage/btrfs/root/@root  # Root user's home directory
 
 
 echo -e "... Unmount /dev/mapper/root"
@@ -105,29 +108,24 @@ echo -e "... Mount subvolume for install"
 mount -o defaults,compress=zstd,noatime,nodev,subvol=@ /dev/mapper/root /mnt/
 
 echo -e ".. create root subvolume mountpoints"
-mkdir -p /mnt/{efi,.efiwin,var/log,var/cache,home,storage/{data,btrfs/{root,data}}}
+mkdir -p /mnt/{efi,.efiwin,var/{abs,cache,log,lib/{docker,libvirt,containers},tmp},root,tmp,home,storage/{data,btrfs/{root,data}}}
 mount -o defaults,compress=zstd,noatime,nodev,nodatacow,subvol=@var_log /dev/mapper/root /mnt/var/log
 mount -o defaults,compress=zstd,noatime,nodev,nodatacow,subvol=@var_cache /dev/mapper/root /mnt/var/cache
+mount -o defaults,compress=zstd,noatime,nodev,nodatacow,subvol=@root /dev/mapper/root /mnt/root
+
 
 # disable Copy-on-Write to prevent slowdown
-mkdir -p /mnt/tmp
-mkdir -p /mnt/var/{log,cache,tmp,abs,lib,lib/{docker,libvirt,containers}}
-chattr +C /mnt/var/log
-chattr +C /mnt/var/cache
-chattr +C /mnt/var/tmp
-chattr +C /mnt/var/abs
-chattr +C /mnt/var/lib/docker
-chattr +C /mnt/var/lib/libvirt
-chattr +C /mnt/var/lib/containers
+chattr +C /mnt/var/*
+chattr +C /mnt/var/lib/*
 chattr +C /mnt/tmp
 
 echo -e ".. Mount home and data btrfs subvolume respectively to /mnt/home and /mnt/data"
 if $WIPEDATA
-  mkdir -p /mnt/data 
-  mount -o defaults,compress=zstd,noatime,nodev,ssd,discard /dev/mapper/data /mnt/data
+  mkdir -p /storage/btrfs/data 
+  mount -o defaults,compress=zstd,noatime,nodev,ssd,discard /dev/mapper/data /storage/btrfs/data 
   echo -e "... create new home, data and snapshots suvolume"
-  btrfs subvolume create /mnt/data/@home
-  btrfs subvolume create /mnt/data/@data
+  btrfs subvolume create /storage/btrfs/data /@home
+  btrfs subvolume create /storage/btrfs/data /@data
   umount /mnt{/data,/}
 fi
 mount -o defaults,compress=zstd,noatime,nodev,subvol=@home /dev/mapper/data /mnt/home
@@ -153,7 +151,7 @@ echo -e ".. mount windows disk boot partition to /mnt/boot/efiwin"
 mount /dev/disk/by-label/EFI /mnt/.efiwin
 
 # copy any windows boot information from EFI to EFIARCH
-rsync /mnt/.bootwin/ /mnt/boot -hAr --info=progress2
+rsync /mnt/.efiwin/ /mnt/efi -hAr --info=progress2
 # remove intel-ucode if present
 if [ -f /mnt/boot/intel-ucode.img ]
 then
@@ -164,7 +162,6 @@ rm -R /mnt/{efi,.efiwin}/EFI/Linux
 
 echo -e "Arch Linux Installation"
 echo -e "... Enable parallel download"
-sed -i 's|#ParallelDownloads|ParallelDownloads|' /etc/pacman.conf
 sed -i 's|#Color|Color|' /etc/pacman.conf
 
 echo -e ".. Install base packages"
@@ -173,7 +170,7 @@ pacstrap /mnt base linux-zen linux-zen-headers base-devel openssh doas ntp wget 
 
 # Enable unified 
 echo -e ".. Install basic tools"
-pacstrap /mnt plocate acl util-linux fwupd arp-scan htop lsof strace screen refind terminus-font
+pacstrap /mnt plocate acl util-linux fwupd arp-scan htop lsof strace screen terminus-font
 
 echo -e "... [config] plocate: includes btrfs mountpoints when updateding the database"
 sed -i 's|PRUNE_BIND_MOUNTS = "yes"|PRUNE_BIND_MOUNTS = "no"|' /mnt/etc/updatedb.conf
@@ -210,7 +207,7 @@ echo -e "Configure system"
 echo -e ".. Set timezone to America/Anchorage"
 ln -sf /usr/share/zoneinfo/${TZDATA} /mnt/etc/localtime
 arch-chroot /mnt hwclock --systohc
-echo ${TZDATA} >> /mnt/etc/timezone
+echo ${TZDATA} > /mnt/etc/timezone
 echo "#KEYMAP=us" >> /mnt/etc/vconsole.conf
 
 # generate locales for en_US
@@ -263,7 +260,6 @@ arch-chroot /mnt passwd $NEWUSER << EOF
 $PASSWORD
 $PASSWORD
 EOF
-arch-chroot /mnt passwd root
 
 # Unified kernel with systemd-boot
 ROFFSET=$(btrfs inspect-internal map-swapfile -r /mnt/storage/btrfs/root/@swap/swapfile)
