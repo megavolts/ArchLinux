@@ -299,10 +299,25 @@ systemctl --root /mnt enable btrfs-scrub@home.timer
 systemctl --root /mnt enable btrfs-scrub@-.timer 
 systemctl --root /mnt enable fstrim.timer
 
-# Install systemd-boot Bootloader
+pacstrap /mnt limine
+arch-chroot cp /usr/share/limine/BOOTX64.EFI /efi/EFI/limine
+## Create Limine boot entry via efibootmgr
 arch-chroot /mnt bootctl install --esp-path=/efi
-
-arch-chroot /mnt /bin/zsh
+arch-chroot efibootmgr --create --disk /dev/nvme0n1 --part 1 --label "Limine Boot Loader" \
+      --loader '\EFI\limine\BOOTX64.EFI' --unicode
+arch-chroot cat << EOF < /efi/limine.conf
+timeout: 5
+/Arch Linux
+    protocol: efi
+    path: boot():/EFI/Linux/arch-linux-zen.efi
+    cmdline: loglevel=3 rd.luks.name=c80756ae-e468-4f5b-8269-a046d8edc257=root root=/dev/mapper/root rootfstype=btrfs rootflags=subvol=/@ rw resume=/dev/mapper/root resume_offset=533760
+/Memtest86+
+    protocol: efi
+    path: boot():/memtest86+/memtest.efi
+/Windows
+    protocol: efi
+    path: boot():/EFI/Microsoft/Boot/bootmgfw.efi
+EOF
 
 # TODO MEGE 01-chrrot here
 #systemctl reboot
