@@ -188,7 +188,7 @@ sed 's/\/mnt\/swap/\/swap/g' /mnt/etc/fstab
 
 echo -e " .. Allow wheel group for doas"
 cat << EOF > /mnt/etc/doas.conf
-permit setenv {PATH=/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin} :wheel
+permit persist setenv {PATH=/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin} :wheel
 permit root as megavolts
 EOF
 chown -c root:root /mnt/etc/doas.conf
