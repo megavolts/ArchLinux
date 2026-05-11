@@ -4,7 +4,6 @@
 # ssh megavolts@IP
 # install graphic consol
 
-
 NEWUSER=megavolts
 echo 'Enter a default passphrase use to encrypt the disk and serve as password for root and megavolts:'
 stty -echo
@@ -15,7 +14,7 @@ yays(){yay -S --removemake --cleanafter --noconfirm $@}
 
 # Set up tailscale
 echo -e ".. Installing tailscale, follow the link to login"
-yays tailscale
+yays tailscale trayscale
 systemctl enable --now tailscaled
 tailscale up --ssh --accept-routes
 
@@ -47,8 +46,8 @@ echo -e ".. partition tools"
 yays gparted ntfs-3g exfat-utils mtools sshfs dosfstools bindfs
 
 echo -e "... network tools"
-yays plasma-nm
-#yays dnsmasq nm-connection-editor openconnect networkmanager-openconnect networkmanager-openvpn avahi plasma-nm hostapd
+yays plasma-nm networkmanager-openvpn
+#yays dnsmasq nm-connection-editor openconnect networkmanager-openconnect  avahi plasma-nm hostapd
 #systemctl enable --now avahi-daemon
 
 echo -e ".. file manager"
@@ -70,13 +69,16 @@ echo -e "... images"
 yays imagemagick guetzli geeqie inkscape gimp darktable inkscape libraw hugin
 
 echo -e ".. coding tools"
-yays sublime-text-4 terminator pycharm-professional code
+yays sublime-text-4 terminator code 
+# pycharm-professional code
 
 echo -e "... musics and videos"
-yays vlc ffmpeg rdp6 libvncserver
+yays vlc ffmpeg
+# rdp6 libvncserver krdc krfb
 
 echo -e ".. office"
-yays libreoffice-fresh libreoffice-extension-texmaths mendeleydesktop zotero-bin
+yays libreoffice-fresh libreoffice-extension-texmaths zotero-bin
+# mendeleydesktop 
 yays aspell-fr aspell-en aspell-de hunspell-en_US hunspell-fr hunspell-de hyphen-en hyphen-en hyphen-de libmythes mythes-en mythes-fr libreoffice-extension-grammalecte-fr
 
 echo -e ".. printing tools"
@@ -87,7 +89,14 @@ echo -e ".. virtualization tools"
 yays virtualbox virtualbox-guest-iso virtualbox-host-dkms virtualbox-ext-oracle
 
 echo -e ".. Utilties toolbox"
-yays solaar krdc krfb
+yays solaar 
+
+yay -S --noconfirm protonmail-bridge protonvpn-gui 
+# Set up oh-my-zsh
+yay -S --noconfirm oh-my-zsh-git
+yay -S docker docker-compose
+
+
 
 # Enable samba
 echo -e ".. Install samba"

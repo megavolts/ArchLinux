@@ -41,9 +41,6 @@ mkdir -p /home/$USER/Downloads
 doas systemctl daemon-reload
 doas mount -a
 
-# Tailscale
-yay -S trayscale
-
 # For all user
 # enable audio for the user
 echo -e ".. enable sound for $USER"
@@ -106,11 +103,8 @@ doas systemctl daemon-reload && mount -a
 
 # Protonmail
 echo -e "... configure protonmail bridge"
-yay -S --noconfirm protonmail-bridge protonvpn-gui 
 protonmail-bridge &
 
-# Set up oh-my-zsh
-yay -S --noconfirm oh-my-zsh-git
 
 # Set up git global
 echo -e "... configure global variable for git"
@@ -119,7 +113,7 @@ git config --global user.name "Marc Oggier"
 
 # Enable sshagent for session
 echo -e ".. Enable SSH agents for session"
-yay -S ksshaskpass
+#yay -S ksshaskpass
 # echo "AddKeysToAgent yes" >> .ssh/config
 # echo 'SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/ssh-agent.socket"' > ~/.config/environment.d/ssh_auth_socket.conf
 systemctl --user enable --now ssh-agent
@@ -140,7 +134,6 @@ EOF
 
 # Docker and install
 echo -e "Install docker"
-yay -S docker docker-compose
 echo -e ".. add $USER to docker group"
 sudo usermod -aG docker megavolts
 sudo systemctl enable --now docker
@@ -177,3 +170,10 @@ if [ -f ~/.config/zoomus.conf ];
 then
   sed -i 's|enableWaylandShare=false|enableWaylandShare=true|g' ~/.config/zoomus.conf
 fi
+
+
+cat << EOF |  doas tee -a /etc/pam.d/doas > /dev/null
+auth      sufficient pam_fprintd_grosshack.s
+auth      sufficient pam_unix.so try_first_pass nullok
+auth      sufficient pam_fprintd.so
+EOF
