@@ -56,7 +56,7 @@ echo -e ".. sync older directory to new directory for $NEWUSER"
 #   find /home/$NEWUSER-old -type d -empty -delete
 # fi
 
-
+## FOR P1 only
 echo -e ".. Set up crypttab to unlock data"
 DATAUUID=$(cryptsetup luksDump /dev/disk/by-partlabel/CRYPTDATA | grep UUID | cut -f2- -d: | sed -e 's/^[ \t]*//')
 echo "data   UUID=$DATAUUID  /etc/cryptfs.key" >> /etc/crypttab
@@ -67,6 +67,10 @@ echo -e ".. Install drivers specific to Intel Corporation Alder Lake-P Integrate
 pacman -S --noconfirm mesa vulkan-intel vulkan-mesa-layers intel-media-driver
 # Enable GuC/HuC firmware loading
 echo "options i915 enable_guc=3" >> /etc/modprobe.d/i915.conf
+
+## Install liminie helper
+yays  limine-mkinitcpio-hook
+
 
 
 #pacman -S --noconfirm nvidia-open nvidia-prime

@@ -276,8 +276,11 @@ echo "rd.luks.name=$ROOTUUID=root root=/dev/mapper/root rootfstype=btrfs rootfla
 sed -i 's/sd-vconsole /sd-vconsole sd-encrypt /g' /mnt/etc/mkinitcpio.conf
 
 # Configure Unified Kernel Image UKI
-sed -i 's/#ALL_config/ALL_config /g' /mnt/etc/mkinitcpio.d/linux-zen.preset
-sed -i "s/('default')/('default' 'fallback')/g" /mnt/etc/mkinitcpio.d/linux-zen.preset
+sed -i 's/ALL_config/#ALL_config /g' /mnt/etc/mkinitcpio.d/linux-zen.preset
+sed -i 's/#ALL_kver/ALL_kver/g' /mnt/etc/mkinitcpio.d/linux-zen.preset
+
+sed -i "s/PRESETS=('default')/#PRESETS=('default')/g" /mnt/etc/mkinitcpio.d/linux-zen.preset
+sed -i "s/#PRESETS=('default' 'fallback')/PRESETS=('default' 'fallback')/g" /mnt/etc/mkinitcpio.d/linux-zen.preset
 
 sed -i 's/default_image/#default_image/g' /mnt/etc/mkinitcpio.d/linux-zen.preset
 sed -i 's/#default_uki/default_uki/g' /mnt/etc/mkinitcpio.d/linux-zen.preset

@@ -5,30 +5,27 @@
 # install graphic consol
 
 NEWUSER=megavolts
+HOME_DISK_LABEL=data
 echo 'Enter a default passphrase use to encrypt the disk and serve as password for root and megavolts:'
 stty -echo
 read PASSWORD
 yay --sudo doas --sudoflags -- --save
 yays(){yay -S --removemake --cleanafter --noconfirm $@}
 
+# Packages list redone as 2025-04-02
+echo -e "... install plasma windows manager"
+yays plasma-desktop pipewire-jack qt6-multimedia-ffmpeg plasma-thunderbolt pinentry kwalletmanager kwallet-pam kinfocenter kruler plasma-login-manager
+systemctl enable --now plasmalogin.service
+
+# Power
+yays powerdevil power-profiles-daemon
+systemctl enable --now power-profiles-daemon
 
 # Set up tailscale
 echo -e ".. Installing tailscale, follow the link to login"
 yays tailscale trayscale
 systemctl enable --now tailscaled
 tailscale up --ssh --accept-routes
-
-# Disable build of debug packages
-echo -e "... disable build of debug packge when using makepkg"
-sed -i "s| debug lto| \!debug lto|g" /etc/makepkg.conf
-
-# Packages list redone as 2025-04-02
-echo -e "... install plasma windows manager"
-yays plasma-desktop pipewire-jack qt6-multimedia-ffmpeg plasma-thunderbolt pinentry kwalletmanager kwallet-pam kinfocenter kruler plasma-login-manager
-
-# Power
-yays powerdevil power-profiles-daemon
-systemctl enable  power-profiles-daemon
 
 # Sound
 echo -e ".. install audio server"
@@ -39,11 +36,11 @@ yays yakuake kdialog kfind kdeconnect deskflow kscreen wl-clipboard xdg-desktop-
 
 echo -e ".. Installing bluetooth"
 yays bluez bluez-utils bluedevil
-systemctl enable bluetooth
+systemctl enable --now bluetooth
 
 echo -e "Install software"
 echo -e ".. partition tools"
-yays gparted ntfs-3g exfat-utils mtools sshfs dosfstools bindfs
+yays gparted ntfs-3g exfatprogs mtools sshfs dosfstools bindfs
 
 echo -e "... network tools"
 yays plasma-nm networkmanager-openvpn
@@ -51,13 +48,13 @@ yays plasma-nm networkmanager-openvpn
 #systemctl enable --now avahi-daemon
 
 echo -e ".. file manager"
-yays dolphin dolphin-plugins ark p7zip zip
+yays dolphin dolphin-plugins ark p7zip zip ffmpegthumbs kdegraphics-thumbnailers kdenetwork-filesharing kdf kio-admin kompare purpose
 
 echo -e "... android tools"
 yays android-tools android-udev 
 
 echo -e ".. internet software"
-yays firefox thunderbird filezilla zoom slack-wayland transmission-qt
+yays firefox thunderbird filezilla zoom slack-wayland transmission-qt hunspell-en_US
 
 echo -e ".. sync software"
 yays c++utilities qtutilities-qt6 qtforkawesome-qt6 syncthingtray-qt6 nextcloud-client 
@@ -73,23 +70,124 @@ yays sublime-text-4 terminator code
 # pycharm-professional code
 
 echo -e "... musics and videos"
-yays vlc ffmpeg
+yays vlc ffmpeg vlc-plugins-all
 # rdp6 libvncserver krdc krfb
 
 echo -e ".. office"
 yays libreoffice-fresh libreoffice-extension-texmaths zotero-bin
-# mendeleydesktop 
 yays aspell-fr aspell-en aspell-de hunspell-en_US hunspell-fr hunspell-de hyphen-en hyphen-en hyphen-de libmythes mythes-en mythes-fr libreoffice-extension-grammalecte-fr
 
 echo -e ".. printing tools"
-yays cups system-config-printer print-manager
-systemctl enable --now cups.service
+# yays cups system-config-printer print-manager
+# systemctl enable --now cups.service
 
 echo -e ".. virtualization tools"
 yays virtualbox virtualbox-guest-iso virtualbox-host-dkms virtualbox-ext-oracle
 
 echo -e ".. Utilties toolbox"
 yays solaar 
+
+echo -e " ..  Install pacman and downgrade tools"
+yays paccache-hook pacman-contrib downgrade
+
+# Enable snapshots with snapper
+echo -e "Install snapper, a snapshots manager "
+yays snapper snapper-gui-git snap-pac
+
+# Enable snapshots with snapper
+echo -e ".. Configure snapper"
+echo -e "... Create root config"
+
+# Delete any /.snapshots directory or subvolume
+if [ -d "/.snapshots" ]; then
+  rmdir /.snapshots
+fi
+snapper -c root create-config /
+btrfs subvolume delete /.snapshots
+mkdir /.snapshots
+if ! [ -d /storage/btrfs/root/@snapshots/@root_snaps ] ; then
+  if ! [ -d /storage/btrfs/root/@snapshots ] ; then
+    doas btrfs subvolume create /storage/btrfs/root/@snapshots
+  fi
+  doas btrfs subvolume create /storage/btrfs/root/@snapshots/@root_snaps
+
+if [ -d "/home/.snapshots" ]; then
+  rmdir /home/.snapshots
+fi
+snapper -c home create-config /home
+btrfs subvolume delete /home/.snapshots
+mkdir /home/.snapshots
+
+if ! [ -d /storage/btrfs/$HOME_DISK_LABEL/@snapshots/@home_snaps ] ; then
+  if ! [ -d /storage/btrfs/$HOME_DISK_LABEL/@snapshots ] ; then
+    btrfs subvolume create /storage/btrfs/$HOME_DISK_LABEL/@snapshots
+  fi
+  btrfs subvolume create /storage/btrfs/$HOME_DISK_LABEL/@snapshots/@home_snaps
+fi
+
+echo -e ".. add entry to fstab and mount"
+echo "# Snapper subvolume"
+echo "LABEL=root /.snapshots btrfs rw,noatime,compress=zstd,subvol=@snapshots/@root_snaps   0 0" >> /etc/fstab
+echo "LABEL=$HOME_DISK_LABEL /home/.snapshots btrfs rw,noatime,compress=zstd,subvol=@snapshots/@home_snaps   0 0" >> /etc/fstab
+systemctl daemon-reload && mount -a
+
+echo -e ".. Edit home and root configuration"
+echo -e "... Allow user $NEWUSER to modify snapper config"
+setfacl -Rm "u:${NEWUSER}:rwx" /etc/snapper/configs
+setfacl -Rdm "u:${NEWUSER}:rwx" /etc/snapper/configs
+
+echo -e "... Allow user $NEWUSER and usergroup wheel to modify snapper"
+sed -i "s|ALLOW_USERS=\"|ALLOW_USERS=\"${NEWUSER}|g" /etc/snapper/configs/root
+sed -i "s|ALLOW_GROUPS=\"|ALLOW_GROUPS=\"wheel|g" /etc/snapper/configs/root
+sed -i "s|ALLOW_USERS=\"|ALLOW_USERS=\"${NEWUSER}|g" /etc/snapper/configs/home
+sed -i "s|ALLOW_GROUPS=\"|ALLOW_GROUPS=\"wheel|g" /etc/snapper/configs/home
+echo -e "... Enable ACL"
+sed "s|SYNC_ACL=\"no|SYNC_ACL=\"yes|g" -i /etc/snapper/configs/root
+sed "s|SYNC_ACL=\"no|SYNC_ACL=\"yes|g" -i /etc/snapper/configs/home
+echo -e "... Change Timeline limit for snapshot retention"
+# update snap config for root directory
+sed  -i "s|TIMELINE_MIN_AGE=\"3600\"|TIMELINE_MIN_AGE=\"0\"|g"         /etc/snapper/configs/root  # Allow all snapshots to be removed, independantly of age
+sed  -i "s|TIMELINE_LIMIT_HOURLY=\"10\"|TIMELINE_LIMIT_HOURLY=\"12\"|g"   /etc/snapper/configs/root  # keep hourly backup for 12 hours
+sed  -i "s|TIMELINE_LIMIT_DAILY=\"10\"|TIMELINE_LIMIT_DAILY=\"7\"|g"     /etc/snapper/configs/root  # keep daily backup for 7 days
+sed  -i "s|TIMELINE_LIMIT_WEEKLY=\"0\"|TIMELINE_LIMIT_WEEKLY=\"4\"|g"     /etc/snapper/configs/root  # keep weekly backup for 4 weeks
+sed  -i "s|TIMELINE_LIMIT_MONTHLY=\"12\"|TIMELINE_LIMIT_MONTHLY=\"12\"|g" /etc/snapper/configs/root  # keep monthly backup for 12 months
+sed  -i "s|TIMELINE_LIMIT_YEARLY=\"5\"|TIMELINE_LIMIT_YEARLY=\"5\"|g"     /etc/snapper/configs/root  # keep yearly backup for 5 years
+# # update snap config for home directory
+sed  -i "s|TIMELINE_MIN_AGE=\"3600\"|TIMELINE_MIN_AGE=\"1800\"|g"         /etc/snapper/configs/home
+sed  -i "s|TIMELINE_LIMIT_HOURLY=\"10\"|TIMELINE_LIMIT_HOURLY=\"96\"|g"   /etc/snapper/configs/home  # keep hourly backup for 48 hours
+sed  -i "s|TIMELINE_LIMIT_DAILY=\"10\"|TIMELINE_LIMIT_DAILY=\"14\"|g"     /etc/snapper/configs/home  # keep daily backup for 14 days
+sed  -i "s|TIMELINE_LIMIT_WEEKLY=\"0\"|TIMELINE_LIMIT_WEEKLY=\"4\"|g"     /etc/snapper/configs/home  # keep weekly backup for 4 weeks
+sed  -i "s|TIMELINE_LIMIT_MONTHLY=\"10\"|TIMELINE_LIMIT_MONTHLY=\"12\"|g" /etc/snapper/configs/home  # keep monthly backup for 12 months
+sed  -i "s|TIMELINE_LIMIT_YEARLY=\"10\"|TIMELINE_LIMIT_YEARLY=\"5\"|g"     /etc/snapper/configs/home  # keep yearly backup for 5 years
+
+echo -e ".. Remove snapshots from mlocate database"
+sed -i 's/PRUNENAMES = "/PRUNENAMES = ".snapshots /g' /etc/updatedb.conf
+
+
+echo -e ".. Enable and start snapshots timer"
+systemctl start --now snapper-timeline.timer snapper-cleanup.timer snapper-boot.timer # start and enable snapper
+
+echo -e " ... Execute snapshots cleanup everyhour"
+SYSTEMD_EDITOR=tee systemctl edit snapper-cleanup.timer <<EOF
+[Timer]
+OnBootSec=10min
+OnUnitActiveSec=1h
+EOF
+
+echo -e "... Take a snapshots every 5 minutes"
+SYSTEMD_EDITOR=tee systemctl edit snapper-timeline.timer <<EOF
+[Timer]
+OnCalendar=*:0/5
+EOF
+
+# enable snapshot at boot
+echo -e "... Take a snapshots at boot after mounting /.snapshots"
+systemctl enable snapper-boot.timer
+SYSTEMD_EDITOR=tee systemctl edit snapper-boot.service <<EOF
+[Unit]
+After=\\\\x2eboot.mount
+EOF
+
 
 yay -S --noconfirm protonmail-bridge protonvpn-gui 
 # Set up oh-my-zsh
@@ -119,114 +217,11 @@ $PASSWORD
 $PASSWORD
 EOF
 
-echo -e " ..  Install pacman and downgrade tools"
-yays paccache-hook pacman-contrib downgrade
 
-# Enable snapshots with snapper
-echo -e "Install snapper, a snapshots manager "
-yays snapper snapper-gui-git snap-pac
-
-echo -e ".. Configure snapper"
-echo -e "... Create root config"
-if [ -d "/.snapshots" ]; then
-  rmdir /.snapshots
-fi
-# snapper -c root create-config /
-
-# echo -e "... Create home config"
-# if [ -d "/home/.snapshots" ]; then
-#   rmdir /home/.snapshots
-# fi
-# snapper -c home create-config /home
-
-# we want the snaps located /at /mnt/btrfs-root/_snaptshot rather than at the root
-# Root volume snapshots
-
-echo -e ".. move snap subvolume to data root subvolume"
-btrfs subvolume delete /.snapshots
-btrfs subvolume delete /home/.snapshots
-mkdir /.snapshots
-if ! [ -d /storage/btrfs/root/@snapshots/@root_snaps ] ; then
-  if ! [ -d /storage/btrfs/root/@snapshots ] ; then
-    btrfs subvolume create /storage/btrfs/root/@snapshots
-  fi
-  btrfs subvolume create /storage/btrfs/root/@snapshots/@root_snaps
-fi
-
-# mkdir /home/.snapshots
-# if ! [ -d /storage/btrfs/data/@snapshots/@home_snaps ] ; then
-#   if ! [ -d /storage/btrfs/data/@snapshots/ ] ; then
-#     btrfs subvolume create /storage/btrfs/data/@snapshots
-#   fi
-#   btrfs subvolume create /storage/btrfs/data/@snapshots/@home_snaps
-# fi
-echo -e ".. add entry to fstab and mount"
-echo "# Snapper subvolume"
-echo "LABEL=arch /.snapshots btrfs rw,noatime,compress=zstd,subvol=@snapshots/@root_snaps   0 0" >> /etc/fstab
-# echo "LABEL=data /home/.snapshots  btrfs rw,noatime,compress=zstd,subvol=@snapshots/@home_snaps   0 0" >> /etc/fstab
-systemctl daemon-reload && mount -a
-
-echo -e ".. Edit home and root configuration"
-echo -e "... Allow user $NEWUSER to modify snapper config"
-setfacl -Rm "u:${NEWUSER}:rwx" /etc/snapper/configs
-setfacl -Rdm "u:${NEWUSER}:rwx" /etc/snapper/configs
-
-echo -e "... Allow user $NEWUSER and usergroup wheel to modify snapper"
-# sed -i "s|ALLOW_USERS=\"|ALLOW_USERS=\"${NEWUSER}|g" /etc/snapper/configs/home
-sed -i "s|ALLOW_USERS=\"|ALLOW_USERS=\"${NEWUSER}|g" /etc/snapper/configs/root
-# sed -i "s|ALLOW_GROUPS=\"|ALLOW_GROUPS=\"wheel|g" /etc/snapper/configs/home # Allow $NEWUSER to modify the files
-sed -i "s|ALLOW_GROUPS=\"|ALLOW_GROUPS=\"wheel|g" /etc/snapper/configs/root
-
-echo -e "... Enable ACL"
-# sed "s|SYNC_ACL=\"no|SYNC_ACL=\"yes|g" -i /etc/snapper/configs/home
-sed "s|SYNC_ACL=\"no|SYNC_ACL=\"yes|g" -i /etc/snapper/configs/root
-
-echo -e "... Change Timeline limit for snapshot retention"
-# # update snap config for home directory
-# sed  -i "s|TIMELINE_MIN_AGE=\"3600\"|TIMELINE_MIN_AGE=\"1800\"|g"         /etc/snapper/configs/home
-# sed  -i "s|TIMELINE_LIMIT_HOURLY=\"10\"|TIMELINE_LIMIT_HOURLY=\"96\"|g"   /etc/snapper/configs/home  # keep hourly backup for 48 hours
-# sed  -i "s|TIMELINE_LIMIT_DAILY=\"10\"|TIMELINE_LIMIT_DAILY=\"14\"|g"     /etc/snapper/configs/home  # keep daily backup for 14 days
-# sed  -i "s|TIMELINE_LIMIT_WEEKLY=\"0\"|TIMELINE_LIMIT_WEEKLY=\"3\"|g"     /etc/snapper/configs/home  # keep weekly backup for 4 weeks
-# sed  -i "s|TIMELINE_LIMIT_MONTHLY=\"10\"|TIMELINE_LIMIT_MONTHLY=\"12\"|g" /etc/snapper/configs/home  # keep monthly backup for 12 months
-# sed  -i "s|TIMELINE_LIMIT_YEARLY=\"10\"|TIMELINE_LIMIT_YEARLY=\"5\"|g"     /etc/snapper/configs/home  # keep yearly backup for 5 years
-# update snap config for root directory
-sed  -i "s|TIMELINE_MIN_AGE=\"3600\"|TIMELINE_MIN_AGE=\"0\"|g"         /etc/snapper/configs/root  # Allow all snapshots to be removed, independantly of age
-sed  -i "s|TIMELINE_LIMIT_HOURLY=\"1\"|TIMELINE_LIMIT_HOURLY=\"12\"|g"   /etc/snapper/configs/root  # keep hourly backup for 4 hours
-sed  -i "s|TIMELINE_LIMIT_DAILY=\"4\"|TIMELINE_LIMIT_DAILY=\"7\"|g"     /etc/snapper/configs/root  # keep daily backup for 7 days
-sed  -i "s|TIMELINE_LIMIT_WEEKLY=\"0\"|TIMELINE_LIMIT_WEEKLY=\"0\"|g"     /etc/snapper/configs/root  # keep weekly backup for 4 weeks
-sed  -i "s|TIMELINE_LIMIT_MONTHLY=\"10\"|TIMELINE_LIMIT_MONTHLY=\"12\"|g" /etc/snapper/configs/root  # keep monthly backup for 12 months
-sed  -i "s|TIMELINE_LIMIT_YEARLY=\"10\"|TIMELINE_LIMIT_YEARLY=\"5\"|g"     /etc/snapper/configs/root  # keep yearly backup for 5 years
-
-echo -e ".. Remove snapshots from mlocate database"
-sed -i 's/PRUNENAMES = "/PRUNENAMES = ".snapshots /g' /etc/updatedb.conf
-
-echo -e ".. Enable and start snapshots timer"
-systemctl start --now snapper-timeline.timer snapper-cleanup.timer  # start and enable snapper
-
-echo -e " ... Execute snapshots cleanup everyhour"
-SYSTEMD_EDITOR=tee systemctl edit snapper-cleanup.timer <<EOF
-[Timer]
-OnBoot=10min
-OnUnitActiveSec=1h
-EOF
-
-echo -e "... Take a snapshots every 5 minutes"
-SYSTEMD_EDITOR=tee systemctl edit snapper-timeline.timer <<EOF
-[Timer]
-OnCalendar=*:0/5
-EOF
-
-# enable snapshot at boot
-echo -e "... Take a snapshots at boot after mounting /.snapshots"
-systemctl enable snapper-boot.timer
-SYSTEMD_EDITOR=tee systemctl edit snapper-boot.service <<EOF
-[Unit]
-After=\\\\x2eboot.mount
-EOF
 
 
 # Image format
-# qt6-imageformats ffmpegthumbs lzop kdegraphics-thumbnailers kimageformats raw-thumbnailer kio-gdrive libappimage rawtherapee
+# qt6-imageformats lzop kdegraphics-thumbnailers kimageformats raw-thumbnailer kio-gdrive libappimage rawtherapee
 
 # FONT
 # ttf-droid
