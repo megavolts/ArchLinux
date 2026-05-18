@@ -14,7 +14,7 @@ yays(){yay -S --removemake --cleanafter --noconfirm $@}
 
 # Packages list redone as 2025-04-02
 echo -e "... install plasma windows manager"
-yays plasma-desktop pipewire-jack qt6-multimedia-ffmpeg plasma-thunderbolt pinentry kwalletmanager kwallet-pam kinfocenter kruler plasma-login-manager
+yays plasma-desktop pipewire-jack qt6-multimedia-ffmpeg plasma-thunderbolt pinentry kwalletmanager kwallet-pam kinfocenter kruler plasma-login-manager plymouth-kcm
 systemctl enable --now plasmalogin.service
 
 # Power
@@ -48,7 +48,7 @@ yays plasma-nm networkmanager-openvpn
 #systemctl enable --now avahi-daemon
 
 echo -e ".. file manager"
-yays dolphin dolphin-plugins ark p7zip zip ffmpegthumbs kdegraphics-thumbnailers kdenetwork-filesharing kdf kio-admin kompare purpose
+yays dolphin dolphin-plugins ark p7zip zip ffmpegthumbs kdegraphics-thumbnailers kdenetwork-filesharing kdf kio-admin kompare purpose raw-thumbnailer
 
 echo -e "... android tools"
 yays android-tools android-udev 
@@ -66,7 +66,8 @@ echo -e "... images"
 yays imagemagick guetzli geeqie inkscape gimp darktable inkscape libraw hugin
 
 echo -e ".. coding tools"
-yays sublime-text-4 terminator code 
+yays sublime-text-4 terminator code oh-my-zsh-git
+
 # pycharm-professional code
 
 echo -e "... musics and videos"
@@ -188,11 +189,69 @@ SYSTEMD_EDITOR=tee systemctl edit snapper-boot.service <<EOF
 After=\\\\x2eboot.mount
 EOF
 
+yays limine-snapper-sync
+doas cp /etc/limine-snapper-sync.conf /etc/default/limine
+sed  -i "s|#TARGET_OS_NAME=\"Arch Linux\"|TARGET_OS_NAME=\"Arch Linux\"|g"        /etc/default/limine
+sed  -i "s|#ESP_PATH=\"\/boot\"|ESP_PATH=\"\/efi\"|g"        /etc/default/limine
+sed  -i "s|ROOT_SNAPSHOTS_PATH=\"\/@\/.snapshots\"|ROOT_SNAPSHOTS_PATH=\"\/@snapshots\/@root_snaps\"|g"        /etc/default/limine
+sed  -i "s|#ENABLE_NOTIFICATION=yes|ENABLE_NOTIFICATION=yes|g"        /etc/default/limine
+cat >> /etc/default/limine << EOF
+
+# limine-entry-tool
+### Boot Integrity Check
+### Enable BLAKE2 checksum verification for bootable files. (yes|no)
+ENABLE_VERIFICATION=yes
+
+### Kernel Entries Order
+### Wildcard "*" matches any letter in kernel entry name
+### If ENABLE_SORT is set to "yes", only wildcard "*" entries are sorted alphabetically.
+BOOT_ORDER="*, *fallback, Snapshots"
+ENABLE_SORT=no
+
+### Find Bootloaders
+### Automatically add systemd-boot, rEFInd, or the default EFI loader to Limine if they are found in the ESP. (yes|no)
+FIND_BOOTLOADERS=yes
+
+### Authentication Method
+### Specify an authentication method: "sudo", "doas", "pkexec", "run0 --background=" or another method of your choice.
+AUTH_METHOD=doas
+
+
+### UKI (Unified Kernel Image)
+### Automatically create UKIs in '$ESP_PATH/EFI/Linux/' using mkinitcpio for UEFI. (yes|no)
+###
+### Advantage:
+###  - UKIs are automatically loaded by bootloaders like 'systemd-boot' and 'rEFInd'.
+### Disadvantage:
+###  - UKIs use more ESP space compared to separate 'initramfs' and 'vmlinuz' files, especially with multiple Limine snapshots.
+###
+### Additional notes:
+### - Duplicate 'initramfs' and 'vmlinuz' files are removed when 'limine-mkinitcpio' or 'limine-update' is run to generate a UKI.
+### - UKI ignores booting into a snapshot when Secure Boot is enabled. To resolve this, any embedded kernel cmdline is removed from the UKI, which will then read the external kernel cmdline.
+ENABLE_UKI=yes
+
+### mkinitcpio UKI Build Options
+### Additional options for mkinitcpio UKI builds
+### See: https://man.archlinux.org/man/mkinitcpio.8.en#OPTIONS_FOR_UNIFIED_KERNEL_IMAGE
+### Example: Add a splash screen
+MKINITCPIO_UKI_OPTIONS="--splash /usr/share/systemd/bootctl/splash-arch.bmp"
+EOF
+
+# 
+yays ttf-droid neofetch
+echo neofetch >> .zshrc
+
+
+
+
+
+
+### TO DO Later
+
+yay -S docker docker-compose
 
 yay -S --noconfirm protonmail-bridge protonvpn-gui 
-# Set up oh-my-zsh
-yay -S --noconfirm oh-my-zsh-git
-yay -S docker docker-compose
+
 
 
 
@@ -221,10 +280,19 @@ EOF
 
 
 # Image format
-# qt6-imageformats lzop kdegraphics-thumbnailers kimageformats raw-thumbnailer kio-gdrive libappimage rawtherapee
+# qt6-imageformats lzop  kimageformats kio-gdrive libappimage rawtherapee
 
-# FONT
-# ttf-droid
+
+
+
+
+
+
+###
+# Add yakuake to startups
+# yays() to bashrc
+# to add GDrive on Dolphin: set up account: https://discuss.kde.org/t/how-to-make-google-drive-work-for-you-for-a-while-at-least/34697
+
 
 # echo -e ".. python pagckages"
 # yays python-utils python-pipx python-setuptools python-utils python-numpy python-matplotlib python-scipy python-pandas python-openpyxl python-basemap python-pillow cython jupyterlab jupyter-notebook ipython  python-pyclipper
@@ -247,9 +315,9 @@ EOF
 
 # # IF ISSUE CHECK TO INSTALL
 # sddm-git
-echo "KWallet login"
-echo "auth            optional        pam_kwallet5.so" >> /etc/pam.d/sddm
-echo "session         optional        pam_kwallet5.so auto_start" >> /etc/pam.d/sddm
+#echo "KWallet login"
+#echo "auth            optional        pam_kwallet5.so" >> /etc/pam.d/sddm
+#echo "session         optional        pam_kwallet5.so auto_start" >> /etc/pam.d/sddm
 
 
 # # IF pass git is required, install pass-git

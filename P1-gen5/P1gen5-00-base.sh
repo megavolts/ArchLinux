@@ -170,7 +170,7 @@ pacstrap /mnt base linux-zen linux-zen-headers base-devel openssh doas ntp wget 
 
 # Enable unified 
 echo -e ".. Install basic tools"
-pacstrap /mnt plocate acl util-linux fwupd arp-scan htop lsof strace screen terminus-font
+pacstrap /mnt plocate acl util-linux fwupd arp-scan htop lsof strace screen terminus-font plymouth
 
 echo -e "... [config] plocate: includes btrfs mountpoints when updateding the database"
 sed -i 's|PRUNE_BIND_MOUNTS = "yes"|PRUNE_BIND_MOUNTS = "no"|' /mnt/etc/updatedb.conf
@@ -267,13 +267,12 @@ ROOTUUID=$(cryptsetup luksDump /dev/disk/by-partlabel/CRYPTROOT | grep UUID | cu
 
 # Configure  cmdline
 echo "loglevel=3" >> /mnt/etc/kernel/cmdline
-echo "loglevel=4" >> /mnt/etc/kernel/cmdline
 mkdir /mnt/etc/cmdline.d
-echo "rd.luks.name=$ROOTUUID=root root=/dev/mapper/root rootfstype=btrfs rootflags=subvol=/@ rw resume=/dev/mapper/root resume_offset=$ROFFSET" >> /mnt/etc/cmdline.d/root.conf
+echo "rd.luks.name=$ROOTUUID=root root=/dev/mapper/root rootfstype=btrfs rootflags=subvol=/@ rw resume=/dev/mapper/root resume_offset=$ROFFSET quiet splash" >> /mnt/etc/cmdline.d/root.conf
 
 # Adjust mkinitcpio.conf
-# add sd-encrypt to hooks
-sed -i 's/sd-vconsole /sd-vconsole sd-encrypt /g' /mnt/etc/mkinitcpio.conf
+# add sd-encrypt and plymouth to hooks. 
+sed -i 's/sd-vconsole /sd-vconsole plymouth sd-encrypt/g' /mnt/etc/mkinitcpio.conf
 
 # Configure Unified Kernel Image UKI
 sed -i 's/ALL_config/#ALL_config /g' /mnt/etc/mkinitcpio.d/linux-zen.preset
@@ -310,10 +309,10 @@ arch-chroot efibootmgr --create --disk /dev/nvme0n1 --part 1 --label "Limine Boo
       --loader '\EFI\limine\BOOTX64.EFI' --unicode
 arch-chroot cat << EOF < /efi/limine.conf
 timeout: 5
-/Arch Linux
+/+Arch Linux
     protocol: efi
     path: boot():/EFI/Linux/arch-linux-zen.efi
-    cmdline: loglevel=3 rd.luks.name=c80756ae-e468-4f5b-8269-a046d8edc257=root root=/dev/mapper/root rootfstype=btrfs rootflags=subvol=/@ rw resume=/dev/mapper/root resume_offset=533760
+    cmdline: loglevel=3 rd.luks.name=c80756ae-e468-4f5b-8269-a046d8edc257=root root=/dev/mapper/root rootfstype=btrfs rootflags=subvol=/@ rw resume=/dev/mapper/root resume_offset=533760 quiet splash
 /Memtest86+
     protocol: efi
     path: boot():/memtest86+/memtest.efi

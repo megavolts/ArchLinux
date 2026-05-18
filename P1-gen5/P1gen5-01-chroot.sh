@@ -68,10 +68,14 @@ pacman -S --noconfirm mesa vulkan-intel vulkan-mesa-layers intel-media-driver
 # Enable GuC/HuC firmware loading
 echo "options i915 enable_guc=3" >> /etc/modprobe.d/i915.conf
 
+# Disable build of debug packages
+echo -e "... disable build of debug packge when using makepkg"
+sed -i "s| debug lto| \!debug lto|g" /etc/makepkg.conf
+
+
 ## Install liminie helper
 yays  limine-mkinitcpio-hook
-
-
+# TODO MORE
 
 #pacman -S --noconfirm nvidia-open nvidia-prime
 
@@ -89,7 +93,7 @@ Target = usr/src/*/dkms.conf
 Depends = rsync
 Description = Backing up /boot...
 When = PostTransaction
-Exec = /usr/bin/rsync -avh --delete /efi /.efibkp && /usr/bin/rsync -avh --delete /efi /.efiwin
+Exec = /bin/sh -c "/usr/bin/rsync -avh --delete /efi /.efibkp && /usr/bin/rsync -avh --delete /efi /.efiwin"
 EOF
 
 exit
