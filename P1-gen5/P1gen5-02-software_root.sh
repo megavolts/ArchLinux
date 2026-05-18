@@ -244,6 +244,11 @@ After=\\\\x2eboot.mount
 EOF
 
 
+yays qgis python-gdal
+
+yay -S --noconfirm arduino-ide-bin
+# Allow user to serial port
+
 # Image format
 # qt6-imageformats ffmpegthumbs lzop kdegraphics-thumbnailers kimageformats raw-thumbnailer kio-gdrive libappimage rawtherapee
 

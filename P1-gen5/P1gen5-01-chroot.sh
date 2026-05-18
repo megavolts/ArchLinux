@@ -125,8 +125,8 @@ When = PostTransaction
 Exec = /usr/bin/rsync -avh --delete /boot/ /.bootbkp && /usr/bin/rsync -avh --delete /boot/ /.bootwin
 EOF
 
-refind-install --usedefault $WINBOOTPART
-refind-install --usedefault $NUXBOOTPART
+# refind-install --usedefault $WINBOOTPART
+# refind-install --usedefault $NUXBOOTPART
 
 if [! $NEWINSTALL ]; then
   if [-d boot/refind_linux.conf ]; then

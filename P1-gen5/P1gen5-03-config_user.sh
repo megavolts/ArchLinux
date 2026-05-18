@@ -140,7 +140,7 @@ EOF
 
 # Docker and install
 echo -e "Install docker"
-yay -S docker docker-compose
+yay -S docker docker-buildx
 echo -e ".. add $USER to docker group"
 sudo usermod -aG docker megavolts
 sudo systemctl enable --now docker
@@ -158,7 +158,7 @@ chmod +x swag/init.sh
 ./swag/init.sh
 
 echo -e ".. Set adguard & unbound"
-git clone clone git@github.com:megavolts/adguard.git
+git clone git@github.com:megavolts/adguard.git
 chmod +x adguard/init.sh
 ./adguard/init.sh
 
