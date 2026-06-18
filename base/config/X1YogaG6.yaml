@@ -1,0 +1,16 @@
+hostname: "dahu"
+user: "megavolts"
+dualboot: true
+newinstall: true
+partition:
+  windows:
+    disk: /dev/nvme0n15
+    bootpart: 1
+  linux:
+    disk: /dev/nvme0n1
+    bootpart: 1
+    rootpart: 5
+    datapart: 5
+wipe:
+  root: true
+  data: false
