@@ -279,11 +279,6 @@ EOF
 
 
 
-yays qgis python-gdal
-
-yay -S --noconfirm arduino-ide-bin
-# Allow user to serial port
-
 # Image format
 # qt6-imageformats lzop  kimageformats kio-gdrive libappimage rawtherapee
 

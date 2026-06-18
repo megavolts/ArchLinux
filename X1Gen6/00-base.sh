@@ -31,17 +31,22 @@
 #  5       540051456      5129682943   2.1  TiB    8300  CRYPTROOT
 #  5      5129682944      7814035455   1.25 TiB    0700  PHOTOGRAPHY
 # btrfs with flat layout: /, /var/
-INSTALL=true
-NEWINSTALL=false
-WIPEDISK=false
-NTFSDATA=true
 
-HOSTNAME=adak
-DISK=/dev/nvme0n1
+HOSTNAME=dahu
+WINDISK=/dev/nvme0n1
+NUXDISK=/dev/nvme0n1
+WINBOOTPART=1
+NUXBOOTPART=1
+NUXROOTPART=5
+NUXDATAPART=5
+NUXPHOTPART=6
 NEWUSER=megavolts
-BOOTPART=1
-CRYPTPART=5
-NTFSPART=6
+
+NEWINSTALL=false
+NEWROOT=true
+WIPEDATA=false
+NTFSDATA=false
+
 TZDATA=America/Anchorage
 
 echo 'Enter a default passphrase use to encrypt the disk and serve as password for root and megavolts:'

@@ -10,20 +10,19 @@ read PASSWORD
 # enable audio for the user
 echo -e ".. enable sound for $USER"
 systemctl enable --user --now pipewire
-#systemctl enable --user --now pipewire-pulse
 
 echo -e ".. create noCOW directory for $USER"
 balooctl6 disable
 
 # Create noCOW directory
-rm -R /home/$USER/{.thunderbird,.mozilla,.local/share/baloo,.config/protonmail/bridge/cache}
+rm -Rf /home/$USER/{.thunderbird,.mozilla,.local/share/baloo,.config/protonmail/bridge/cache}
 mkdir -p /home/$USER/{.thunderbird,.mozilla,.local/share/baloo,.config/protonmail/bridge/cache}
 
 # Disable COW for thunderbird, baloo, protonmail
 chattr +C /home/$USER/.thunderbird
 chattr +C /home/$USER/.local/share/baloo/
 chattr +C /home/$USER/.mozilla
-chattr +C /home/$USER/.config/protonmail/
+chattr +C /home/$USER/.config/protonmail/bridge/cache/
 
 # For USER megavolts
 # Import private gpg
@@ -34,19 +33,18 @@ gpg --refresh-keys
 
 # Create noCOW yay build subvolume under .cache/yay
 echo -e "... create noCOW subvolume for yay"
-sudo rm -R /home/$USER/.cache/yay
+doas rm -R /home/$USER/.cache/yay
 mkdir /home/$USER/.cache/yay
 chattr +C /home/$USER/.cache/yay
 if  ! [ -d /storage/btrfs/data/@${USER} ]; then
   doas btrfs subvolume create /storage/btrfs/data/@${USER}
 fi
-if [ -d /stroage/btrfs/data/@{USER}/@cache_yay ]; then
+if [ -d /storage/btrfs/data/@$USER/@cache_yay ]; then
   doas btrfs subvolume delete /storage/btrfs/data/@$USER/@cache_yay
 fi
 doas btrfs subvolume create /storage/btrfs/data/@${USER}/@cache_yay
-
-if ! [ -d /mnt/btrfs/data/@${USER}/@download ] ; then
-  doas btrfs subvolume create /storage/btrfs/data/@${USER}/@downloads
+if ! [ -d /storage/btrfs/data/@$USER/@downloads ] ; then
+  doas btrfs subvolume create /storage/btrfs/data/@$USER/@downloads
 fi
 cat <<EOF | doas tee -a /etc/fstab > /dev/null
 ## USER: megavolts
@@ -57,20 +55,6 @@ EOF
 mkdir -p /home/$USER/Downloads 
 doas systemctl daemon-reload
 doas mount -a
-
-# For all user
-# enable audio for the user
-echo -e ".. enable sound for $USER"
-systemctl enable --user --now pipewire
-#systemctl enable --user --now pipewire-pulse
-
-# For USER megavolts
-# Import private gpg
-echo -e "Importing private gpg key. Please select the correct file"
-KEYFILE=$(kdialog --getopenfilename)
-gpg --allow-secret-key-import --import $KEYFILE
-gpg --refresh-keys
-
 
 echo -e "Give access to megavolts to /opt and /storage/data"
 doas setfacl -Rm "u:${USER}:rwx" /opt
@@ -117,14 +101,14 @@ cat <<EOF | doas tee -a /etc/fstab > /dev/null
 EOF
 doas systemctl daemon-reload && mount -a
 
+# UAF VPN
+yays openconnect networkmanager-openconnect
+
 
 # Protonmail
 echo -e "... configure protonmail bridge"
 yay -S --noconfirm protonmail-bridge protonvpn-gui 
 protonmail-bridge &
-
-# Set up oh-my-zsh
-yay -S --noconfirm oh-my-zsh-git
 
 # Set up git global
 echo -e "... configure global variable for git"
@@ -133,24 +117,21 @@ git config --global user.name "Marc Oggier"
 
 # Enable sshagent for session
 echo -e ".. Enable SSH agents for session"
+systemctl --user enable --now ssh-agent
+
 #yay -S ksshaskpas
 # echo "AddKeysToAgent yes" >> .ssh/config
 # echo 'SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/ssh-agent.socket"' > ~/.config/environment.d/ssh_auth_socket.conf
-systemctl --user enable --now ssh-agent
-
-# Set up back in time
-# echo -e "... set up secondary backup system"
-# yay -S --noconfirm backintime
 
 echo -e "... tuning firefox"
 echo -e "Arkenfox setup"
 
-echo -e "... force KDE dialog box everywhere"
-mkdir ~/.config/systemd/user/xdg-desktop-portal.service.d
-cat <<EOF | tee -a ~/.config/systemd/user/xdg-desktop-portal.service.d/override.conf > /dev/null
-[Service]
-Environment="XDG_CURRENT_DESKTOP=KDE"
-EOF
+# echo -e "... force KDE dialog box everywhere"
+# mkdir ~/.config/systemd/user/xdg-desktop-portal.service.d
+# cat <<EOF | tee -a ~/.config/systemd/user/xdg-desktop-portal.service.d/override.conf > /dev/null
+# [Service]
+# Environment="XDG_CURRENT_DESKTOP=KDE"
+# EOF
 
 # Docker and install
 echo -e "Install docker"
@@ -192,9 +173,11 @@ then
   sed -i 's|enableWaylandShare=false|enableWaylandShare=true|g' ~/.config/zoomus.conf
 fi
 
+# Allow fingerprint
+yays fprintd
+fprintd-enrol
 
 cat << EOF |  doas tee -a /etc/pam.d/doas > /dev/null
-auth      sufficient pam_fprintd_grosshack.s
 auth      sufficient pam_unix.so try_first_pass nullok
 auth      sufficient pam_fprintd.so
 EOF
