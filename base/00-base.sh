@@ -9,22 +9,36 @@
 #  3       537921536      7814035455     3.4 TiB   8300  CRYPTDATA
 # Windows Disk: /dev/nvme0n1
 
+SSN=$(dmidecode -s system-serial-number)
+if [[ $SSN == "PW04CDHX" ]]; then
+  DUALBOOT=true
+  echo "# P1 Vouivre"
+  HOSTNAME=vouivre
+  WINDISK=/dev/nvme1n1
+  WINBOOTPART=1
+  NUXDISK=/dev/nvme0n1
+  NUXBOOTPART=1
+  NUXROOTPART=2
+  NUXDATAPART=3
+  # TODO: check for win disk
+elif [[ $SSN == "PF3EV1ZS" ]]; then
+  DUALBOOT=true
+  # TODO: Read from config file
+  WINDISK=/dev/nvme0n1
+  NUXDISK=/dev/nvme0n1
+  WINBOOTPART=1
+  NUXBOOTPART=1
+  NUXROOTPART=5
+  NUXDATAPART=5
+  NUXPHOTPART=6
+fi
 
-# TODO: Read from config file
-WINDISK=/dev/nvme0n1
-NUXDISK=/dev/nvme0n1
-WINBOOTPART=1
-NUXBOOTPART=1
-NUXROOTPART=5
-NUXDATAPART=5
-NUXPHOTPART=6
 NEWUSER=megavolts
-
 NEWINSTALL=false
 NEWROOT=true
 WIPEDATA=false
 NTFSDATA=false
-TZDATA=America/Anchorage
+TZDATA="America/Anchorage"
 
 echo 'Enter a default passphrase use to encrypt the disk and serve as password for root and megavolts:'
 stty -echo
@@ -41,39 +55,72 @@ echo -e ".. Mount subvolume for install"
 mount -o defaults,compress=zstd,noatime,nodev,subvol=@ /dev/mapper/root /mnt/
 
 echo -e "... create root subvolume mountpoints"
-mkdir -p /mnt/{efi,.efiwin,var/{abs,cache,log,lib/{docker,libvirt,containers},tmp},root,tmp,home,storage/{data,btrfs/root}}
+mkdir -p /mnt/{efi,var/{abs,cache,log,lib/{docker,libvirt,containers},tmp},root,tmp,home,storage/{data,btrfs/root}}
+
 mount -o defaults,compress=zstd,noatime,nodev,nodatacow,subvol=@var_log /dev/mapper/root /mnt/var/log
 mount -o defaults,compress=zstd,noatime,nodev,nodatacow,subvol=@var_cache /dev/mapper/root /mnt/var/cache
 mount -o defaults,compress=zstd,noatime,nodev,nodatacow,subvol=@root /dev/mapper/root /mnt/root
-mount -o defaults,compress=zstd,noatime,nodev,nodatacow,subvol=@home /dev/mapper/root /mnt/home
 
 echo -e "... mount root btrfs subvolume on /storage/btrfs/root"
+mkdir -p /mnt/storage/btrfs/root
 mount -o defaults,compress=zstd,noatime,nodev /dev/mapper/root /mnt/storage/btrfs/root
+
+mkdir -p /mnt/efi
+mount /dev/disk/by-label/EFI /mnt/efi
 
 # boot partition EFI and EFI_LINUX
 echo -e ".. mount linux disk boot partition to /mnt/boot/efi"
-mount /dev/disk/by-label/EFI /mnt/efi
 
-if $DUALBOOT
+if $DUALBOOT; then
   echo ".. EFI partition: preserve Windows Boot Loader"
 
   if [[ -f /mnt/efi/limine.conf ]]; then
     # remove previous kernel
     OLD_LIMINE=$(cat /mnt/efi/limine.conf | grep "_linux" | head -n 1 | cut -d '/' -f4 | cut -d '_' -f1)
-    rm -R /mnt/limine.conf*
-    rm -R /mnt/loader 
-    rm -R /mnt/systemd
-    rm -R /mnt/EFI/Linux 
-    rm -R /mnt/EFI/limine
-    rm -R /mnt/$OLD_LIMINE
+    rm -R /mnt/efi/limine.conf*
+    rm -R /mnt/efi/loader 
+    rm -R /mnt/efi/systemd
+    rm -R /mnt/efi/EFI/Linux 
+    rm -R /mnt/efi/EFI/limine
+    rm -R /mnt/efi/$OLD_LIMINE
   fi
+fi
 
 if [[ $HOSTNAME == "vouivre" ]]; then
-  echo -e ".. mount windows disk boot partition to /mnt/boot/efiwin"
+  echo -e ".. format nux disk boot partition labelled with EFIARCH"
+  mkfs.vfat -F32 /dev/disk/by-label/EFIARCH -n EFIARCH
+  echo -e ".. mount linux disk boot partition to /mnt/.efiarch"
+  mkdir -p /mnt/.efiarch/
   mount /dev/disk/by-label/EFIARCH /mnt/.efiarch
   # copy any windows boot information from EFI to EFIARCH
   # TODO: REMOVE AT DESTINATION TOO
   rsync /mnt/efi/ /mnt/.efiarch -hAr --info=progress2
+fi
+
+echo -e ".. Configuring swap"
+# Create swapfile if not existing
+if ! [[ -d /mnt/storage/btrfs/root/@swap ]]; then
+  btrfs subvolume create /mnt/storage/btrfs/root/@swap
+fi
+if [[ -f /mnt/storage/btrfs/root/@swap/swapfile ]]; then
+  rm /mnt/storage/btrfs/root/@swap/swapfile
+fi
+if [[ $HOSTNAME == vouivre ]]; then
+  btrfs filesystem mkswapfile --size=64G /mnt/storage/btrfs/root/@swap/swapfile
+elif [[ $HOSTNAME == dahu ]]; then
+  btrfs filesystem mkswapfile --size=32G /mnt/storage/btrfs/root/@swap/swapfile
+else
+  echo "swap configuration: HOSTNAME not define"
+fi
+swapon /mnt/storage/btrfs/root/@swap/swapfile
+
+# HOME
+echo -e ".. Configuring home"
+if [[ $HOSTNAME = vouivre ]]; then
+  echo -en $PASSWORD | cryptsetup luksOpen /dev/disk/by-partlabel/CRYPTDATA data
+  mkdir -p /mnt/storage/btrfs/data
+  mount -o defaults,compress=zstd,noatime,nodev /dev/mapper/data /mnt/storage/btrfs/data
+  mount -o defaults,compress=zstd,noatime,nodev,subvol=@home /dev/mapper/data /mnt/home
 fi
 
 echo -e "Arch Linux Installation"
@@ -84,9 +131,8 @@ echo -e ".. Install base packages"
 pacman -Sy
 pacstrap /mnt base linux-zen linux-zen-headers base-devel openssh doas ntp wget grml-zsh-config btrfs-progs networkmanager usbutils linux-firmware sof-firmware yajl mkinitcpio git go nano zsh terminus-font refind intel-ucode rsync iwd dhcpcd
 
-# Enable unified 
 echo -e ".. Install basic tools"
-pacstrap /mnt plocate acl util-linux fwupd arp-scan htop lsof strace screen terminus-font plymouth less
+pacstrap /mnt plocate acl util-linux fwupd arp-scan htop lsof strace screen terminus-font plymouth less inetutils
 
 echo -e "... [config] plocate: includes btrfs mountpoints when updateding the database"
 sed -i 's|PRUNE_BIND_MOUNTS = "yes"|PRUNE_BIND_MOUNTS = "no"|' /mnt/etc/updatedb.conf
@@ -99,8 +145,9 @@ sed 's/\/mnt\/swap/\/swap/g' /mnt/etc/fstab
 echo -e " .. Allow wheel group for doas"
 cat << EOF > /mnt/etc/doas.conf
 permit persist setenv {PATH=/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin} :wheel
-permit root as megavolts
+permit nopass root as megavolts
 EOF
+
 chown -c root:root /mnt/etc/doas.conf
 chmod -c 0400 /mnt/etc/doas.conf
 arch-chroot /mnt bash -c "if doas -C /etc/doas.conf; then echo \"config ok\"; else echo \"config error\"; fi"
@@ -148,12 +195,6 @@ if [[ $HOSTNAME == "vouivre" ]]; then
 fi
 
 ### USERS ###
-echo -e "Create user"
-echo 'Enter a default passphrase use to encrypt the disk and serve as password for root and megavolts:'
-stty -echo
-read PASSWORD
-stty echo
-# ROOT options
 echo -e "Set root password"
 arch-chroot /mnt passwd root << EOF
 $PASSWORD
@@ -213,9 +254,13 @@ systemctl --root /mnt enable fstrim.timer
 pacstrap /mnt limine
 mkdir /mnt/efi/EFI/Limine
 cp /mnt/usr/share/limine/BOOTX64.EFI /mnt/efi/EFI/Limine/
+
 ## Create Limine boot entry via efibootmgr
 arch-chroot /mnt bootctl install --esp-path=/efi
-arch-chroot /mnt efibootmgr --create --disk $NUXDISK --part $NUXBOOTPART --label "Limine Boot Loader" \
+arch-chroot /mnt efibootmgr --create --disk $WINDISK --part $WINBOOTPART --label "Limine Boot Loader - win" \
+      --loader '\EFI\Limine\BOOTX64.EFI' --unicode
+arch-chroot /mnt bootctl install --esp-path=/.efiarch     
+arch-chroot /mnt efibootmgr --create --disk $NUXDISK --part $NUXBOOTPART --label "Limine Boot Loader - nux" \
       --loader '\EFI\Limine\BOOTX64.EFI' --unicode
 cat << EOF > /mnt/efi/limine.conf
 timeout: 5
@@ -231,6 +276,11 @@ timeout: 5
     path: boot():/EFI/Microsoft/Boot/bootmgfw.efi
 EOF
 
+if [[ $HOSTNAME == vouivre ]]; then
+  rsync /mount
+fi
+
+
 echo -e "Tuning pacman"
 echo -e ".. Enable multilib" 
 sed -i 's|#[multilib]|[multilib]|' /mnt/etc/pacman.conf
@@ -244,6 +294,7 @@ arch-chroot /mnt pacman -S --noconfirm archlinux-keyring rebuild-detector
 arch-chroot /mnt pacman-key --init
 arch-chroot /mnt pacman-key --populate archlinux
 arch-chroot /mnt pacman -Syu --noconfirm
+
 # Disable build of debug packages
 echo -e "... disable build of debug packge when using makepkg"
 sed -i "s| debug lto| \!debug lto|g" /etc/makepkg.conf
@@ -257,21 +308,25 @@ echo -e "Install aur package manager"
 arch-chroot /mnt wget https://aur.archlinux.org/cgit/aur.git/snapshot/package-query.tar.gz
 arch-chroot /mnt tar -xvzf package-query.tar.gz -C /home/$NEWUSER
 arch-chroot /mnt chown ${NEWUSER}:users /home/$NEWUSER/package-query -R
-arch-chroot /mnt doas -u ${NEWUSER} bash -c "makepkg -s --noconfirm -D /home/$NEWUSER/package-query"
+echo -en $PASSWORD | arch-chroot /mnt doas -u ${NEWUSER} bash -c "makepkg -s --noconfirm -D /home/$NEWUSER/package-query"
 arch-chroot /mnt bash -c "pacman -U --noconfirm /home/${NEWUSER}/package-query/package-query-*.zst"
-arch-chroot /mnt doas -u ${NEWUSER} bash -c "yay --sudo doas --sudoflags -- --save"
+
 arch-chroot /mnt wget https://aur.archlinux.org/cgit/aur.git/snapshot/yay.tar.gz
 arch-chroot /mnt tar -xvzf yay.tar.gz -C /home/$NEWUSER
 arch-chroot /mnt chown ${NEWUSER}:users /home/$NEWUSER/yay -R
-arch-chroot /mnt doas -u ${NEWUSER} bash -c "makepkg -s --noconfirm -D /home/$NEWUSER/yay"
+echo -en $PASSWORD | arch-chroot /mnt doas -u ${NEWUSER} bash -c "makepkg -s --noconfirm -D /home/$NEWUSER/yay" 
 arch-chroot /mnt bash -c "pacman -U --noconfirm /home/${NEWUSER}/yay/yay-*.zst"
+echo -en $PASSWORD | arch-chroot /mnt doas -u ${NEWUSER} bash -c "yay --sudo doas --sudoflags -- --save"
 arch-chroot /mnt rm -R /home/${NEWUSER}/{yay,package-query}
+
+yays(){arch-chroot /mnt doas -u $NEWUSER bash -c "yay  --removemake --cleanafter --noconfirm -S $1"}
+
 
 ## FOR P1 only
 if [[ $HOSTNAME == "vouivre" ]]; then
   echo -e ".. Set up crypttab to unlock data"
   DATAUUID=$(cryptsetup luksDump /dev/disk/by-partlabel/CRYPTDATA | grep UUID | cut -f2- -d: | sed -e 's/^[ \t]*//')
-  echo "data   UUID=$DATAUUID  /etc/cryptfs.key" >> /etc/crypttab
+  echo "data   UUID=$DATAUUID  /etc/cryptfs.key" >> /mnt/etc/crypttab
 fi
 
 ## Intel Graphics Software
@@ -282,14 +337,11 @@ arch-chroot /mnt pacman -S --noconfirm mesa vulkan-intel vulkan-mesa-layers inte
 # Enable GuC/HuC firmware loading
 echo "options i915 enable_guc=3" >> /mnt/etc/modprobe.d/i915.conf
 
-yays(){doas -u $NEWUSER bash -c "yay -S --removemake --cleanafter --noconfirm $1"}
-#echo "permit nopass megavolts as root" >>  /mnt/etc/doas.conf
-echo "permit nopass root as megavolts" >> /mnt/etc/doas.conf
 
 # Packages list redone as 2025-04-02
 # Windows Manager
 
-arch-chroot /mnt pacman -S --noconfirm plasma-desktop pipewire-jack qt6-multimedia-ffmpeg plasma-thunderbolt pinentry kwalletmanager kwallet-pam kinfocenter kruler plasma-login-manager plymouth-kcm
+arch-chroot /mnt pacman -S --noconfirm plasma-desktop pipewire-jack qt6-multimedia-ffmpeg plasma-thunderbolt pinentry kwalletmanager kwallet-pam ksshaskpass kinfocenter kruler plasma-login-manager plymouth-kcm
 systemctl --root /mnt enable plasmalogin.service
 
 # Power
@@ -305,14 +357,15 @@ arch-chroot /mnt pacman -S --noconfirm  deskflow kscreen wl-clipboard colord-kde
 
 echo -e ".. install software"
 echo -e "... terminal"
-arch-chroot /mnt pacman -S --noconfirm  yakuake kdialog kfind kdeconnect dg-desktop-portal-kde solaar
+arch-chroot /mnt pacman -S --noconfirm  yakuake kdialog kfind kdeconnect xdg-desktop-portal-kde solaar
 
 echo -e ".. coding tools"
 arch-chroot /mnt pacman -S --noconfirm  code
-yays sublime-text-4 oh-my-zsh-git pycharm
+echo -en $PASSWORD | yays sublime-text-4 oh-my-zsh-git pycharm
 
 echo -e "... network tools"
-arch-chroot /mnt pacman -S --noconfirm  plasma-nm networkmanager-openvpn dnsmasq
+arch-chroot /mnt pacman -S --noconfirm  plasma-nm networkmanager-openvpn dnsmasq networkmanager-openconnect   
+echo -en $PASSWORD | yays geteduroam
 
 echo -e "... bluetooth"
 arch-chroot /mnt pacman -S --noconfirm  bluez bluez-utils bluedevil
@@ -320,21 +373,21 @@ systemctl --root /mnt enable bluetooth.service
 
 echo -e ".... partition tools"
 arch-chroot /mnt pacman -S --noconfirm  gparted ntfs-3g exfatprogs mtools sshfs dosfstools
-yays bindfs
+echo -en $PASSWORD | yays bindfs
 
 echo -e ".... file manager"
 arch-chroot /mnt pacman -S --noconfirm  dolphin dolphin-plugins ark p7zip zip ffmpegthumbs kdegraphics-thumbnailers kdenetwork-filesharing kdf kio-admin kompare purpose
-yays raw-thumbnailer
+echo -en $PASSWORD | yays raw-thumbnailer
 
 echo -e "... android tools"
 arch-chroot /mnt pacman -S --noconfirm  android-tools android-udev 
 
 echo -e ".;. internet software"
-arch-chroot /mnt pacman -S --noconfirm  firefox thunderbird filezilla zoom slack-wayland transmission-qt
-yays  zoom
+arch-chroot /mnt pacman -S --noconfirm  firefox thunderbird filezilla transmission-qt protonmail-bridge 
+echo -en $PASSWORD | yays  zoom zen-browser-bin
 
 echo -e ".. sync software"
-yays c++utilities qtutilities-qt6 qtforkawesome-qt6 syncthingtray-qt6 nextcloud-client 
+echo -en $PASSWORD | yays c++utilities qtutilities-qt6 qtforkawesome-qt6 syncthingtray-qt6 nextcloud-client 
 
 echo -e "... viewer"
 arch-chroot /mnt pacman -S --noconfirm  okular spectacle tesseract-data-eng tesseract-data-fra
@@ -342,33 +395,97 @@ arch-chroot /mnt pacman -S --noconfirm  okular spectacle tesseract-data-eng tess
 echo -e "... video"
 arch-chroot /mnt pacman -S --noconfirm  vlc ffmpeg vlc-plugins-all
 
-pacman -S libreoffice-fresh libreoffice-extension-texmaths
-pacman -S aspell-fr aspell-en aspell-de hunspell-en_US hunspell-fr-comprehensive hunspell-de hyphen-en hyphen-en hyphen-de libmythes mythes-en mythes-fr
-yays zotero-bin libreoffice-extension-grammalecte-fr
+arch-chroot /mnt pacman -S --noconfirm libreoffice-fresh libreoffice-extension-texmaths
+arch-chroot /mnt pacman -S --noconfirm aspell-fr aspell-en aspell-de hunspell-en_US hunspell-fr-comprehensive hunspell-de hyphen-en hyphen-en hyphen-de libmythes mythes-en mythes-fr
+echo -en $PASSWORD | yays zotero-bin libreoffice-extension-grammalecte-fr
 
 echo -e " ..  Install pacman and downgrade tools"
-yays paccache-hook downgrade
+echo -en $PASSWORD | yays paccache-hook downgrade
 
 echo -e ".. virtualization tools"
-pacman -S virtualbox virtualbox-guest-iso virtualbox-host-dkms
-yays virtualbox-ext-oracle
+arch-chroot /mnt pacman -S --noconfirm virtualbox virtualbox-guest-iso virtualbox-host-dkms
+echo -en $PASSWORD | yays virtualbox-ext-oracle
 
-pacman -S ttf-droid
-yays neofetch
+arch-chroot /mnt pacman -S --noconfirm ttf-droid
+echo -en $PASSWORD | yays neofetch
 echo neofetch >> /mnt/home/$NEWUSER/.zshrc
 
 echo -e ".. Installing tailscale, follow the link to login"
-pacman -S tailscale
-yays traysacle
+arch-chroot /mnt pacman -S --noconfirm tailscale
+echo -en $PASSWORD | yays tail-tray
+systemctl --root enable tailscale-wait-online.service 
+
 
 echo -e "Install snapper, a snapshots manager "
-pacman -S snapper
-yays snapper-gui-git snap-pac
+arch-chroot /mnt pacman -S --noconfirm snapper
+echo -en $PASSWORD | yays snapper-gui-git snap-pac
 
-pacman -S qgis
+arch-chroot /mnt pacman -S --noconfirm qgis
 
 echo -e "... file sharing"
-pacman -S samba kdenetwork-filesharing
+arch-chroot /mnt pacman -S --noconfirm samba kdenetwork-filesharing kio-gdrive
+# Modify google provider with
+cat <<EOF | tee -a  /mnt/usr/share/accounts/providers/kde/google.provider > /dev/null
+<?xml version="1.0" encoding="UTF-8"?>
+<provider id="google">
+  <name>Google</name>
+  
+  <description>Adapted Google Drive and YouTube</description>
+  <icon>im-google</icon>
+  <translations>kaccounts-providers</translations>
+  <domains>.*google\.com</domains>
+
+  <template>
+    <group name="auth">
+      <setting name="method">oauth2</setting>
+      <setting name="mechanism">web_server</setting>
+      <group name="oauth2">
+        <group name="web_server">
+          <setting name="Host">accounts.google.com</setting>
+          <setting name="AuthPath">o/oauth2/auth?access_type=offline</setting>
+          <setting name="TokenPath">o/oauth2/token</setting>
+          <setting name="RedirectUri">http://localhost/oauth2callback</setting>
+          
+          <setting name="ResponseType">code</setting>
+          <setting type="as" name="Scope">[
+              'https://www.googleapis.com/auth/userinfo.email',
+              'https://www.googleapis.com/auth/userinfo.profile',
+              'https://www.googleapis.com/auth/calendar',
+              'https://www.googleapis.com/auth/tasks',
+              'https://www.googleapis.com/auth/drive'
+          ]</setting>
+          <setting type="as" name="AllowedSchemes">['https']</setting>
+          <setting name="ClientId">44438659992-7kgjeitenc16ssihbtdjbgguch7ju55s.apps.googleusercontent.com</setting>
+          <setting name="ClientSecret">-gMLuQyDiI0XrQS_vx_mhuYF</setting>
+          <setting type="b" name="ForceClientAuthViaRequestBody">true</setting>
+        </group>
+      </group>
+    </group>
+  </template>
+</provider>
+EOF
+
+
+#Utility tooly
+arch-chroot /mnt pacman -S --noconfirm fprintd
+# ONly allow root to enroll fingerprint (fprintd-enroll $USER)
+cat <<EOF | tee -a /mnt/etc/polkit-1/rules.d/50-net.reactivated.fprint.device.enroll.rules > /dev/null
+polkit.addRule(function (action, subject) {
+  if (action.id == "net.reactivated.fprint.device.enroll") {
+    return subject.user == "root" ? polkit.Result.YES : polkit.Result.NO
+  }
+})
+EOF
+sed -i '2i\
+auth      sufficient pam_unix.so try_first_pass nullok
+auth      sufficient pam_fprintd.so' /mnt/etc/pam.d/doas
+
+sed -i '2i\
+auth            sufficient      pam_unix.so try_first_pass likeauth nullok\
+auth            sufficient      pam_fprintd.so' /mnt/etc/pam.d/system-local-login
+
+
+
 
 # Enable snapshots with snapper
 echo -e ".. Configure snapper"
@@ -380,7 +497,22 @@ if [ -d "/.snapshots" ]; then
 fi
 
 
+
+swapoff /mnt/storage/btrfs/root/@swap/swapfile
+umount /mnt/{boot,.bootwin,storage,storage/data,storage/btrfs/root,storage/btrfs/data,var/log,var/tmp,/tmp,/var/cache/pacman/pkg,var/abs,/home}
+reboot
+
+
+
 # Create root and home snapper config
+# ON REBOOT
+
+tailscale up --ssh --accept-routes
+
+
+
+
+
 snapper -c root create-config /
 btrfs subvolume delete /.snapshots
 mkdir /.snapshots
@@ -391,24 +523,29 @@ if ! [ -d /storage/btrfs/root/@snapshots/@root_snaps ] ; then
   btrfs subvolume create /storage/btrfs/root/@snapshots/@root_snaps
 fi
 
+
+if [[ "$(cat /etc/hostname)" == "vouivre" ]]; then
+  HOME_DISK="data"
+else
+  HOME_DISK="root"
+fi
+NEWUSER=megavolts
 snapper -c home create-config /home/
 btrfs subvolume delete /home/.snapshots
 mkdir /home/.snapshots
-if ! [ -d /storage/btrfs/root/@snapshots/@home_snaps ] ; then
-  if ! [ -d /storage/btrfs/root/@snapshots ] ; then
-    btrfs subvolume create /storage/btrfs/root/@snapshots
+
+if ! [ -d /storage/btrfs/$HOME_DISK/@snapshots/@home_snaps ] ; then
+  if ! [ -d /storage/btrfs/$HOME_DISK/@snapshots ] ; then
+    btrfs subvolume create /storage/btrfs/$HOME_DISK/@snapshots
   fi
-  btrfs subvolume create /storage/btrfs/root/@snapshots/@home_snaps
+  btrfs subvolume create /storage/btrfs/$HOME_DISK/@snapshots/@home_snaps
 fi
 
 echo -e ".. add entry to fstab and mount"
 echo "# Snapper subvolume"  >> /etc/fstab
 echo "/dev/mapper/root /.snapshots btrfs rw,noatime,compress=zstd,subvol=@snapshots/@root_snaps   0 0" >> /etc/fstab
-if [[ $HOSTNAME == "vouivre" ]]; then
-  echo "/dev/mapper/data /home/.snapshots btrfs rw,noatime,compress=zstd,subvol=@snapshots/@home_snaps   0 0" >> /etc/fstab
-elif [[ $HOSTNAME == "dahu" ]]; then
-  echo "/dev/mapper/root /home/.snapshots btrfs rw,noatime,compress=zstd,subvol=@snapshots/@home_snaps   0 0" >> /etc/fstab
-fi
+echo "/dev/mapper/$HOME_DISK /home/.snapshots btrfs rw,noatime,compress=zstd,subvol=@snapshots/@home_snaps   0 0" >> /etc/fstab
+
 systemctl daemon-reload && mount -a
 
 echo -e ".. Edit home and root configuration"
@@ -467,17 +604,12 @@ EOF
 echo -e ".. Enable and start snapshots timer"
 systemctl start --now snapper-timeline.timer snapper-cleanup.timer snapper-boot.timer # start and enable snapper
 
+echo "Allow other_user for fuse"
+sed  -i "s|#user_allow_other|user_allow_other|g"        /etc/fuse.conf
 
 # Generic Tune UP
 # echo "Allow other_user for fuse"
 # sed  -i "s|#user_allow_other|user_allow_other|g"        /etc/fuse.conf
-
-
-
-# ON REBOOT
-systemctl enable --now tailscaled
-tailscale up --ssh --accept-routes
-
 
 
 
@@ -504,10 +636,6 @@ tailscale up --ssh --accept-routes
 # if [[ $HOSTNAME == "vouivre" ]]; then
 #   sed -i 's|/.efibkp"|/.efibkp \&\& /usr/bin/rsync -avh --delete /efi /.efiarch"|g' /usr/share/libalpm/hooks/91-boot_backup_after.hook
 # fi
-
-swapoff /mnt/storage/btrfs/root/@swap/swapfile
-umount /mnt/{boot,.bootwin,storage,storage/data,storage/btrfs/root,storage/btrfs/data,var/log,var/tmp,/tmp,/var/cache/pacman/pkg,var/abs,/home}
-reboot
 
 
 

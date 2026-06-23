@@ -31,25 +31,43 @@
 #   6      5129682944      7814035455   1.2 TiB     0700  PHOTOGRAPHY
 # btrfs with flat layout: /, /var/
 
-TODO tune to read conf file from config/X1.yaml
-read -r HOSTNAME NEWUSER < <(yq '.hostname, .user' config/X1YogaG6.yaml)
+# TODO tune to read conf file from config/X1.yaml
+# read -r HOSTNAME NEWUSER < <(yq '.hostname, .user' config/X1YogaG6.yaml)
 
-HOSTNAME=dahu
-WINDISK=/dev/nvme0n1
-NUXDISK=/dev/nvme0n1
-WINBOOTPART=1
-NUXBOOTPART=1
-NUXROOTPART=5
-NUXDATAPART=5
-NUXPHOTPART=6
+SSN=$(dmidecode -s system-serial-number)
+if [[ $SSN == "PW04CDHX" ]]; then
+  DUALBOOT=true
+  echo "# P1 Vouivre"
+  HOSTNAME=vouivre
+  WINDISK=/dev/nvme1n1
+  WINBOOTPART=1
+  NUXDISK=/dev/nvme0n1
+  NUXBOOTPART=1
+  NUXROOTPART=2
+  NUXDATAPART=3
+  # TODO: check for win disk
+elif [[ $SSN == "PF3EV1ZS" ]]; then
+  # TODO: Read from config file
+  DUALBOOT=true
+  echo "# X1 Dahu"
+  HOSTNAME=dahu
+  WINDISK=/dev/nvme0n1
+  NUXDISK=/dev/nvme0n1
+  WINBOOTPART=1
+  NUXBOOTPART=1
+  NUXROOTPART=5
+  NUXDATAPART=5
+  NUXPHOTPART=6
+fi
+
 NEWUSER=megavolts
-
 NEWINSTALL=false
-NEWROOT=true
+WIPEROOT=true
 WIPEDATA=false
 NTFSDATA=false
-
 TZDATA=America/Anchorage
+NTFSDATA=false
+
 echo 'Enter a default passphrase use to encrypt the disk and serve as password for root and megavolts:'
 stty -echo
 read PASSWORD
@@ -76,15 +94,18 @@ then
 else
   echo -e "... Decrypt root device"
   echo -en $PASSWORD | cryptsetup luksOpen ${NUXDISK}p${NUXROOTPART} root
-  mkdir -p /mnt
   mount /dev/mapper/root /mnt
   if [ -d /mnt/@ ]; then
     mv /mnt/@ /mnt/@.$(date +%Y%m%d)
   fi
+  rm /mnt/@swap/*
   umount /mnt
 fi
 
 echo -e "EFI partition"
+if $DUALBOOT
+
+
 if $NEWINSTALL
   # Remove OLD Limine Entry
   mount ${NUXDISK}p${NUXROOTPART} /mnt
@@ -100,7 +121,7 @@ if $WIPEROOT; then
   echo -e "... Delete individual root snapshots on  @root_snaps"
   btrfs subvolume delete /mnt/@snapshots/@root_snaps/*/snapshot 
   btrfs subvolume delete /mnt/@snapshots/@root_snaps/
-  btrfs subvolume delete /mnt/root/@snapshots/
+  btrfs subvolume delete /mnt/@snapshots/
   fi  
 fi
 
@@ -109,22 +130,7 @@ btrfs subvolume create /mnt/@ # Root directory
 btrfs subvolume create /mnt/@var_log # Log files; avoid rollback for easier debugging
 btrfs subvolume create /mnt/@var_cache # Cache files; no need to rollback
 btrfs subvolume create /mnt/@root  # Root user's home directory
+
 echo -e "... Unmount root btrfs subvolume from /mnt"
 umount /mnt
 
-echo -e ".. Mount subvolume for install"
-# Mount root subvolume
-# By default zstd compression level is 3, but need to override default zlib compression algorithm
-# By default space_cache option is v2 (free space tree) since btrfs-progs 5.15
-# By default discard=async is automatically enable for kernel>6.2
-# By default btrfs enable or disable ssd according to `/sys/block/DEV/queue/rotational`
-mount -o defaults,compress=zstd,noatime,nodev,subvol=@ /dev/mapper/root /mnt/
-
-echo -e "... create root subvolume mountpoints"
-mkdir -p /mnt/{efi,.efiwin,var/{abs,cache,log,lib/{docker,libvirt,containers},tmp},root,tmp,home,storage/{data,btrfs/root}}
-mount -o defaults,compress=zstd,noatime,nodev,nodatacow,subvol=@var_log /dev/mapper/root /mnt/var/log
-mount -o defaults,compress=zstd,noatime,nodev,nodatacow,subvol=@var_cache /dev/mapper/root /mnt/var/cache
-mount -o defaults,compress=zstd,noatime,nodev,nodatacow,subvol=@root /dev/mapper/root /mnt/root
-
-echo -e "... mount root btrfs subvolume on /storage/btrfs/root"
-mount -o defaults,compress=zstd,noatime,nodev /dev/mapper/root /mnt/storage/btrfs/root
