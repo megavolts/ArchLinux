@@ -160,6 +160,7 @@ systemctl --user enable --now ssh-agent
 - Startup
   - Yakuake
   - tail-tray
+- Import GPG key  
 - Network
   - Set up UAF VPN with globalconnect, as currently networkmanager-openconnect does not work anymore
   - Set up eduroam with geteduroam
@@ -188,6 +189,10 @@ echo -e "Arkenfox setup"
 # [Service]
 # Environment="XDG_CURRENT_DESKTOP=KDE"
 # EOF
+
+# Docker alternative
+echo -e "Install podman"
+
 
 # Docker and install
 echo -e "Install docker"

@@ -77,7 +77,6 @@ sed -i "s| debug lto| \!debug lto|g" /etc/makepkg.conf
 yays  limine-mkinitcpio-hook
 # TODO MORE
 
-#pacman -S --noconfirm nvidia-open nvidia-prime
 
 # Set up automatic copy of boot partition on kernel update to enable backup to /.boot
 cat << EOF >>  /usr/share/libalpm/hooks/91-boot_backup_after.hook

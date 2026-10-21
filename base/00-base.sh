@@ -277,7 +277,7 @@ timeout: 5
 EOF
 
 if [[ $HOSTNAME == vouivre ]]; then
-  rsync /mount
+  rsync /mnt/efi/ /mnt/.efiarch -hAr --info=progress2
 fi
 
 
@@ -337,6 +337,10 @@ arch-chroot /mnt pacman -S --noconfirm mesa vulkan-intel vulkan-mesa-layers inte
 # Enable GuC/HuC firmware loading
 echo "options i915 enable_guc=3" >> /mnt/etc/modprobe.d/i915.conf
 
+if [[ $HOSTNAME == "vouivre" ]]; then
+  arch-chroot /mnt pacman -S --noconfirm nvidia-open-dkms nvidia-prime
+fi
+
 
 # Packages list redone as 2025-04-02
 # Windows Manager
@@ -364,7 +368,7 @@ arch-chroot /mnt pacman -S --noconfirm  code
 echo -en $PASSWORD | yays sublime-text-4 oh-my-zsh-git pycharm
 
 echo -e "... network tools"
-arch-chroot /mnt pacman -S --noconfirm  plasma-nm networkmanager-openvpn dnsmasq networkmanager-openconnect   
+arch-chroot /mnt pacman -S --noconfirm  plasma-nm networkmanager-openvpn dnsmasq networkmanager-openconnect globalprotect-openconnect-git   
 echo -en $PASSWORD | yays geteduroam
 
 echo -e "... bluetooth"
@@ -569,6 +573,7 @@ sed  -i "s|TIMELINE_LIMIT_DAILY=\"10\"|TIMELINE_LIMIT_DAILY=\"7\"|g"     /etc/sn
 sed  -i "s|TIMELINE_LIMIT_WEEKLY=\"0\"|TIMELINE_LIMIT_WEEKLY=\"4\"|g"     /etc/snapper/configs/root  # keep weekly backup for 4 weeks
 sed  -i "s|TIMELINE_LIMIT_MONTHLY=\"12\"|TIMELINE_LIMIT_MONTHLY=\"12\"|g" /etc/snapper/configs/root  # keep monthly backup for 12 months
 sed  -i "s|TIMELINE_LIMIT_YEARLY=\"5\"|TIMELINE_LIMIT_YEARLY=\"5\"|g"     /etc/snapper/configs/root  # keep yearly backup for 5 years
+
 # # update snap config for home directory
 sed  -i "s|TIMELINE_MIN_AGE=\"3600\"|TIMELINE_MIN_AGE=\"7200\"|g"         /etc/snapper/configs/home  # Keep all snapshots within the last 2 hours
 sed  -i "s|TIMELINE_LIMIT_HOURLY=\"10\"|TIMELINE_LIMIT_HOURLY=\"96\"|g"   /etc/snapper/configs/home  # keep hourly backup for 96 hours (4 days)
@@ -601,42 +606,85 @@ SYSTEMD_EDITOR=tee systemctl edit snapper-boot.service <<EOF
 After=\\\\x2eboot.mount
 EOF
 
+yays limine-snapper-sync limine-mkinitcpio-sync
+doas cp /etc/limine-snapper-sync.conf /etc/default/limine
+sed  -i "s|#TARGET_OS_NAME=\"Arch Linux\"|TARGET_OS_NAME=\"Arch Linux\"|g"        /etc/default/limine
+sed  -i "s|#ESP_PATH=\"\/boot\"|ESP_PATH=\"\/efi\"|g"        /etc/default/limine
+sed  -i "s|ROOT_SNAPSHOTS_PATH=\"\/@\/.snapshots\"|ROOT_SNAPSHOTS_PATH=\"\/@snapshots\/@root_snaps\"|g"        /etc/default/limine
+sed  -i "s|#ENABLE_NOTIFICATION=yes|ENABLE_NOTIFICATION=yes|g"        /etc/default/limine
+cat >> /etc/default/limine << EOF
+
+# limine-entry-tool
+### Boot Integrity Check
+### Enable BLAKE2 checksum verification for bootable files. (yes|no)
+ENABLE_VERIFICATION=yes
+
+### Kernel Entries Order
+### Wildcard "*" matches any letter in kernel entry name
+### If ENABLE_SORT is set to "yes", only wildcard "*" entries are sorted alphabetically.
+BOOT_ORDER="*, *fallback, Snapshots"
+ENABLE_SORT=no
+
+### Find Bootloaders
+### Automatically add systemd-boot, rEFInd, or the default EFI loader to Limine if they are found in the ESP. (yes|no)
+FIND_BOOTLOADERS=yes
+
+### Authentication Method
+### Specify an authentication method: "sudo", "doas", "pkexec", "run0 --background=" or another method of your choice.
+AUTH_METHOD=doas
+
+
+### UKI (Unified Kernel Image)
+### Automatically create UKIs in '$ESP_PATH/EFI/Linux/' using mkinitcpio for UEFI. (yes|no)
+###
+### Advantage:
+###  - UKIs are automatically loaded by bootloaders like 'systemd-boot' and 'rEFInd'.
+### Disadvantage:
+###  - UKIs use more ESP space compared to separate 'initramfs' and 'vmlinuz' files, especially with multiple Limine snapshots.
+###
+### Additional notes:
+### - Duplicate 'initramfs' and 'vmlinuz' files are removed when 'limine-mkinitcpio' or 'limine-update' is run to generate a UKI.
+### - UKI ignores booting into a snapshot when Secure Boot is enabled. To resolve this, any embedded kernel cmdline is removed from the UKI, which will then read the external kernel cmdline.
+ENABLE_UKI=yes
+
+### mkinitcpio UKI Build Options
+### Additional options for mkinitcpio UKI builds
+### See: https://man.archlinux.org/man/mkinitcpio.8.en#OPTIONS_FOR_UNIFIED_KERNEL_IMAGE
+### Example: Add a splash screen
+MKINITCPIO_UKI_OPTIONS="--splash /usr/share/systemd/bootctl/splash-arch.bmp"
+EOF
+
+if [[ $HOSTNAME == "vouivre" ]]; then
+cat << EOF >  /usr/share/libalpm/hooks/91-boot_sync_after_limine.hook
+[Trigger]
+Operation = Upgrade
+Operation = Install
+Type = Package
+Target = limine-mkinitcpio-hook
+Target = linux
+Target = linux-zen
+
+[Action]
+Description = Running rsync between efi and efitarch after Limine/mkinitcpio update
+When = PostTransaction
+Exec = /bin/sh -c "/usr/bin/rsync -ah --delete /efi /.efiarch"
+EOF
+chmod +x /usr/share/libalpm/hooks/91-boot_sync_after_limine.hook
+fi
+
+
 echo -e ".. Enable and start snapshots timer"
 systemctl start --now snapper-timeline.timer snapper-cleanup.timer snapper-boot.timer # start and enable snapper
+
 
 echo "Allow other_user for fuse"
 sed  -i "s|#user_allow_other|user_allow_other|g"        /etc/fuse.conf
 
-# Generic Tune UP
-# echo "Allow other_user for fuse"
-# sed  -i "s|#user_allow_other|user_allow_other|g"        /etc/fuse.conf
-
-
 
 # TODO: slack-wayland
 
-# # # Set up automatic copy of boot partition on kernel update to enable backup to /.boot
-# 2026-06-17: likely not needed
-# # cat << EOF >  /usr/share/libalpm/hooks/91-boot_backup_after.hook
-# # [Trigger]
-# # Type = Path
-# # Operation = Install
-# # Operation = Upgrade
-# # Target = usr/lib/modules/*/vmlinuz
-# # Target = usr/lib/initcpio/*
-# # Target = usr/src/*/dkms.conf
-
-# # [Action]
-# # Depends = rsync
-# # Description = Backing up /boot...
-# # When = PostTransaction
-# # Exec = /bin/sh -c "/usr/bin/rsync -avh --delete /efi /.efibkp"
-# # EOF
-# # mkdir /.efibkp
-# if [[ $HOSTNAME == "vouivre" ]]; then
-#   sed -i 's|/.efibkp"|/.efibkp \&\& /usr/bin/rsync -avh --delete /efi /.efiarch"|g' /usr/share/libalpm/hooks/91-boot_backup_after.hook
-# fi
-
+# # Set up automatic copy of boot partition on kernel update to enable backup to /.boot
+#2026-06-17: likely not needed
 
 
 # TODO MEGE 01-chrrot here
