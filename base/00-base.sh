@@ -605,6 +605,25 @@ SYSTEMD_EDITOR=tee systemctl edit snapper-boot.service <<EOF
 [Unit]
 After=\\\\x2eboot.mount
 EOF
+o
+if [[ $HOTSNAME == vouivre ]]; then
+cat << EOF >>  /mnt/usr/share/libalpm/hooks/91-boot_backup_after.hook
+[Trigger]
+Type = Path
+Operation = Install
+Operation = Upgrade
+Target = usr/lib/modules/*/vmlinuz
+Target = usr/lib/initcpio/*
+Target = usr/src/*/dkms.conf
+
+[Action]
+Depends = rsync
+Description = Backing up /boot...
+When = PostTransaction
+Exec = /bin/sh -c "/usr/bin/rsync -avh --delete /efi /.efiarch"
+EOF
+
+
 
 yays limine-snapper-sync limine-mkinitcpio-sync
 doas cp /etc/limine-snapper-sync.conf /etc/default/limine

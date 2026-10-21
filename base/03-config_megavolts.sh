@@ -180,6 +180,34 @@ systemctl --user enable --now ssh-agent
 
 
 
+
+## Install liminie helper
+yays  limine-mkinitcpio-hook 
+# TODO MORE
+
+#pacman -S --noconfirm nvidia-open nvidia-prime
+
+# Set up automatic copy of boot partition on kernel update to enable backup to /.boot
+cat << EOF >>  /usr/share/libalpm/hooks/91-boot_backup_after.hook
+[Trigger]
+Type = Path
+Operation = Install
+Operation = Upgrade
+Target = usr/lib/modules/*/vmlinuz
+Target = usr/lib/initcpio/*
+Target = usr/src/*/dkms.conf
+
+[Action]
+Depends = rsync
+Description = Backing up /boot...
+When = PostTransaction
+Exec = /bin/sh -c "/usr/bin/rsync -avh --delete /efi /.efibkp && /usr/bin/rsync -avh --delete /efi /.efiwin"
+EOF
+
+<<<<<<< HEAD
+
+
+
 echo -e "... tuning firefox"
 echo -e "Arkenfox setup"
 
